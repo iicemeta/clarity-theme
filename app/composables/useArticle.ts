@@ -1,6 +1,6 @@
 import type { ContentCollectionItem } from '@nuxt/content'
-import type { MetaSlotsTree } from '~~/remark-plugins/rehype-meta-slots'
-import type { ArticleOrderType, ArticleProps } from '~/types/article'
+import type { MetaSlotsTree } from '../../remark-plugins/rehype-meta-slots'
+import type { ArticleOrderType, ArticleProps } from '../types/article'
 import { orderBy } from 'es-toolkit/array'
 
 /** 获取已加载的文章内容/元信息 */
@@ -64,12 +64,12 @@ interface UseArticleSortOptions {
 }
 
 export function useArticleSort(list: MaybeRefOrGetter<ArticleProps[]>, options?: UseArticleSortOptions) {
-	const appConfig = useAppConfig()
+	const clarity = useClarityConfig()
 	const {
 		bindDirectionQuery,
 		bindOrderQuery,
 		initialAscend = false,
-		initialOrder = appConfig.pagination.sortOrder || 'date',
+		initialOrder = (clarity.pagination.sortOrder as ArticleOrderType) || 'date',
 	} = options || {}
 
 	const sortOrder = bindOrderQuery
@@ -99,13 +99,13 @@ export function useArticleSort(list: MaybeRefOrGetter<ArticleProps[]>, options?:
 }
 
 export function getCategoryIcon(category?: string) {
-	const appConfig = useAppConfig()
-	return appConfig.article.categories[category!]?.icon ?? 'tabler:folder'
+	const clarity = useClarityConfig()
+	return clarity.article.categories[category!]?.icon ?? 'tabler:folder'
 }
 
 export function getCategoryColor(category?: string) {
-	const appConfig = useAppConfig()
-	return appConfig.article.categories[category!]?.color
+	const clarity = useClarityConfig()
+	return clarity.article.categories[category!]?.color
 }
 
 interface GetPostTypeClassNameOptions {
