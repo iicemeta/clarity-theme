@@ -94,8 +94,10 @@ export default defineAppConfig({
 | --- | --- |
 | `defineClarityConfig()` | 定义并校验站点配置 |
 | `createClarityContentConfig()` | 生成 Nuxt Content 集合 |
+| `useClaritySiteFeedEntry()` | 由站点配置生成本站订阅条目（友链页 / OPML） |
 | `useClarityConfig()` | 获取完整配置（站点 + UI） |
 | `useClaritySite()` / `useClarityArticle()` | 获取站点 / 文章配置 |
+| `clarity-theme/img` | 头像 / 图标 / 图片 URL helper（feeds.ts 与组件共用） |
 | `type ClarityConfig` 等 | 公共类型（`clarity-theme/config`） |
 | `#clarity/feeds` | 消费项目友链数据注入点 |
 
@@ -116,7 +118,9 @@ pnpm install        # 安装 Theme + Playground（pnpm workspace）
 pnpm dev            # 启动 Playground
 pnpm generate       # Playground 静态生成验证
 pnpm lint
+pnpm typecheck      # vue-tsc 全量类型检查
 pnpm verify         # 作者信息 / 站点文件泄漏检查
+pnpm test:consumer  # npm tarball 真实消费项目验证
 node scripts/sync-upstream.mjs check  # 检查上游更新
 ```
 
@@ -142,7 +146,9 @@ node scripts/sync-upstream.mjs diff   # 变更分类明细
 - `anti-mirror` 改为 `features.antiMirror` 可选功能
 - Twikoo 评论、统计脚本等改为 `integrations` 配置注入
 - 上游 `pnpm-workspace.yaml` catalog 依赖改为普通语义化版本
-- 上游 `patches/` 尚未迁移（见下方待办）
+- 新增 `clarity-theme/img` 包导出（feeds.ts 头像 helper）
+- 上游 `patches/` 部分处理：`@nuxtjs/mdc` 的「行内代码 props.code」已被 ProseCode
+  原生适配**取代**（有 patch / 无 patch 均兼容）；其余待逐个判定（见待办）
 - Layer 构建兼容修复：
   - `modules` 相对路径改为 Theme 绝对路径（Layer 中相对路径以消费项目为基准）
   - `@pinia/nuxt` 不扫描 Layer 的 `app/stores`，由 `clarity-config` 显式注册
@@ -154,6 +160,7 @@ node scripts/sync-upstream.mjs diff   # 变更分类明细
 ```text
 [✓] Playground nuxt generate（37 条路由，含 atom.xml / stats / opml / compatibility）
 [✓] Real Consumer Test（pnpm pack → 独立目录安装 tarball → nuxt generate，21 条路由 + 6 项断言）
+[✓] 差异测试站（原版 blog-v3 全量数据 + Theme，242 条路由 + 10 项对比，见下文）
 [✓] vue-tsc typecheck（playground 全量，0 错误）
 [✓] eslint / stylelint
 [✓] 作者信息泄漏、站点文件、跨项目路径检查（pnpm verify）
@@ -207,6 +214,24 @@ Real Consumer Test（`pnpm test:consumer`）暴露并修复了三个 workspace �
 `clarity.config.ts` / `content.config.ts` / `feeds.ts` / 文章 / UI 覆盖）→
 `pnpm install` → `nuxt generate` → 断言（站点注入 / inline code / 文章路由 / atom / UI 覆盖）。
 
+### 差异测试站：theme-based-blog-v3
+
+`../theme-based-blog-v3` 是一个**独立部署的完整站点**：原版 blog-v3 的全部站点数据
+（86 篇文章、友链、redirects、统计与评论配置、上游 4 个 patch）运行在 Theme 上，
+通过 tarball 安装（与 npm 发布形态一致），用于与原版输出对比。
+
+```text
+[✓] 242 条路由预渲染，0 错误（86 篇文章 + 归档 / 友链 / 预览 / theme 文档）
+[✓] 站点注入：标题 / favicon / author meta / umami / Insights / Twikoo 脚本
+[✓] 文章正文：article / h2 / pre / inline code（含 language-* 高亮）/ twikoo 容器
+[✓] atom.xml 50 条（feed.limit）、stats 90 篇 / 132,995 字、opml 137 个订阅
+[✓] redirects.json 全量 308 重定向
+[✓] 上游 patch 环境（@nuxtjs/mdc patch APPLIED）下 ProseCode 双模式兼容
+```
+
+该站点同时验证了 **patch 共存**（ProseCode 的插槽 / `code` prop 双模式设计）
+与 **consumer UI 覆盖**（footer / header / birthYear 均来自站点侧覆盖）。
+
 ## 待办（按 devdoc 阶段）
 
 - [x] Phase 0：冻结基线（blog-v3@3.7.2，f6ea97d）
@@ -219,7 +244,10 @@ Real Consumer Test（`pnpm test:consumer`）暴露并修复了三个 workspace �
 - [x] Real Consumer Test（devdoc2.0 Phase D）：tarball 安装 + generate + 断言
 - [x] Config API 加固（devdoc2.0 Phase E 部分）：`CustomAppConfig` 类型合并、zod v4 `prefault`、
       server 路由改用 `@nuxt/content/server` 显式导入、`ufo`/`@types/hast`/`minimark` 显式依赖
+- [x] 差异测试站 theme-based-blog-v3（原版全量数据 × Theme，Phase A / D 终验）
 - [ ] Phase 4：逐个处理上游 patch（删除 / upstream / fork / consumer patch）
+  - `@nuxtjs/mdc`：行内代码部分已被 Theme 取代；detab（tab 保留）待判定
+  - `@nuxt/image` / `ipx` / `plain-shiki`：待判定
 - [ ] Phase 5（剩余）：CI 三层验证（lint → playground generate → pack + 临时 consumer generate）
 - [ ] Phase 6：sync-upstream `apply` / `verify` 模式与定时 PR
 
