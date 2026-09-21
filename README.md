@@ -12,8 +12,8 @@ clarity-theme (Layer)          your-blog (Consumer)
 ├── app/          UI 组件      ├── clarity.config.ts   站点配置
 ├── config/       Config API   ├── content.config.ts   Content Schema
 ├── modules/      配置桥接      ├── feeds.ts            友链数据
-│   ├── clarity-config/         ├── content/            文章
-│   └── anti-mirror/            ├── app/app.config.ts   UI 覆盖
+│   └── clarity-config/         ├── content/            文章
+│       （含 anti-mirror-client）├── app/app.config.ts   UI 覆盖
 ├── remark-plugins/             └── nuxt.config.ts      extends Layer
 ├── server/  stats/atom/opml
 ├── shared/  通用工具
@@ -273,7 +273,6 @@ Real Consumer Test（`pnpm test:consumer`）暴露并修复了三个 workspace �
 - [x] Config API 加固（devdoc2.0 Phase E 部分）：`CustomAppConfig` 类型合并、zod v4 `prefault`、
       server 路由改用 `@nuxt/content/server` 显式导入、`ufo`/`@types/hast`/`minimark` 显式依赖
 - [x] 差异测试站 theme-based-blog-v3（原版全量数据 × Theme，Phase A / D 终验）
-- [ ] Phase 4：逐个处理上游 patch（删除 / upstream / fork / consumer patch）
 - [x] Phase 4：patch audit 完成（结论见 [docs/PATCHES.md](./docs/PATCHES.md)；
       需保留的 4 个 patch 由消费项目持有，`@nuxtjs/mdc` 已精简为 detab 单 hunk）
 - [x] Phase 5：CI 三层验证（ci.yml：lint + typecheck + verify 矩阵 → generate + test:consumer）

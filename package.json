@@ -5,10 +5,13 @@
   "packageManager": "pnpm@12.4.1",
   "description": "Clarity Theme — 从 blog-v3 提取的可复用 Nuxt 4 Layer 博客主题",
   "license": "MIT",
-  "homepage": "https://github.com/L33Z22L11/blog-v3",
+  "homepage": "https://github.com/iicemeta/clarity-theme",
   "repository": {
     "type": "git",
-    "url": "https://github.com/L33Z22L11/blog-v3.git"
+    "url": "https://github.com/iicemeta/clarity-theme.git"
+  },
+  "bugs": {
+    "url": "https://github.com/iicemeta/clarity-theme/issues"
   },
   "exports": {
     ".": "./nuxt.config.ts",
