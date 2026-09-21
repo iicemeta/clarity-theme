@@ -1,0 +1,50 @@
+{
+  "upstream": {
+    "repo": "https://github.com/L33Z22L11/blog-v3.git",
+    "branch": "main",
+    "commit": "f6ea97d745517feb52f0c100e89acb36f0adc12f",
+    "version": "3.7.2",
+    "nuxt": "4.5.2",
+    "content": "^3.16.0",
+    "syncedAt": "2026-09-21T16:40:00+08:00"
+  },
+  "include": [
+    "app/assets/**",
+    "app/components/**",
+    "app/composables/**",
+    "app/layouts/**",
+    "app/middleware/**",
+    "app/pages/**",
+    "app/plugins/**",
+    "app/shiki.config.ts",
+    "app/app.vue",
+    "app/error.vue",
+    "modules/**",
+    "remark-plugins/**",
+    "server/**",
+    "shared/**",
+    "public/assets/**",
+    "public/fonts/**"
+  ],
+  "siteOnly": [
+    "app/feeds.ts",
+    "blog.config.ts",
+    "content/**",
+    "content.config.ts",
+    "redirects.json",
+    "edgeone.json",
+    "scripts/**",
+    ".vscode/**"
+  ],
+  "manual": [
+    "app/app.config.ts",
+    "nuxt.config.ts",
+    "package.json",
+    "pnpm-workspace.yaml",
+    "patches/**",
+    "tsconfig.json",
+    "eslint.config.mjs",
+    "stylelint.config.mjs",
+    "cspell.json"
+  ]
+}
