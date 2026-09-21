@@ -1,0 +1,192 @@
+import { existsSync } from 'node:fs'
+import { dirname, resolve } from 'node:path'
+import { fileURLToPath } from 'node:url'
+import { createJiti } from 'jiti'
+import {
+	defineNuxtModule,
+	installModule,
+	updateAppConfig,
+	useLogger,
+} from '@nuxt/kit'
+import { toPublicClarityConfig } from '../../config/public'
+import { clarityConfigSchema } from '../../config/schema'
+
+const moduleDir = dirname(fileURLToPath(import.meta.url))
+const themeDir = resolve(moduleDir, '../..')
+
+export interface ModuleOptions {
+	/** 消费项目中 clarity 配置文件路径（相对 rootDir） */
+	configFile?: string
+}
+
+export default defineNuxtModule<ModuleOptions>({
+	meta: {
+		name: 'clarity-config',
+		configKey: 'clarityConfig',
+	},
+
+	async setup(options, nuxt) {
+		const logger = useLogger('clarity-config')
+		const rootDir = nuxt.options.rootDir
+
+		const configPath = resolve(rootDir, options.configFile ?? findConfigFile(rootDir))
+		const feedsPath = findFeedsFile(rootDir, themeDir)
+
+		// ---- 依赖注入层：Theme 内部不感知消费项目的文件布局 ----
+		Object.assign(nuxt.options.alias, {
+			'#clarity': themeDir,
+			'#clarity/config': configPath,
+			'#clarity/feeds': feedsPath.resolved,
+		})
+
+		if (!existsSync(configPath)) {
+			throw new Error(
+				`[clarity-config] 未找到 ${configPath}。`
+				+ '请在消费项目根目录创建 clarity.config.ts（可参考 playground/clarity.config.ts）。',
+			)
+		}
+		if (!feedsPath.found) {
+			logger.warn('未找到 feeds.ts，友链页面与 OPML 订阅将输出空数据。')
+		}
+
+		// ---- 读取并校验站点配置 ----
+		const jiti = createJiti(import.meta.url, { moduleCache: false, interopDefault: true })
+		const configModule = await jiti.import(configPath)
+		const config = clarityConfigSchema.parse(configModule?.default ?? configModule)
+		const { site, article, integrations, features } = config
+
+		// ---- Site Config → App Config 桥梁 ----
+		updateAppConfig(nuxt, {
+			clarity: toPublicClarityConfig(config),
+		})
+
+		// 站点派生的 UI 默认值（仅当用户未覆盖时生效）
+		const uiDefaults = nuxt.options.appConfig.clarity as {
+			header?: { logo?: string, subtitle?: string }
+			footer?: { copyright?: string }
+		}
+		uiDefaults.header ??= {}
+		uiDefaults.footer ??= {}
+		if (!uiDefaults.header.logo) {
+			uiDefaults.header.logo = site.author.avatar ?? ''
+		}
+		if (!uiDefaults.header.subtitle) {
+			uiDefaults.header.subtitle = site.subtitle ?? ''
+		}
+		if (!uiDefaults.footer.copyright) {
+			uiDefaults.footer.copyright = site.copyright?.name
+				? `© ${new Date().getFullYear()} ${site.author.name} · ${site.copyright.name}`
+				: `© ${new Date().getFullYear()} ${site.author.name}`
+		}
+
+		// ---- SEO / site / robots / llms ----
+		nuxt.options.site = {
+			...nuxt.options.site,
+			name: site.title,
+			url: site.url,
+			defaultLocale: site.language,
+		}
+
+		nuxt.options.robots = {
+			...nuxt.options.robots,
+			disallow: article.robotsNotIndex,
+		}
+
+		nuxt.options.llms = {
+			...nuxt.options.llms,
+			domain: site.url,
+			title: site.title,
+			description: site.description,
+		}
+
+		// ---- Head 元数据 ----
+		const head = nuxt.options.app.head
+		head.meta ??= []
+		head.meta.push({ name: 'author', content: [site.author.name, site.author.email].filter(Boolean).join(', ') })
+		head.link ??= []
+		head.link.push({ rel: 'icon', href: site.favicon })
+		if (features.atom) {
+			head.link.push({ rel: 'alternate', type: 'application/atom+xml', href: '/atom.xml' })
+		}
+		const twikooPreload = integrations.twikoo?.preload ?? integrations.twikoo?.envId
+		if (twikooPreload) {
+			head.link.push({ rel: 'preconnect', href: twikooPreload })
+		}
+		head.script ??= []
+		head.script.push(...integrations.scripts as any[])
+		head.titleTemplate = `%s %separator ${site.title}`
+
+		// ---- 构建信息（供 BlogTech 等 Widget 使用） ----
+		const consumerPkg = await loadJson(resolve(rootDir, 'package.json'), jiti)
+		const themePkg = await loadJson(resolve(themeDir, 'package.json'), jiti)
+		nuxt.options.runtimeConfig.public.clarity = {
+			theme: 'Clarity',
+			themeVersion: String(themePkg?.version ?? ''),
+			themeHomepage: String(themePkg?.homepage ?? ''),
+			siteVersion: String(consumerPkg?.version ?? ''),
+			sitePackageManager: String(consumerPkg?.packageManager ?? ''),
+			nuxtVersion: nuxt.versions.nuxt,
+			vueVersion: nuxt.versions.vue,
+		}
+
+		// ---- 路由规则 ----
+		const routeRules = nuxt.options.routeRules
+		if (features.stats) {
+			routeRules['/api/stats'] = { prerender: true, headers: { 'Content-Type': 'application/json' } }
+		}
+		if (features.atom) {
+			routeRules['/atom.xml'] = { prerender: true, headers: { 'Content-Type': 'application/xml' } }
+		}
+		if (features.opml) {
+			routeRules['/subscriptions.opml'] = { prerender: true, headers: { 'Content-Type': 'application/xml' } }
+		}
+		routeRules['/favicon.ico'] = { redirect: { to: site.favicon } }
+
+		// ---- 自定义链接与 /posts 前缀处理 ----
+		nuxt.hook('content:file:afterParse', (ctx) => {
+			const { permalink, path } = ctx.content as Record<string, string | undefined>
+			if (permalink) {
+				ctx.content.path = permalink
+			}
+			else if (article.hidePostPrefix && path?.startsWith('/posts/')) {
+				ctx.content.path = path.slice('/posts'.length)
+			}
+		})
+
+		// ---- 可选功能：anti-mirror ----
+		if (features.antiMirror !== false) {
+			const blacklist = typeof features.antiMirror === 'boolean' ? [] : features.antiMirror.blacklist
+			await installModule(resolve(moduleDir, '../anti-mirror'), {
+				blacklist,
+				target: site.url,
+			})
+		}
+	},
+})
+
+function findConfigFile(rootDir: string) {
+	for (const name of ['clarity.config.ts', 'clarity.config.mjs', 'clarity.config.js']) {
+		if (existsSync(resolve(rootDir, name))) {
+			return name
+		}
+	}
+	return 'clarity.config.ts'
+}
+
+function findFeedsFile(rootDir: string, themeDir: string) {
+	for (const name of ['feeds.ts', 'feeds.mjs', 'feeds.js']) {
+		if (existsSync(resolve(rootDir, name))) {
+			return { found: true, resolved: resolve(rootDir, name) }
+		}
+	}
+	return { found: false, resolved: resolve(themeDir, 'config/feeds.empty.ts') }
+}
+
+async function loadJson(path: string, jiti: ReturnType<typeof createJiti>) {
+	try {
+		return (await jiti.import<object>(path))?.default
+	}
+	catch {
+		return undefined
+	}
+}
