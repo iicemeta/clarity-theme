@@ -17,6 +17,10 @@
       "types": "./config/content.d.mts",
       "default": "./config/content.mjs"
     },
+    "./img": {
+      "types": "./img/index.d.mts",
+      "default": "./img/index.mjs"
+    },
     "./schema": {
       "types": "./config/schema.d.mts",
       "default": "./config/schema.mjs"
@@ -28,6 +32,7 @@
     "README.md",
     "app",
     "config",
+    "img",
     "modules",
     "nuxt.config.ts",
     "package.json",
