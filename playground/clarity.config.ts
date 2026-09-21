@@ -1,0 +1,57 @@
+import { defineClarityConfig } from 'clarity-theme/config'
+
+export default defineClarityConfig({
+	site: {
+		title: 'Clarity Playground',
+		subtitle: 'Clarity Theme 示例站点',
+		description: 'Clarity Theme 的最小可运行示例，用于验证 Layer 独立构建与站点配置注入。',
+		url: 'https://clarity-theme.example.com/',
+		language: 'zh-CN',
+		timezone: 'Asia/Shanghai',
+		established: '2026-01-01',
+		favicon: '/favicon.svg',
+		author: {
+			name: 'Clarity 用户',
+			email: 'user@example.com',
+			homepage: 'https://clarity-theme.example.com/',
+		},
+		copyright: {
+			abbr: 'CC BY 4.0',
+			name: '署名 4.0 国际',
+			url: 'https://creativecommons.org/licenses/by/4.0/deed.zh-hans',
+		},
+	},
+
+	article: {
+		defaultCategory: '未分类',
+		categories: {
+			未分类: { icon: 'tabler:circle-dashed' },
+			技术: { icon: 'tabler:code', color: '#7777ff' },
+			生活: { icon: 'tabler:leaf', color: '#ff7777' },
+		},
+		types: {
+			tech: {},
+			story: {},
+		},
+	},
+
+	feed: {
+		limit: 20,
+		enableStyle: true,
+	},
+
+	integrations: {
+		scripts: [],
+	},
+
+	features: {
+		atom: true,
+		opml: true,
+		stats: true,
+		antiMirror: false,
+	},
+
+	changelog: [
+		{ date: '2026-01-01', text: '使用 Clarity Theme 建站' },
+	],
+})
