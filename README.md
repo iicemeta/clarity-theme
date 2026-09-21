@@ -121,21 +121,49 @@ pnpm lint
 pnpm typecheck      # vue-tsc 全量类型检查
 pnpm verify         # 作者信息 / 站点文件泄漏检查
 pnpm test:consumer  # npm tarball 真实消费项目验证
-node scripts/sync-upstream.mjs check  # 检查上游更新
 ```
+
+CI（GitHub Actions）：
+
+- `ci.yml`：push / PR 时跑 lint + typecheck + verify（Node 22 / 24 矩阵），
+  Node 24 上额外执行 playground generate 与 real consumer test
+- `sync.yml`：每周一检查上游更新，有新提交时自动创建同步 Issue（附分类明细）
 
 ## 上游同步
 
 - 基线：`blog-v3@3.7.2`（`f6ea97d7`，2026-09-06）
-- 清单：`sync-manifest.json`（include / siteOnly / manual）
+- 清单：`sync-manifest.json` 四分类（devdoc2.0 §21）
  - `include`：可直接同步的通用文件
- - `siteOnly`：上游私有内容，永不进入 Theme
+ - `exclude`：上游私有内容，永不进入 Theme（原 siteOnly）
+ - `transform`：从上游派生、需按变更重构的文件（nuxt.config / app.config / content.config / package.json / pnpm-workspace）
  - `manual`：Theme 重构过的文件，只报告差异不自动覆盖
 
 ```bash
-node scripts/sync-upstream.mjs check  # 是否有新提交
-node scripts/sync-upstream.mjs diff   # 变更分类明细
+pnpm sync:check    # 是否有新提交（CI 加 --fail-on-update）
+pnpm sync:diff     # 变更分类明细
+pnpm sync:apply    # 安全应用：include 快进 + 基线对比冲突检测 + 更新基线
+pnpm sync:verify   # 提纯验证 + 基线状态检查
 ```
+
+`apply` 的安全策略：
+
+- 仅 `include` 类文件参与自动同步，且要求 Theme 工作树干净
+- 本地文件与上游基线一致（未被适配）→ 快进到最新
+- 本地文件已被 Theme 适配（与基线有差异）→ **标记冲突跳过**，人工按基线 → 最新合并
+- 上游删除且本地未适配 → 同步删除
+- `transform` / `manual` 永不自动覆盖，仅报告差异
+
+## 上游 Patch 审计
+
+详见 [docs/PATCHES.md](./docs/PATCHES.md)。结论：Theme 包不携带任何 patch，
+需要的 patch 由消费项目（`theme-based-blog-v3/patches/`）持有：
+
+| Patch | 判定 |
+| --- | --- |
+| `@nuxtjs/mdc` | ✅ 已精简：行内代码部分被 ProseCode 取代（删除）；detab 保留 tab 部分仍需 consumer patch |
+| `@nuxt/image` | 🟡 consumer patch（小数密度 `1.5x`；`parseFloat` 适合向上游提 PR） |
+| `ipx` | 🟡 consumer patch（ICO 透传，避免 favicon 处理崩溃） |
+| `plain-shiki` | 🟡 consumer patch（`::highlight` 后代选择器修复，适合向上游提 PR） |
 
 ## 与上游的差异（v0.1）
 
@@ -246,10 +274,10 @@ Real Consumer Test（`pnpm test:consumer`）暴露并修复了三个 workspace �
       server 路由改用 `@nuxt/content/server` 显式导入、`ufo`/`@types/hast`/`minimark` 显式依赖
 - [x] 差异测试站 theme-based-blog-v3（原版全量数据 × Theme，Phase A / D 终验）
 - [ ] Phase 4：逐个处理上游 patch（删除 / upstream / fork / consumer patch）
-  - `@nuxtjs/mdc`：行内代码部分已被 Theme 取代；detab（tab 保留）待判定
-  - `@nuxt/image` / `ipx` / `plain-shiki`：待判定
-- [ ] Phase 5（剩余）：CI 三层验证（lint → playground generate → pack + 临时 consumer generate）
-- [ ] Phase 6：sync-upstream `apply` / `verify` 模式与定时 PR
+- [x] Phase 4：patch audit 完成（结论见 [docs/PATCHES.md](./docs/PATCHES.md)；
+      需保留的 4 个 patch 由消费项目持有，`@nuxtjs/mdc` 已精简为 detab 单 hunk）
+- [x] Phase 5：CI 三层验证（ci.yml：lint + typecheck + verify 矩阵 → generate + test:consumer）
+- [x] Phase 6：sync 四分类 manifest + `check` / `diff` / `apply` / `verify` 四模式 + 每周同步 Issue
 
 ## 许可证
 

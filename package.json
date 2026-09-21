@@ -52,7 +52,11 @@
     "lint:fix": "eslint --fix && stylelint \"app/**/*.{vue,scss}\" \"playground/app/**/*.vue\" --fix",
     "typecheck": "pnpm --dir playground typecheck",
     "verify": "node scripts/verify-theme.mjs",
-    "test:consumer": "node scripts/test-consumer.mjs"
+    "test:consumer": "node scripts/test-consumer.mjs",
+    "sync:check": "node scripts/sync-upstream.mjs check",
+    "sync:diff": "node scripts/sync-upstream.mjs diff",
+    "sync:apply": "node scripts/sync-upstream.mjs apply",
+    "sync:verify": "node scripts/sync-upstream.mjs verify"
   },
   "peerDependencies": {
     "nuxt": "^4.5.2",

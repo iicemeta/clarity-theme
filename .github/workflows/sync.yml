@@ -1,0 +1,37 @@
+name: Upstream Sync Check
+
+on:
+  schedule:
+    - cron: '0 3 * * 1' # 每周一 03:00 UTC
+  workflow_dispatch:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: 检查上游更新并生成分类明细
+        id: sync
+        continue-on-error: true
+        run: |
+          node scripts/sync-upstream.mjs check --fail-on-update
+
+      - name: 上游有更新时创建 Issue
+        if: steps.sync.outcome == 'failure'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          node scripts/sync-upstream.mjs diff > sync-diff.txt || true
+          gh issue create \
+            --title "chore(sync): upstream blog-v3 有新提交" \
+            --body-file sync-diff.txt \
+            --label "sync"
