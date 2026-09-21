@@ -1,26 +1,38 @@
 import { defineNuxtModule } from 'nuxt/kit'
 import { minify } from 'oxc-minify'
-import blogConfig from '../../blog.config'
 import handleMirror from './runtime/client'
 
-const blacklist = [
-	'dgjlx.com', // blog.revincx.icu
-	'dgvhqt.com', // blog.zhilu.cyou
-	'hcmsla.com', // thyuu.com
-	'wmlop.com', // xaoxuu.com
-	'yswjxs.com', // blog.zhilu.cyou
-]
+export interface ModuleOptions {
+	/** 需要跳转回源站的镜像站域名后缀 */
+	blacklist: string[]
+	/** 源站规范 URL */
+	target: string
+}
 
-export default defineNuxtModule({
+/**
+ * 可选功能：检测常见镜像站域名并跳转回源站。
+ * 由 clarity-config 模块根据 features.antiMirror 配置按需安装。
+ */
+export default defineNuxtModule<ModuleOptions>({
 	meta: {
 		name: 'anti-mirror',
 	},
 	setup(options, nuxt) {
-		(nuxt.options.app.head.script ??= []).push({
-			innerHTML: toIifeString(handleMirror, blacklist.map(btoa), btoa(blogConfig.url)),
+		const blacklist = [...defaultMirrorBlacklist, ...options.blacklist]
+		;(nuxt.options.app.head.script ??= []).push({
+			innerHTML: toIifeString(handleMirror, blacklist.map(btoa), btoa(options.target)),
 		})
 	},
 })
+
+/** 默认镜像站域名黑名单（可被配置扩展） */
+const defaultMirrorBlacklist = [
+	'dgjlx.com',
+	'dgvhqt.com',
+	'hcmsla.com',
+	'wmlop.com',
+	'yswjxs.com',
+]
 
 function toIifeString<T extends unknown[]>(fn: (...args: T) => void, ...args: T) {
 	const fnString = fn.toString()
