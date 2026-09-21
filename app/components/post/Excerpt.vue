@@ -5,15 +5,15 @@ const props = defineProps<{
 	excerpt: string
 }>()
 
-const appConfig = useAppConfig()
+const clarity = useClarityConfig()
 
 const excerpt = ref(props.excerpt)
 const caret = ref('')
 
-if (appConfig.component.excerpt?.animation !== false) {
+	if (clarity.component.excerpt?.animation !== false) {
 	excerpt.value = ''
 	onMounted(async () => {
-		caret.value = appConfig.component.excerpt?.caret ?? '_'
+		caret.value = clarity.component.excerpt?.caret ?? '_'
 		for (const char of props.excerpt) {
 			excerpt.value += char
 			await delay(50)

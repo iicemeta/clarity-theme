@@ -1,7 +1,8 @@
 <script setup lang="tsx">
 import type { TippyComponent } from 'vue-tippy'
 
-const appConfig = useAppConfig()
+const clarity = useClarityConfig()
+const enabled = computed(() => !!clarity.integrations.twikoo?.envId)
 
 const commentEl = useTemplateRef('comment')
 const popoverEl = useTemplateRef<TippyComponent>('popover')
@@ -52,8 +53,11 @@ function confirmOpen() {
 }
 
 onMounted(() => {
+	if (!enabled.value)
+		return
+
 	window.twikoo?.init?.({
-		envId: appConfig.twikoo?.envId,
+		envId: clarity.integrations.twikoo?.envId,
 		// twikoo 会把挂载后的元素变为 #twikoo
 		el: '#twikoo',
 	})
@@ -104,9 +108,12 @@ onMounted(() => {
 		</template>
 	</Tooltip>
 
-	<div id="twikoo">
+	<div v-if="enabled" id="twikoo">
 		<p>评论加载中...</p>
 	</div>
+	<p v-else class="no-comment">
+		本文暂未开启评论
+	</p>
 </section>
 </template>
 
@@ -206,6 +213,11 @@ onMounted(() => {
 		width: auto;
 		height: auto;
 	}
+}
+
+.no-comment {
+	margin: 2em 0;
+	color: var(--c-text-3);
 }
 
 :deep(:where(.tk-preview-container,.tk-content)) {

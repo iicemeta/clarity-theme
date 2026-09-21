@@ -11,8 +11,8 @@ const props = withDefaults(defineProps<{
 	type: 'tip',
 })
 
-const appConfig = useAppConfig()
-const card = computed(() => appConfig.component.alert.defaultStyle === 'flat' ? props.card : !props.flat)
+const clarity = useClarityConfig()
+const card = computed(() => clarity.component.alert.defaultStyle === 'flat' ? props.card : !props.flat)
 
 const typeMap = {
 	tip: {

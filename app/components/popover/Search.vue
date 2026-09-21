@@ -6,8 +6,8 @@ const props = defineProps<ModalProps>()
 
 defineEmits<ModalEmits>()
 
-const appConfig = useAppConfig()
-const segmenter = Intl.Segmenter && new Intl.Segmenter(appConfig.language, { granularity: 'word' })
+const clarity = useClarityConfig()
+const segmenter = Intl.Segmenter && new Intl.Segmenter(clarity.site.language, { granularity: 'word' })
 
 // await useAsyncData() 会阻塞渲染
 const { data, status } = await useLazyAsyncData(

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { NavItem } from '~/types/nav'
+import type { NavItem } from '../../types/nav'
 
 defineProps<{
 	list: NavItem[]

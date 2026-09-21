@@ -1,16 +1,16 @@
 <script setup lang="ts">
-import type { ArticleProps } from '~/types/article'
+import type { ArticleProps } from '../../types/article'
 
 defineOptions({ inheritAttrs: false })
 const props = defineProps<ArticleProps>()
 
-const appConfig = useAppConfig()
+const clarity = useClarityConfig()
 
 const coverFilter = computed(() => props.meta?.coverFilter || (props.meta?.coverDim && 'brightness(0.75)') || undefined)
 
-const shareText = `【${appConfig.title}】${props.title}\n\n${
+	const shareText = `【${clarity.site.title}】${props.title}\n\n${
 	props.description ? `${props.description}\n\n` : ''}${
-	new URL(props.path!, appConfig.url).href}`
+	new URL(props.path!, clarity.site.url).href}`
 
 const { copy, copied } = useCopy(shareText)
 </script>

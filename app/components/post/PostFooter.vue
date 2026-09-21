@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { ArticleProps } from '~/types/article'
+import type { ArticleProps } from '../../types/article'
 
 defineOptions({ inheritAttrs: false })
 defineProps<ArticleProps>()
@@ -8,7 +8,7 @@ const [DefineTemplate, ReuseTemplate] = createReusableTemplate<{
 	title: string
 }>({ inheritAttrs: false })
 
-const appConfig = useAppConfig()
+const clarity = useClarityConfig()
 </script>
 
 <template>
@@ -38,9 +38,10 @@ const appConfig = useAppConfig()
 	<ReuseTemplate :title="meta?.slots?.copyright?.props?.title as string || '许可协议'">
 		<ContentRenderer v-if="meta?.slots?.copyright" :value="meta?.slots?.copyright" />
 		<p v-else>
-			本文采用 <ProseA :href="appConfig.copyright.url">
-				{{ appConfig.copyright.name }}
+			本文采用 <ProseA v-if="clarity.site.copyright?.url" :href="clarity.site.copyright.url">
+				{{ clarity.site.copyright.name }}
 			</ProseA>
+			<span v-else-if="clarity.site.copyright?.name">{{ clarity.site.copyright.name }}</span>
 			许可协议，转载请注明出处。
 		</p>
 	</ReuseTemplate>

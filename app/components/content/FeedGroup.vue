@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { FeedEntry, FeedGroup } from '~/types/feed'
+import type { FeedEntry, FeedGroup } from '../../types/feed'
 import { shuffle } from 'es-toolkit/array'
 
 const props = defineProps<FeedGroup & { shuffle?: boolean }>()

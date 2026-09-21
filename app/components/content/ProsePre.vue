@@ -27,8 +27,8 @@ const meta = computed(() => props.meta.split(' ').reduce((acc: CodeblockMeta, it
 	return acc
 }, {}))
 
-const appConfig = useAppConfig()
-const compConf = computed(() => appConfig.component.codeblock)
+const clarity = useClarityConfig()
+const compConf = computed(() => clarity.component.codeblock)
 
 const rows = computed(() => props.code.split('\n').length - 1)
 const collapsible = computed(() => !meta.value.expand && rows.value > compConf.value.triggerRows)

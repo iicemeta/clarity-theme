@@ -1,13 +1,13 @@
 <script setup lang="ts">
-import type { ArticleProps } from '~/types/article'
+import type { ArticleProps } from '../../types/article'
 import Autoplay from 'embla-carousel-autoplay'
 import emblaCarouselVue from 'embla-carousel-vue'
 import { WheelGesturesPlugin } from 'embla-carousel-wheel-gestures'
 
 defineProps<{ list: ArticleProps[] }>()
 
-const appConfig = useAppConfig()
-const compConf = computed(() => appConfig.component.slide)
+const clarity = useClarityConfig()
+const compConf = computed(() => clarity.component.slide)
 
 // @keep-sorted
 const [carouselEl, carouselApi] = emblaCarouselVue({

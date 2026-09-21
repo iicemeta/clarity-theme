@@ -1,11 +1,17 @@
 <script setup lang="ts">
 import { Icon } from '#components'
-import { merge } from 'es-toolkit/object'
-import { packageManager, version } from '~~/package.json'
-import pnpmWorkspace from '~~/pnpm-workspace.yaml'
 
-const appConfig = useAppConfig()
-const { public: { arch, ci, nodeVersion, platform } } = useRuntimeConfig()
+const clarity = useClarityConfig()
+const runtimeConfig = useRuntimeConfig()
+const buildInfo = runtimeConfig.public.clarity as {
+	theme: string
+	themeVersion: string
+	siteVersion: string
+	sitePackageManager: string
+	nuxtVersion: string
+	vueVersion: string
+}
+const { public: { arch, ci, nodeVersion, platform } } = runtimeConfig
 
 const ciPlatform = computed(() => {
 	const iconName = ciIcons[ci]
@@ -19,25 +25,18 @@ const ciPlatform = computed(() => {
 	return h('span', {}, [iconNode, ` ${ci.split(' ')[0]}`])
 })
 
-// @ts-expect-error pnpm-workspace.yaml 无类型定义
-const packages = merge(...Object.values(pnpmWorkspace.catalogs))
-const [pm, pmVersion] = packageManager.split('@') as [string, string]
-
 const service = computed(() => ([
 	...ci ? [{ label: '构建平台', value: ciPlatform }] : [],
-	{ label: '图片存储', value: () => [h(Icon, { name: 'devicon:cloudflare' }), ' R2'] },
-	{ label: '软件协议', value: 'MIT' },
-	{ label: '文章许可', value: appConfig.copyright.abbr },
-	{ label: '规范域名', value: getDomain(appConfig.url) },
+	{ label: '文章许可', value: clarity.site.copyright?.abbr || '未配置' },
+	{ label: '规范域名', value: getDomain(clarity.site.url) },
 ]))
 
 const techstack = computed(() => ([
-	{ label: 'Blog', value: version },
-	{ label: 'Vue', value: packages.vue },
-	{ label: 'Nuxt', value: packages.nuxt },
-	{ label: 'Content', value: packages['@nuxt/content'] },
+	{ label: 'Blog', value: buildInfo.siteVersion || '--' },
+	{ label: 'Theme', value: `${buildInfo.theme} ${buildInfo.themeVersion}` },
+	{ label: 'Vue', value: buildInfo.vueVersion },
+	{ label: 'Nuxt', value: buildInfo.nuxtVersion },
 	{ label: 'Node', value: nodeVersion },
-	{ label: pm, value: pmVersion },
 	{ label: 'OS', value: platform },
 	{ label: 'Arch', value: arch },
 ]))

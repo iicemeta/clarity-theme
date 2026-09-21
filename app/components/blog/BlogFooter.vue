@@ -1,11 +1,11 @@
 <script setup lang="ts">
-const appConfig = useAppConfig()
+const clarity = useClarityConfig()
 </script>
 
 <template>
 <footer class="blog-footer">
 	<nav class="footer-nav">
-		<div v-for="(group, groupIndex) in appConfig.footer.nav" :key="groupIndex">
+		<div v-for="(group, groupIndex) in clarity.footer.nav" :key="groupIndex">
 			<hgroup class="text-creative" v-text="group.title" />
 			<menu>
 				<li v-for="(item, itemIndex) in group.items" :key="itemIndex">
@@ -17,7 +17,7 @@ const appConfig = useAppConfig()
 			</menu>
 		</div>
 	</nav>
-	<p v-html="appConfig.footer.copyright" />
+	<p v-html="clarity.footer.copyright" />
 </footer>
 </template>
 
