@@ -1,7 +1,6 @@
-import type { FeedEntry, FeedGroup } from '~/types/feed'
 import XmlBuilder from 'fast-xml-builder'
-import blogConfig, { myFeed } from '~~/blog.config'
-import feeds from '~/feeds'
+import type { FeedEntry, FeedGroup } from '../../app/types/feed'
+import { toZonedTemporal } from '../../shared/utils/time'
 
 const runtimeConfig = useRuntimeConfig()
 
@@ -11,36 +10,51 @@ const builder = new XmlBuilder({
 	ignoreAttributes: false,
 })
 
-function mapEntry(item: FeedEntry) {
+function mapEntry(item: FeedEntry, timeZone: string) {
 	return {
 		$text: item.title || item.sitenick || item.author,
 		$type: 'rss',
 		$xmlUrl: item.feed,
-		$created: toZonedTemporal(item.date).toInstant().toString(),
+		$created: toZonedTemporal(item.date, timeZone).toInstant().toString(),
 		$description: item.desc,
 		$htmlUrl: item.link || item.feed,
 	}
 }
 
-function flattenGroups(groups: FeedGroup[]) {
-	return groups.flatMap(({ entries }) => entries.filter(({ feed }) => feed).map(mapEntry))
+function flattenGroups(groups: FeedGroup[], timeZone: string) {
+	return groups.flatMap(({ entries }) => entries.filter(({ feed }) => feed).map(item => mapEntry(item, timeZone)))
 }
 
-export default defineEventHandler(async (_e) => {
+export default defineEventHandler(async () => {
+	const { site } = useClarityConfig()
+	const feeds = (await import('#clarity/feeds')).default as FeedGroup[]
+	const myFeed: FeedEntry = {
+		author: site.author.name,
+		title: site.title,
+		desc: site.subtitle || site.description,
+		link: site.url,
+		feed: new URL('/atom.xml', site.url).toString(),
+		icon: site.favicon,
+		avatar: site.author.avatar || site.favicon,
+		date: site.established || '',
+	}
+
 	const outlines = [
-		mapEntry(myFeed),
-		...flattenGroups(feeds),
+		mapEntry(myFeed, site.timezone),
+		...flattenGroups(feeds, site.timezone),
 	]
 
 	const opml = {
 		$version: '2.0',
 		head: {
-			title: `${blogConfig.title}的友链订阅`,
-			dateCreated: toZonedTemporal(blogConfig.timeEstablished).toInstant().toString(),
+			title: `${site.title}的友链订阅`,
+			dateCreated: site.established
+				? toZonedTemporal(site.established, site.timezone).toInstant().toString()
+				: undefined,
 			dateModified: runtimeConfig.public.buildTime,
-			ownerName: blogConfig.author.name,
-			ownerEmail: blogConfig.author.email,
-			ownerId: blogConfig.author.homepage,
+			ownerName: site.author.name,
+			ownerEmail: site.author.email,
+			ownerId: site.author.homepage,
 			docs: 'https://opml.org/spec2.opml',
 		},
 		body: { outline: outlines },
