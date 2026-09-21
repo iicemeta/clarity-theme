@@ -153,6 +153,7 @@ node scripts/sync-upstream.mjs diff   # 变更分类明细
 
 ```text
 [✓] Playground nuxt generate（37 条路由，含 atom.xml / stats / opml / compatibility）
+[✓] Real Consumer Test（pnpm pack → 独立目录安装 tarball → nuxt generate，21 条路由 + 6 项断言）
 [✓] eslint / stylelint
 [✓] 作者信息泄漏、站点文件、跨项目路径检查（pnpm verify）
 [✓] 上游同步检查（sync:check，基线 f6ea97d = upstream/main）
@@ -188,6 +189,23 @@ Consumer Override Test：`playground/app/components/content/Badge.vue` 同路径
 [✓] Consumer component override
 ```
 
+### npm Runtime 兼容（devdoc2.0 Phase D）
+
+Real Consumer Test（`pnpm test:consumer`）暴露并修复了三个 workspace 链接掩盖的真实 npm 包问题：
+
+1. **Node 原生 TS 剥离禁止 node_modules 内的 TS 文件**：`@nuxt/content` 以 Node 原生方式加载
+   content config 与 remark/rehype 插件，因此 `config/schema`、`config/content`、
+   `remark-plugins/*` 提供与 TS 源同构的 **`.mjs` 运行时实现**（`.d.mts` re-export `.ts` 作为类型源），
+   exports 指向 `.mjs`
+2. **`#modals` 虚拟别名**：`@bikariya/modals` 的 exports 未暴露 runtime/types，
+   Vue SFC 编译器在 pnpm 隔离布局下无法解析该类型导入；Theme 在
+   `app/types/modal.ts` 内联同构类型
+3. **`sass-embedded`**：从 devDependencies 移入 dependencies，保证消费项目开箱编译 SCSS
+
+测试流程：`pnpm pack` → 临时目录消费项目（`extends: ['clarity-theme']` +
+`clarity.config.ts` / `content.config.ts` / `feeds.ts` / 文章 / UI 覆盖）→
+`pnpm install` → `nuxt generate` → 断言（站点注入 / inline code / 文章路由 / atom / UI 覆盖）。
+
 ## 待办（按 devdoc 阶段）
 
 - [x] Phase 0：冻结基线（blog-v3@3.7.2，f6ea97d）
@@ -197,6 +215,7 @@ Consumer Override Test：`playground/app/components/content/Badge.vue` 同路径
 - [x] Phase 5（部分）：Playground + lint + generate
 - [x] Rendering Compatibility（devdoc2.0 Phase A）
 - [x] Config API 加固：`site.url` 尾斜杠校验、`article.types` 空值兜底
+- [x] Real Consumer Test（devdoc2.0 Phase D）：tarball 安装 + generate + 断言
 - [ ] Phase 4：逐个处理上游 patch（删除 / upstream / fork / consumer patch）
 - [ ] Phase 5（剩余）：CI 三层验证（lint → playground generate → pack + 临时 consumer generate）
 - [ ] Phase 6：sync-upstream `apply` / `verify` 模式与定时 PR
