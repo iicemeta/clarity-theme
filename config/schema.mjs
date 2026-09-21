@@ -93,10 +93,10 @@ export const clarityChangelogEntrySchema = z.object({
 
 export const clarityConfigSchema = z.object({
 	site: claritySiteSchema,
-	article: clarityArticleSchema.default({}),
-	feed: clarityFeedSchema.default({}),
-	stats: clarityStatsSchema.default({}),
-	integrations: clarityIntegrationsSchema.default({}),
-	features: clarityFeaturesSchema.default({}),
+	article: clarityArticleSchema.prefault({}),
+	feed: clarityFeedSchema.prefault({}),
+	stats: clarityStatsSchema.prefault({}),
+	integrations: clarityIntegrationsSchema.prefault({}),
+	features: clarityFeaturesSchema.prefault({}),
 	changelog: z.array(clarityChangelogEntrySchema).default([]),
 })

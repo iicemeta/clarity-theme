@@ -154,6 +154,7 @@ node scripts/sync-upstream.mjs diff   # 变更分类明细
 ```text
 [✓] Playground nuxt generate（37 条路由，含 atom.xml / stats / opml / compatibility）
 [✓] Real Consumer Test（pnpm pack → 独立目录安装 tarball → nuxt generate，21 条路由 + 6 项断言）
+[✓] vue-tsc typecheck（playground 全量，0 错误）
 [✓] eslint / stylelint
 [✓] 作者信息泄漏、站点文件、跨项目路径检查（pnpm verify）
 [✓] 上游同步检查（sync:check，基线 f6ea97d = upstream/main）
@@ -216,6 +217,8 @@ Real Consumer Test（`pnpm test:consumer`）暴露并修复了三个 workspace �
 - [x] Rendering Compatibility（devdoc2.0 Phase A）
 - [x] Config API 加固：`site.url` 尾斜杠校验、`article.types` 空值兜底
 - [x] Real Consumer Test（devdoc2.0 Phase D）：tarball 安装 + generate + 断言
+- [x] Config API 加固（devdoc2.0 Phase E 部分）：`CustomAppConfig` 类型合并、zod v4 `prefault`、
+      server 路由改用 `@nuxt/content/server` 显式导入、`ufo`/`@types/hast`/`minimark` 显式依赖
 - [ ] Phase 4：逐个处理上游 patch（删除 / upstream / fork / consumer patch）
 - [ ] Phase 5（剩余）：CI 三层验证（lint → playground generate → pack + 临时 consumer generate）
 - [ ] Phase 6：sync-upstream `apply` / `verify` 模式与定时 PR

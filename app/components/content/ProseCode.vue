@@ -20,7 +20,7 @@ function extractText(vnode: VNode): string {
 	if (typeof vnode.children === 'string')
 		return vnode.children
 	if (Array.isArray(vnode.children))
-		return vnode.children.map(extractText).join('')
+		return (vnode.children as VNode[]).map(extractText).join('')
 	return ''
 }
 

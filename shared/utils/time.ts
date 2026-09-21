@@ -1,6 +1,6 @@
 import { Temporal } from 'temporal-polyfill'
 
-export function isSameUnit(date1: string, date2: string, unit: Temporal.DateTimeUnit, timeZone = 'UTC') {
+export function isSameUnit(date1: string, date2: string, unit: 'year' | 'month' | 'week' | 'day' | 'hour' | 'minute' | 'second', timeZone = 'UTC') {
 	try {
 		const p1 = toZonedTemporal(date1, timeZone).toPlainDateTime()
 		const p2 = toZonedTemporal(date2, timeZone).toPlainDateTime()

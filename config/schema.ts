@@ -102,11 +102,11 @@ export const clarityChangelogEntrySchema = z.object({
 
 export const clarityConfigSchema = z.object({
 	site: claritySiteSchema,
-	article: clarityArticleSchema.default({}),
-	feed: clarityFeedSchema.default({}),
-	stats: clarityStatsSchema.default({}),
-	integrations: clarityIntegrationsSchema.default({}),
-	features: clarityFeaturesSchema.default({}),
+	article: clarityArticleSchema.prefault({}),
+	feed: clarityFeedSchema.prefault({}),
+	stats: clarityStatsSchema.prefault({}),
+	integrations: clarityIntegrationsSchema.prefault({}),
+	features: clarityFeaturesSchema.prefault({}),
 	/** 更新日志组件数据，按时间倒序展示 */
 	changelog: z.array(clarityChangelogEntrySchema).default([]),
 })

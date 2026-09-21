@@ -36,7 +36,7 @@ const yearlyWordCount = computed(() =>
 
 function getArticleYear(article: ArticleProps) {
 	try {
-		return toZonedTemporal(article[sortOrder.value] as string, clarity.site.timezone).year.toString()
+		return toZonedTemporal((article as any)[sortOrder.value] as string, clarity.site.timezone).year.toString()
 	}
 	catch {
 		return ''

@@ -1,9 +1,10 @@
-import type { ClarityAppConfig, ClarityArticleConfig, ClaritySiteConfig } from '../../config/app'
-import type { FeedEntry } from '../app/types/feed'
+import type { ClarityAppConfig } from '../../config/app'
+import type { FeedEntry } from '../../config/feed'
+import type { ClarityArticleConfig, ClaritySiteConfig } from '../../config/schema'
 
 /** 获取完整 Clarity 配置（站点配置 + UI 配置） */
 export function useClarityConfig(): ClarityAppConfig {
-	return useAppConfig().clarity as ClarityAppConfig
+	return useAppConfig().clarity as unknown as ClarityAppConfig
 }
 
 /** 获取站点配置（标题、作者、URL 等） */

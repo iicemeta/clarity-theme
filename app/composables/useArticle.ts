@@ -87,7 +87,7 @@ export function useArticleSort(list: MaybeRefOrGetter<ArticleProps[]>, options?:
 
 	const listSorted = computed(() => orderBy(
 		toValue(list),
-		[sortOrder.value, 'date'],
+		[sortOrder.value, 'date'] as any,
 		[isAscending.value ? 'asc' : 'desc'],
 	))
 

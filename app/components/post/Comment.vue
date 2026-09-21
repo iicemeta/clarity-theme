@@ -57,7 +57,7 @@ onMounted(() => {
 		return
 
 	window.twikoo?.init?.({
-		envId: clarity.integrations.twikoo?.envId,
+		envId: clarity.integrations.twikoo?.envId ?? '',
 		// twikoo 会把挂载后的元素变为 #twikoo
 		el: '#twikoo',
 	})

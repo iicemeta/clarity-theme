@@ -38,7 +38,7 @@ const { copy, copied } = useCopy(shareText)
 			/>
 
 			<UtilDate
-				v-if="updated && isTimeDiffSignificant(date, updated, 1)"
+				v-if="updated && isTimeDiffSignificant(date, updated, undefined, 1)"
 				v-tip
 				:tip-transform="d => `修改于${d}`"
 				:date="updated"

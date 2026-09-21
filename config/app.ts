@@ -1,5 +1,10 @@
-import type { Nav, NavItem } from '../app/types/nav'
+import type { NavItem } from '../app/types/nav'
 import type { ClarityPublicConfig } from './public'
+
+export interface NavGroup {
+	title: string
+	items: NavItem[]
+}
 
 /** Theme 提供的 UI 默认值，全部可由消费项目在 app/app.config.ts 中覆盖 */
 export interface ClarityUiConfig {
@@ -32,7 +37,7 @@ export interface ClarityUiConfig {
 		/** 侧边栏底部图标导航 */
 		iconNav: NavItem[]
 		/** 页脚站点地图 */
-		nav: Nav[]
+		nav: NavGroup[]
 	}
 	header: {
 		/** 左侧栏顶部 Logo，默认使用 site.author.avatar */
@@ -51,7 +56,7 @@ export interface ClarityUiConfig {
 		randomInGroup: boolean
 	}
 	/** 左侧栏导航 */
-	nav: Nav[]
+	nav: NavGroup[]
 	pagination: {
 		perPage: number
 		/** 默认排序方式，需为 article.order 中的键名 */

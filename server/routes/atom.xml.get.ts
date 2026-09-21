@@ -1,4 +1,5 @@
 import type { ContentCollectionItem } from '@nuxt/content'
+import { queryCollection } from '@nuxt/content/server'
 import XmlBuilder from 'fast-xml-builder'
 import { toZonedTemporal } from '../../shared/utils/time'
 
@@ -50,7 +51,7 @@ export default defineEventHandler(async (event) => {
 		id: getUrl(post.path),
 		title: post.title ?? '',
 		updated: formatIsoDate(post.updated),
-		author: { name: post.author || site.author.name },
+		author: { name: (post as any).author || site.author.name },
 		content: {
 			$type: 'html',
 			$: renderContent(post),
