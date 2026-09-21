@@ -4,4 +4,19 @@ export default defineNuxtConfig({
 	extends: [
 		'clarity-theme',
 	],
+
+	nitro: {
+		prerender: {
+			// 兼容性基准页不从首页链接可达，需显式预渲染
+			routes: [
+				'/compatibility/markdown',
+				'/compatibility/code',
+				'/compatibility/mdc',
+				'/compatibility/math',
+				'/compatibility/mermaid',
+				'/compatibility/music',
+				'/compatibility/image',
+			],
+		},
+	},
 })

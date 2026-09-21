@@ -40,6 +40,11 @@ export default defineClarityConfig({
 		enableStyle: true,
 	},
 
+	stats: {
+		// 仅统计正式文章，避免 link.md 与 compatibility 基准页进入字数统计
+		includePaths: ['posts/%'],
+	},
+
 	integrations: {
 		scripts: [],
 	},
