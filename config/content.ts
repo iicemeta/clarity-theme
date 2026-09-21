@@ -24,7 +24,9 @@ export interface ArticleSchema {
 }
 
 function createArticleSchema(config: ClarityConfig) {
+	// 兜底：types 为空时 z.enum([]) 非法，统一回退到默认版式
 	const articleTypes = Object.keys(config.article.types)
+	const typeValues = articleTypes.length > 0 ? articleTypes : ['tech']
 
 	return z.object({
 		title: z.string().optional(),
@@ -34,7 +36,7 @@ function createArticleSchema(config: ClarityConfig) {
 		published: z.string().optional(),
 		categories: z.array(z.string()).default([config.article.defaultCategory]),
 		tags: z.array(z.string()).default([]),
-		type: z.enum(articleTypes as any).optional().default(articleTypes[0]),
+		type: z.enum(typeValues as any).optional().default(typeValues[0]),
 
 		image: z.string().optional(),
 		recommend: z.number().optional(),

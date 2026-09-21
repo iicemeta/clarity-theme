@@ -152,10 +152,40 @@ node scripts/sync-upstream.mjs diff   # 变更分类明细
 ## 验证状态
 
 ```text
-[✓] Playground nuxt generate（23 条路由，含 atom.xml / stats / opml）
+[✓] Playground nuxt generate（37 条路由，含 atom.xml / stats / opml / compatibility）
 [✓] eslint / stylelint
 [✓] 作者信息泄漏、站点文件、跨项目路径检查（pnpm verify）
 [✓] 上游同步检查（sync:check，基线 f6ea97d = upstream/main）
+```
+
+### Rendering Compatibility（devdoc2.0 Phase A）
+
+上游 `@nuxtjs/mdc` patch（行内代码 `props.code` 传入原文）**未迁移**。
+Theme 的 `ProseCode.vue` 已适配 MDC 原生行为：inline code 原文从默认插槽（text VNode）提取，
+同时保留对 patch 场景 `code` prop 的兼容，因此**该 patch 不再是必需依赖**。
+
+兼容性基准页位于 `playground/content/compatibility/`：
+
+| 页面 | 覆盖范围 |
+| --- | --- |
+| `markdown.md` | A 类：标题 / 强调 / 链接 / 列表 / 任务列表 / 引用 / 分隔线 / 表格 / 脚注 |
+| `code.md` | inline / inline 高亮 `{lang}` / fenced / 文件名 / 行高亮 / diff 标记 |
+| `mdc.md` | C 类：alert / tip / copy / card-list / folding / badge |
+| `math.md` | remark-math + rehype-katex（行内 / 块级 / aligned） |
+| `mermaid.md` | remark-code-component → Mermaid |
+| `music.md` | remark-code-component → MusicScore (abcjs) |
+| `image.md` | Markdown 图片 / Pic 组件 |
+
+Consumer Override Test：`playground/app/components/content/Badge.vue` 同路径覆盖 Theme 组件
+（生成 HTML 含 `data-consumer-override` 标记），验证优先级
+`Consumer component > Consumer app.config > Module 注入 > Theme app.config`。
+
+```text
+[✓] inline code 文字渲染（修复空框问题）
+[✓] inline 高亮 / fenced / 文件名 / 行高亮 / diff
+[✓] KaTeX / Mermaid / ABC 乐谱
+[✓] MDC 组件（alert / tip / copy / card-list / folding / badge）
+[✓] Consumer component override
 ```
 
 ## 待办（按 devdoc 阶段）
@@ -165,6 +195,8 @@ node scripts/sync-upstream.mjs diff   # 变更分类明细
 - [x] Phase 2：clarity.config.ts API + modules/clarity-config
 - [x] Phase 3：Layer 本地化路径（CSS / Icon / Remark / 组件 / Server）
 - [x] Phase 5（部分）：Playground + lint + generate
+- [x] Rendering Compatibility（devdoc2.0 Phase A）
+- [x] Config API 加固：`site.url` 尾斜杠校验、`article.types` 空值兜底
 - [ ] Phase 4：逐个处理上游 patch（删除 / upstream / fork / consumer patch）
 - [ ] Phase 5（剩余）：CI 三层验证（lint → playground generate → pack + 临时 consumer generate）
 - [ ] Phase 6：sync-upstream `apply` / `verify` 模式与定时 PR

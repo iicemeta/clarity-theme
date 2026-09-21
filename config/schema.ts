@@ -18,8 +18,11 @@ export const claritySiteSchema = z.object({
 	title: z.string().min(1),
 	subtitle: z.string().optional(),
 	description: z.string().min(1),
-	/** 站点规范 URL，需以 / 结尾 */
-	url: z.string().url(),
+	/** 站点规范 URL（以 / 结尾，用于 new URL() 相对路径解析） */
+	url: z.string().url().refine(
+		value => value.endsWith('/'),
+		'站点 URL 必须以 / 结尾（例如 https://example.com/）',
+	),
 	language: z.string().default('zh-CN'),
 	timezone: z.string().default('Asia/Shanghai'),
 	/** 建站日期 */
