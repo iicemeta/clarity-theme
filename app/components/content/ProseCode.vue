@@ -1,11 +1,37 @@
 <script setup lang="ts">
+import type { VNode } from 'vue'
+
 const props = defineProps<{
 	language?: string
-	code: string
+	/**
+	 * 代码原文。
+	 * MDC 原生行为中 inline code 通过默认插槽（text VNode）传递，
+	 * 上游 @nuxtjs/mdc patch（inline code props.code 传入原文）存在时走此 prop，
+	 * fenced code（ProsePre 内部）也始终通过此 prop 传递。
+	 */
+	code?: string
 	copy?: boolean
 }>()
 
-const { copy: copyCode, copied } = useCopy(props.code)
+const slots = useSlots()
+
+/** 从插槽 VNode 中递归提取纯文本 */
+function extractText(vnode: VNode): string {
+	if (typeof vnode.children === 'string')
+		return vnode.children
+	if (Array.isArray(vnode.children))
+		return vnode.children.map(extractText).join('')
+	return ''
+}
+
+/** 无 patch 时以插槽文本作为原文，有 patch 时优先使用 code prop */
+const rawCode = computed(() => {
+	if (props.code !== undefined)
+		return props.code
+	return (slots.default?.() ?? []).map(extractText).join('')
+})
+
+const { copy: copyCode, copied } = useCopy(rawCode.value)
 const shiki = useShiki()
 const codeElement = useTemplateRef('code')
 const highlighted = ref(false)
@@ -13,7 +39,7 @@ const highlighted = ref(false)
 onMounted(async () => {
 	if (!props.language)
 		return
-	await shiki.mountInline(codeElement.value!, props.code, {
+	await shiki.mountInline(codeElement.value!, rawCode.value, {
 		language: props.language,
 		transformerOptions: ['ignoreColorizedBrackets'],
 	})
@@ -23,7 +49,9 @@ onMounted(async () => {
 
 <template>
 <code ref="code" :class="{ copyable: copy }">
-	<template v-if="!language || !highlighted">{{ code }}</template>
+	<template v-if="!language || !highlighted">
+		<slot>{{ rawCode }}</slot>
+	</template>
 	<Icon v-if="copy" v-show="false" name="tabler:check" />
 	<button v-if="copy" type="button" class="copy-button" aria-label="复制" @click="copyCode()">
 		<Icon :name="copied ? 'tabler:check' : 'tabler:copy'" />
