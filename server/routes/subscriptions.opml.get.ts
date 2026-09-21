@@ -1,5 +1,5 @@
-import XmlBuilder from 'fast-xml-builder'
 import type { FeedEntry, FeedGroup } from '../../app/types/feed'
+import XmlBuilder from 'fast-xml-builder'
 import { toZonedTemporal } from '../../shared/utils/time'
 
 const runtimeConfig = useRuntimeConfig()

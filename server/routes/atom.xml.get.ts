@@ -13,7 +13,7 @@ const builder = new XmlBuilder({
 })
 
 export default defineEventHandler(async (event) => {
-	const { site, feed, integrations } = useClarityConfig()
+	const { site, feed } = useClarityConfig()
 	const themeInfo = runtimeConfig.public.clarity as { theme: string, themeVersion: string, themeHomepage: string }
 
 	function formatIsoDate(date?: string) {
@@ -92,6 +92,6 @@ export default defineEventHandler(async (event) => {
 	return builder.build({
 		'?xml': { $version: '1.0', $encoding: 'UTF-8' },
 		'?xml-stylesheet': feed.enableStyle ? { $type: 'text/xsl', $href: '/assets/atom.xsl' } : undefined,
-		feed: feedData,
+		'feed': feedData,
 	})
 })

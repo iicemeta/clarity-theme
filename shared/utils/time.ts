@@ -69,6 +69,7 @@ export function toInstantString(date: string | Temporal.ZonedDateTime, timeZone 
 
 /**
  * 将日期字符串解析为带时区的 Temporal 对象
+ * @param date 日期字符串
  * @param timeZone 无时区信息时使用的默认时区（来自站点配置）
  */
 export function toZonedTemporal(date: string, timeZone = 'UTC') {

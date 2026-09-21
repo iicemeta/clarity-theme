@@ -1,8 +1,8 @@
 import type { ReadTimeResults } from 'reading-time'
+import type { ClarityConfig } from './schema'
 import { defineCollection } from '@nuxt/content'
 import { defineSitemapSchema } from '@nuxtjs/sitemap/content'
 import { z } from 'zod'
-import type { ClarityConfig } from './schema'
 
 export interface ArticleSchema {
 	title?: string

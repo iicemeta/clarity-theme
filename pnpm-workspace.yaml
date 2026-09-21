@@ -2,3 +2,13 @@
 # Theme package 的依赖全部为普通语义化版本，消费项目无需 pnpm workspace。
 packages:
   - playground
+
+# 仅作用于 Theme 仓库自身的开发环境安装
+allowBuilds:
+  '@parcel/watcher': true
+  esbuild: true
+  oxc-resolver: true
+  rolldown: true
+  sharp: true
+  unrs-resolver: true
+  vue-demi: true

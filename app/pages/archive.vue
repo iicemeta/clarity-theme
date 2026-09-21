@@ -9,7 +9,7 @@ useSeoMeta({
 	title: '归档',
 	description: `${clarity.site.title}的所有文章归档。`,
 })
-	const birthYear = computed(() => clarity.component.stats.birthYear)
+const birthYear = computed(() => clarity.component.stats.birthYear)
 const showTuning = ref(false)
 const spacing = ref(0)
 const column = ref(1)
@@ -36,7 +36,7 @@ const yearlyWordCount = computed(() =>
 
 function getArticleYear(article: ArticleProps) {
 	try {
-	return toZonedTemporal(article[sortOrder.value] as string, clarity.site.timezone).year.toString()
+		return toZonedTemporal(article[sortOrder.value] as string, clarity.site.timezone).year.toString()
 	}
 	catch {
 		return ''

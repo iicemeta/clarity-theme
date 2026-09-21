@@ -1,9 +1,9 @@
-import { join, dirname } from 'node:path'
+import { dirname, join } from 'node:path'
 import { arch, env, version as nodeVersion, platform } from 'node:process'
 import { fileURLToPath, pathToFileURL } from 'node:url'
 import { name as ciName, CLOUDFLARE_PAGES, GITHUB_ACTIONS, NETLIFY } from 'ci-info'
 import { Temporal } from 'temporal-polyfill'
-import { name as themeName, version as themeVersion, homepage } from './package.json'
+import { homepage, name as themeName, version as themeVersion } from './package.json'
 
 /** Theme 根目录（Layer 本地路径基准，兼容 npm 包 / git 包 / 本地目录安装） */
 const themeDir = dirname(fileURLToPath(import.meta.url))
@@ -24,7 +24,7 @@ export default defineNuxtConfig({
 		head: {
 			meta: [
 				{ name: 'color-scheme', content: 'light dark' },
-				{ name: 'generator', content: `Clarity Theme ${themeVersion}`, 'data-github-repo': homepage },
+				{ 'name': 'generator', 'content': `Clarity Theme ${themeVersion}`, 'data-github-repo': homepage },
 				{ name: 'mobile-web-app-capable', content: 'yes' },
 			],
 			link: [
@@ -80,7 +80,8 @@ export default defineNuxtConfig({
 		'@nuxtjs/seo',
 		'@pinia/nuxt',
 		'@vueuse/nuxt',
-		'./modules/clarity-config',
+		// 注意：Layer 配置中的相对 module 路径会以消费项目为基准解析，必须使用绝对路径
+		toThemePath('modules/clarity-config'),
 		'unplugin-yaml/nuxt',
 	],
 
@@ -108,8 +109,8 @@ export default defineNuxtConfig({
 		nodeTsConfig: {
 			// @keep-sorted
 			include: [
-				'../remark-plugins/**/*.ts',
 				'../config/**/*.ts',
+				'../remark-plugins/**/*.ts',
 			],
 		},
 	},
@@ -165,8 +166,15 @@ export default defineNuxtConfig({
 		},
 	},
 
+	dxup: {
+		features: {
+			// 页面通过 <template #aside> 向布局具名插槽传参
+			namedLayoutSlots: true,
+		},
+	},
+
 	hooks: {
-		'ready': () => {
+		ready: () => {
 			console.info(`
 ================================
 ${themeName} ${themeVersion}

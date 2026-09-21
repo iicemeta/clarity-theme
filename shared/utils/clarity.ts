@@ -1,4 +1,4 @@
-import type { ClarityAppConfig, ClarityArticleConfig, ClaritySiteConfig } from '#clarity/config/app'
+import type { ClarityAppConfig, ClarityArticleConfig, ClaritySiteConfig } from '../../config/app'
 import type { FeedEntry } from '../app/types/feed'
 
 /** 获取完整 Clarity 配置（站点配置 + UI 配置） */

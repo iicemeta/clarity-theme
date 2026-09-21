@@ -9,6 +9,7 @@
  */
 import { readdirSync, readFileSync, statSync } from 'node:fs'
 import { extname, join, relative } from 'node:path'
+import process from 'node:process'
 import { fileURLToPath } from 'node:url'
 
 const themeDir = fileURLToPath(new URL('..', import.meta.url))

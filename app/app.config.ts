@@ -48,8 +48,6 @@ export default defineAppConfig({
 
 		// @keep-sorted
 		footer: {
-			/** 页脚版权信息，支持 <br> 换行等内联 HTML 标签；默认由站点配置生成 */
-			copyright: '',
 			/** 侧边栏底部图标导航 */
 			iconNav: [] as { icon: string, text: string, url: string }[],
 			/** 页脚站点地图 */
@@ -61,12 +59,8 @@ export default defineAppConfig({
 
 		/** 左侧栏顶部 Logo */
 		header: {
-			/** 默认使用站点作者头像 */
-			logo: '',
 			/** 展示标题文本，否则展示纯 Logo */
 			showTitle: true,
-			/** 默认使用站点副标题 */
-			subtitle: '',
 			emojiTail: [] as string[],
 		},
 

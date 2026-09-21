@@ -50,7 +50,7 @@ function getInspectStyle(src: string): CSSProperties {
 			</ClientOnly>
 
 			<NuxtImg v-else class="round-cobblestone" :src="avatar" :alt="author" loading="lazy" />
-		<Icon v-if="clarity.link.remindNoFeed && !feed" class="no-feed" name="tabler:bell-off" />
+			<Icon v-if="clarity.link.remindNoFeed && !feed" class="no-feed" name="tabler:bell-off" />
 		</div>
 
 		<span class="author">{{ author }}</span>

@@ -3,16 +3,29 @@ import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { createJiti } from 'jiti'
 import {
+	addImportsDir,
 	defineNuxtModule,
-	installModule,
 	updateAppConfig,
 	useLogger,
-} from '@nuxt/kit'
+} from 'nuxt/kit'
+import nuxtPkg from 'nuxt/package.json'
+import { minify } from 'oxc-minify'
+import vuePkg from 'vue/package.json'
 import { toPublicClarityConfig } from '../../config/public'
 import { clarityConfigSchema } from '../../config/schema'
+import handleMirror from './anti-mirror-client'
 
 const moduleDir = dirname(fileURLToPath(import.meta.url))
 const themeDir = resolve(moduleDir, '../..')
+
+/** 默认镜像站域名黑名单（可被站点配置扩展） */
+const defaultMirrorBlacklist = [
+	'dgjlx.com',
+	'dgvhqt.com',
+	'hcmsla.com',
+	'wmlop.com',
+	'yswjxs.com',
+]
 
 export interface ModuleOptions {
 	/** 消费项目中 clarity 配置文件路径（相对 rootDir） */
@@ -34,10 +47,22 @@ export default defineNuxtModule<ModuleOptions>({
 
 		// ---- 依赖注入层：Theme 内部不感知消费项目的文件布局 ----
 		Object.assign(nuxt.options.alias, {
-			'#clarity': themeDir,
 			'#clarity/config': configPath,
 			'#clarity/feeds': feedsPath.resolved,
 		})
+
+		// @pinia/nuxt 不会自动扫描 Layer 的 stores 目录，需显式注册
+		addImportsDir(resolve(themeDir, 'app/stores'))
+
+		// @bikariya/shiki 运行时固定导入 ~/shiki.config，
+		// 消费项目未提供时回退到 Theme 内置配置；
+		// 需置于 '~' 之前以保证 Vite 别名前缀优先匹配
+		if (!existsSync(resolve(nuxt.options.srcDir, 'shiki.config.ts'))) {
+			nuxt.options.alias = {
+				'~/shiki.config': resolve(themeDir, 'app/shiki.config.ts'),
+				...nuxt.options.alias,
+			}
+		}
 
 		if (!existsSync(configPath)) {
 			throw new Error(
@@ -56,28 +81,23 @@ export default defineNuxtModule<ModuleOptions>({
 		const { site, article, integrations, features } = config
 
 		// ---- Site Config → App Config 桥梁 ----
-		updateAppConfig(nuxt, {
-			clarity: toPublicClarityConfig(config),
+		// 注意 Nuxt appConfig 合并优先级：消费项目 app.config > Theme app.config > 模块注入，
+		// 因此站点派生默认值（header.logo 等）不放入 Theme 的 app.config.ts，
+		// 由这里注入后仍可被消费项目覆盖。
+		updateAppConfig({
+			clarity: {
+				...toPublicClarityConfig(config),
+				header: {
+					logo: site.author.avatar ?? '',
+					subtitle: site.subtitle ?? '',
+				},
+				footer: {
+					copyright: site.copyright?.name
+						? `© ${new Date().getFullYear()} ${site.author.name} · ${site.copyright.name}`
+						: `© ${new Date().getFullYear()} ${site.author.name}`,
+				},
+			},
 		})
-
-		// 站点派生的 UI 默认值（仅当用户未覆盖时生效）
-		const uiDefaults = nuxt.options.appConfig.clarity as {
-			header?: { logo?: string, subtitle?: string }
-			footer?: { copyright?: string }
-		}
-		uiDefaults.header ??= {}
-		uiDefaults.footer ??= {}
-		if (!uiDefaults.header.logo) {
-			uiDefaults.header.logo = site.author.avatar ?? ''
-		}
-		if (!uiDefaults.header.subtitle) {
-			uiDefaults.header.subtitle = site.subtitle ?? ''
-		}
-		if (!uiDefaults.footer.copyright) {
-			uiDefaults.footer.copyright = site.copyright?.name
-				? `© ${new Date().getFullYear()} ${site.author.name} · ${site.copyright.name}`
-				: `© ${new Date().getFullYear()} ${site.author.name}`
-		}
 
 		// ---- SEO / site / robots / llms ----
 		nuxt.options.site = {
@@ -125,8 +145,8 @@ export default defineNuxtModule<ModuleOptions>({
 			themeHomepage: String(themePkg?.homepage ?? ''),
 			siteVersion: String(consumerPkg?.version ?? ''),
 			sitePackageManager: String(consumerPkg?.packageManager ?? ''),
-			nuxtVersion: nuxt.versions.nuxt,
-			vueVersion: nuxt.versions.vue,
+			nuxtVersion: nuxtPkg.version,
+			vueVersion: vuePkg.version,
 		}
 
 		// ---- 路由规则 ----
@@ -156,13 +176,15 @@ export default defineNuxtModule<ModuleOptions>({
 		// ---- 可选功能：anti-mirror ----
 		if (features.antiMirror !== false) {
 			const blacklist = typeof features.antiMirror === 'boolean' ? [] : features.antiMirror.blacklist
-			await installModule(resolve(moduleDir, '../anti-mirror'), {
-				blacklist,
-				target: site.url,
-			})
+			injectAntiMirror(nuxt, [...defaultMirrorBlacklist, ...blacklist], site.url)
 		}
 	},
 })
+
+function injectAntiMirror(nuxt: { options: { app: { head: { script?: { innerHTML: string }[] } } } }, blacklist: string[], target: string) {
+	const iife = minify('', `(${handleMirror.toString()})(${JSON.stringify(blacklist.map(btoa))},${JSON.stringify(btoa(target))})`)
+	;(nuxt.options.app.head.script ??= []).push({ innerHTML: iife.code })
+}
 
 function findConfigFile(rootDir: string) {
 	for (const name of ['clarity.config.ts', 'clarity.config.mjs', 'clarity.config.js']) {

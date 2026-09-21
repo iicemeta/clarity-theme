@@ -8,7 +8,7 @@ const clarity = useClarityConfig()
 
 const coverFilter = computed(() => props.meta?.coverFilter || (props.meta?.coverDim && 'brightness(0.75)') || undefined)
 
-	const shareText = `【${clarity.site.title}】${props.title}\n\n${
+const shareText = `【${clarity.site.title}】${props.title}\n\n${
 	props.description ? `${props.description}\n\n` : ''}${
 	new URL(props.path!, clarity.site.url).href}`
 

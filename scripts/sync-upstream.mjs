@@ -46,7 +46,7 @@ const tempDir = mkdtempSync(join(tmpdir(), 'clarity-sync-'))
 try {
 	execSync(`git clone --quiet --no-checkout ${repo} ${JSON.stringify(tempDir)}`, { stdio: 'inherit' })
 	const output = execSync(`git diff --name-status ${commit}..${head}`, { cwd: tempDir, encoding: 'utf8' })
-	const changes = output.trim().split('\n').filter(Boolean).map(line => {
+	const changes = output.trim().split('\n').filter(Boolean).map((line) => {
 		const [status, path] = line.split('\t')
 		return { status, path }
 	})

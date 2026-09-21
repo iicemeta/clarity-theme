@@ -1,10 +1,9 @@
 import type {
-	ClarityAntiMirrorConfig,
 	ClarityArticleConfig,
 	ClarityChangelogEntry,
 	ClarityConfig,
-	ClarityFeedConfig,
 	ClarityFeaturesConfig,
+	ClarityFeedConfig,
 	ClarityIntegrationsConfig,
 	ClaritySiteConfig,
 	ClarityStatsConfig,

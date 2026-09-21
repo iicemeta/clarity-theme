@@ -143,11 +143,30 @@ node scripts/sync-upstream.mjs diff   # 变更分类明细
 - Twikoo 评论、统计脚本等改为 `integrations` 配置注入
 - 上游 `pnpm-workspace.yaml` catalog 依赖改为普通语义化版本
 - 上游 `patches/` 尚未迁移（见下方待办）
+- Layer 构建兼容修复：
+  - `modules` 相对路径改为 Theme 绝对路径（Layer 中相对路径以消费项目为基准）
+  - `@pinia/nuxt` 不扫描 Layer 的 `app/stores`，由 `clarity-config` 显式注册
+  - `@bikariya/shiki` 的 `~/shiki.config` 在消费项目未提供时回退到 Theme 内置配置
+  - `#clarity/feeds` 等消费项目注入点通过模块 alias 提供
+
+## 验证状态
+
+```text
+[✓] Playground nuxt generate（23 条路由，含 atom.xml / stats / opml）
+[✓] eslint / stylelint
+[✓] 作者信息泄漏、站点文件、跨项目路径检查（pnpm verify）
+[✓] 上游同步检查（sync:check，基线 f6ea97d = upstream/main）
+```
 
 ## 待办（按 devdoc 阶段）
 
+- [x] Phase 0：冻结基线（blog-v3@3.7.2，f6ea97d）
+- [x] Phase 1：提纯（移除内容 / 作者配置 / 站点组件）
+- [x] Phase 2：clarity.config.ts API + modules/clarity-config
+- [x] Phase 3：Layer 本地化路径（CSS / Icon / Remark / 组件 / Server）
+- [x] Phase 5（部分）：Playground + lint + generate
 - [ ] Phase 4：逐个处理上游 patch（删除 / upstream / fork / consumer patch）
-- [ ] Phase 5：CI 三层验证（lint → playground generate → pack + 临时 consumer generate）
+- [ ] Phase 5（剩余）：CI 三层验证（lint → playground generate → pack + 临时 consumer generate）
 - [ ] Phase 6：sync-upstream `apply` / `verify` 模式与定时 PR
 
 ## 许可证

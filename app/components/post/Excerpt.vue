@@ -10,7 +10,7 @@ const clarity = useClarityConfig()
 const excerpt = ref(props.excerpt)
 const caret = ref('')
 
-	if (clarity.component.excerpt?.animation !== false) {
+if (clarity.component.excerpt?.animation !== false) {
 	excerpt.value = ''
 	onMounted(async () => {
 		caret.value = clarity.component.excerpt?.caret ?? '_'
