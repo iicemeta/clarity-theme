@@ -1,5 +1,3 @@
-import blogConfig from '~~/blog.config'
-
 interface StatsEntry {
 	posts: number
 	words: number
@@ -12,6 +10,8 @@ interface CategoryEntry {
 }
 
 export default defineEventHandler(async (event) => {
+	const { site, stats: statsConfig } = useClarityConfig()
+
 	const stats = {
 		total: { posts: 0, words: 0 },
 		annual: <Record<number, StatsEntry>>{},
@@ -22,8 +22,8 @@ export default defineEventHandler(async (event) => {
 	const existedPaths = new Set<string>()
 
 	const query = queryCollection(event, 'content')
-	if (blogConfig.stats.includePaths.length) {
-		query.orWhere(group => blogConfig.stats.includePaths.reduce(
+	if (statsConfig.includePaths.length) {
+		query.orWhere(group => statsConfig.includePaths.reduce(
 			(group, path) => group.where('stem', 'LIKE', path),
 			group,
 		))
@@ -54,7 +54,7 @@ export default defineEventHandler(async (event) => {
 
 		// 年文章/年字数计数
 		try {
-			const year = toZonedTemporal(post.date || '').year
+			const year = toZonedTemporal(post.date || '', site.timezone).year
 			if (!stats.annual[year]) {
 				stats.annual[year] = { posts: 0, words: 0 }
 			}
