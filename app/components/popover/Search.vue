@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { ModalEmits, ModalProps } from '#modals'
+import type { ModalEmits, ModalProps } from '../../types/modal'
 import MiniSearch from 'minisearch'
 
 const props = defineProps<ModalProps>()

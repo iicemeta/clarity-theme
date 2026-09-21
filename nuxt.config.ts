@@ -10,7 +10,9 @@ const themeDir = dirname(fileURLToPath(import.meta.url))
 const toThemePath = (path: string) => join(themeDir, path).replaceAll('\\', '/')
 
 function pluginPath(path: string) {
-	return pathToFileURL(join(themeDir, 'remark-plugins', `${path}.ts`)).href
+	// 插件必须是 .mjs：@nuxt/content 以 Node 原生方式加载，
+	// 不允许 node_modules 内的 TS 文件（TS 剥离限制）
+	return pathToFileURL(join(themeDir, 'remark-plugins', `${path}.mjs`)).href
 }
 
 /**

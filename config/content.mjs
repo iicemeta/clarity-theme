@@ -1,30 +1,17 @@
-import type { ReadTimeResults } from 'reading-time'
-import type { ClarityConfig } from './schema'
 import { defineCollection, defineContentConfig } from '@nuxt/content'
 import { defineSitemapSchema } from '@nuxtjs/sitemap/content'
 import { z } from 'zod'
-import { clarityConfigSchema } from './schema'
+import { clarityConfigSchema } from './schema.mjs'
 
-export interface ArticleSchema {
-	title?: string
-	description?: string
-	date?: string
-	updated?: string
-	published?: string
-	categories?: string[]
-	tags?: string[]
-	type?: keyof ClarityConfig['article']['types']
+/**
+ * createClarityContentConfig 运行时实现（JS）。
+ *
+ * 类型真源在同目录 content.ts；
+ * @nuxt/content 的配置加载使用 Node 原生 TS 剥离，
+ * 不允许 node_modules 内的 TS 文件，因此运行时链必须是 .mjs。
+ */
 
-	image?: string
-	recommend?: number
-	references?: { title?: string, link?: string }[]
-	draft?: boolean
-	permalink?: string
-
-	readingTime?: ReadTimeResults
-}
-
-function createArticleSchema(config: ClarityConfig) {
+function createArticleSchema(config) {
 	// 兜底：types 为空时 z.enum([]) 非法，统一回退到默认版式
 	const articleTypes = Object.keys(config.article.types)
 	const typeValues = articleTypes.length > 0 ? articleTypes : ['tech']
@@ -37,7 +24,7 @@ function createArticleSchema(config: ClarityConfig) {
 		published: z.string().optional(),
 		categories: z.array(z.string()).default([config.article.defaultCategory]),
 		tags: z.array(z.string()).default([]),
-		type: z.enum(typeValues as any).optional().default(typeValues[0]),
+		type: z.enum(typeValues).optional().default(typeValues[0]),
 
 		image: z.string().optional(),
 		recommend: z.number().optional(),
@@ -54,19 +41,10 @@ function createArticleSchema(config: ClarityConfig) {
 			time: z.number(),
 			words: z.number(),
 		}),
-	}) satisfies z.ZodType<ArticleSchema>
+	})
 }
 
-/**
- * 在消费项目 content.config.ts 中生成 Clarity Content 集合：
- *
- * ```ts
- * import clarityConfig from './clarity.config'
- * import { createClarityContentConfig } from 'clarity-theme/content'
- * export default createClarityContentConfig(clarityConfig)
- * ```
- */
-export function createClarityContentConfig(config: ClarityConfig) {
+export function createClarityContentConfig(config) {
 	const parsed = clarityConfigSchema.parse(config)
 	return defineContentConfig({
 		collections: {
@@ -77,7 +55,7 @@ export function createClarityContentConfig(config: ClarityConfig) {
 					sitemap: defineSitemapSchema({
 						name: 'content',
 						onUrl: (url, entry) => {
-							const lastmod = (entry.updated || entry.published || entry.date) as string | undefined
+							const lastmod = (entry.updated || entry.published || entry.date)
 							if (lastmod) {
 								url.lastmod = new Date(lastmod).toLocaleDateString('sv')
 							}
