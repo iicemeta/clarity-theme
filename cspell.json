@@ -1,0 +1,9 @@
+{
+  "unknownWords": "report-common-typos",
+  "ignorePaths": [
+    "node_modules",
+    "playground/node_modules",
+    "pnpm-lock.yaml",
+    "playground/pnpm-lock.yaml"
+  ]
+}

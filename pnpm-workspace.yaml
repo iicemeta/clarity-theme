@@ -1,0 +1,4 @@
+# 仅用于 Theme 仓库自身的开发环境（playground），
+# Theme package 的依赖全部为普通语义化版本，消费项目无需 pnpm workspace。
+packages:
+  - playground
