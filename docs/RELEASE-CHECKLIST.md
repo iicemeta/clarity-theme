@@ -2,7 +2,7 @@
 
 **English** | [简体中文](./RELEASE-CHECKLIST.zh-CN.md)
 
-> Checklist date: 2026-09-22, Asia/Taipei. The v0.1.0 P0 correctness gates are resolved and the release pipeline is implemented. The working tree passed the ordered verification suite before tagging; the actual publish still requires an exact-tag run plus the manual npm/GitHub steps in §9.
+> Checklist date: 2026-09-22, Asia/Taipei. The v0.1.0 P0 correctness gates are resolved and the release pipeline is implemented. The gated release version is **`0.1.1`** (the registry's out-of-band `0.1.0` cannot be republished). The working tree passed the ordered verification suite before tagging; the actual publish still requires the exact-tag workflow run plus the manual npm/GitHub steps in §9.
 
 Legend:
 
@@ -50,8 +50,8 @@ Legend:
 ## 4. Package Contract
 
 - [x] Package name is `clarity-theme`.
-- [x] Current package version is `0.1.0`, the intended first npm release version.
-- [x] First release version/tag decision: release `0.1.0` from tag `v0.1.0`.
+- [x] Current package version is `0.1.1`, the gated npm release version.
+- [x] Release version/tag decision: release `0.1.1` from tag `v0.1.1` (`0.1.0` is taken by the out-of-band registry publication and cannot be republished).
 - [x] License field is MIT and `LICENSE` is included.
 - [!] A maintainer/legal reviewer should confirm whether the existing MIT copyright attribution needs an additional current rights-holder line before publication.
 - [x] Package metadata has repository, homepage, bugs, engines, and package manager data.
@@ -64,7 +64,7 @@ Legend:
 - [x] Theme purity verification found no forbidden author/site data or cross-project imports.
 - [x] Consumer patches remain outside the package payload.
 - [x] `publishConfig.access` is `public`.
-- [x] `CHANGELOG.md` exists with a consumer-facing `0.1.0` entry.
+- [x] `CHANGELOG.md` exists with consumer-facing `0.1.1` and `0.1.0` entries.
 - [x] Runtime dependencies are fully declared (48 dependencies, verified by pack audit).
 - [x] `main`, `type`, `engines`, `peerDependencies`, and `packageManager` are frozen and asserted by `pnpm release:check`.
 
@@ -75,11 +75,11 @@ Legend:
 - [x] P0-3: anti-mirror navigation corrected (canonical host derived from `site.url`) and exercised by a real-browser mirror-hostname case in `test:compatibility`.
 - [x] P0-4: the no-op `useRandomPermalink` field removed from schema, docs, migration mapping, and tests.
 - [x] P1-2: multi-pattern stats selection verified as union semantics (`@nuxt/content` 3.16 `orWhere` group) and locked by a `posts/% + notes/%` consumer regression.
-- [ ] P1-1: make remote CSS/font origins configurable. **Deferred** to Milestone 2; documented as a known limitation in the 0.1.0 release notes.
+- [ ] P1-1: make remote CSS/font origins configurable. **Deferred** to Milestone 2; documented as a known limitation in the 0.1.1 release notes.
 - [ ] P1-3: complete sync-manifest classification for known upstream-derived paths. **Deferred** to Milestone 2; documented as a known limitation.
 - [ ] P1-4: add a TypeScript/MJS parity gate. **Deferred** to Milestone 2; documented as a known limitation.
 - [x] P1-6: design the first npm release workflow. Execution (actual publish) remains a manual release action.
-- [x] Resolve or explicitly defer every remaining P1/P2 item in the release notes (P1-1/P1-3/P1-4/P1-5 and P2 items are recorded in `CHANGELOG.md` and `docs/RELEASE-NOTES-0.1.0.md`).
+- [x] Resolve or explicitly defer every remaining P1/P2 item in the release notes (P1-1/P1-3/P1-4/P1-5 and P2 items are recorded in `CHANGELOG.md` and `docs/RELEASE-NOTES-0.1.1.md`).
 
 These are tracked in [ROADMAP](./ROADMAP.md). Documentation completion does not clear them.
 
@@ -124,9 +124,9 @@ All commands were run serially on 2026-09-22.
 | `pnpm test:migration` | ✅ Pass | 10/10 tests |
 | `pnpm peers check` | ✅ Pass | No peer dependency issues |
 | `pnpm sync:check` | ✅ Pass | Upstream baseline current |
-| `pnpm release:check --allow-untagged` | ✅ Pass | package/tag/CHANGELOG contract, exports/files, pack, and 151-file tarball boundary; exact-tag enforcement runs in the publish workflow |
-| `pnpm pack` | ✅ Pass | `artifacts/clarity-theme-0.1.0.tgz`, 151 files, SHA-256 `790639b8a0a4ae644840244c844c9978635d2bf2779cd8e11847c6852527fa6c` |
-| `npm publish ./artifacts/clarity-theme-0.1.0.tgz --dry-run` | ⛔ Registry-blocked (expected) | Registry rejects: `0.1.0` was published out-of-band (see §9); the corrected release must be `0.1.1` |
+| `pnpm release:check` | ✅ Pass (after `v0.1.1` tag) | package/tag/CHANGELOG contract, exports/files, pack, and 151-file tarball boundary; the pre-commit run correctly refused the `v0.1.0`-tagged HEAD vs `0.1.1` mismatch |
+| `pnpm pack` | ✅ Pass | `artifacts/clarity-theme-0.1.1.tgz`, 151 files, SHA-256 `f72021e7c64df3303eb34a777197c521f867d3629e709524dde22dcc09a2cc3d` |
+| `npm publish ./artifacts/clarity-theme-0.1.1.tgz --dry-run` | ✅ Pass | Registry accepts `0.1.1` (`+ clarity-theme@0.1.1`); the earlier `0.1.0` dry-run was correctly rejected because that version was published out-of-band |
 | `pnpm test:registry-consumer` | ❌ Against published `0.1.0` (expected) | Installs the real registry package, then fails typecheck **inside the published tarball** (`stats.get.ts` `orWhere` void-return, `link.vue` `never[]` feeds typing) — both fixed in this tree; must pass against the corrected release |
 | `git diff --check` | ✅ Pass | No whitespace errors |
 
@@ -166,7 +166,7 @@ No test is being reported as currently failing.
 
 - [x] All ROADMAP P0 items resolved; P1/P2 deferrals recorded in the release notes.
 - [!] **Out-of-band publication detected:** `clarity-theme@0.1.0` was published to npm at 2026-09-22T07:28:22Z by `creampack <creampack@iicemeta.com>` from gitHead `5a03778` — the pre-P0-fix tree, outside the release workflow, without provenance. The registry consumer test fails typecheck inside that published package (see §8).
-- [!] Maintainer decisions required: confirm the publisher/intent; plan the corrected gated release as **`0.1.1`** (npm forbids republishing `0.1.0`); optionally `npm deprecate clarity-theme@0.1.0`; **never auto-unpublish**.
+- [x] Maintainer decision: the corrected gated release is **`0.1.1` from tag `v0.1.1`** (npm forbids republishing `0.1.0`); optionally `npm deprecate clarity-theme@0.1.0`; **never auto-unpublish**.
 - [!] Commit the reviewed working tree, bump to the chosen release version, tag, and rerun the full ordered suite at that exact tag (the publish workflow does this automatically).
 - [x] Release tag, changelog, provenance, artifact checksum, and rollback procedure are defined in [PUBLISHING](./PUBLISHING.md).
 - [x] npm package name verified: `clarity-theme` exists on the registry with a live (out-of-band) `0.1.0`; maintainers include `creampack <creampack@iicemeta.com>`.
@@ -180,4 +180,4 @@ No test is being reported as currently failing.
 
 **Release-closing documentation, migration guidance, Skill, fixture, CI wiring, and local verification: complete.**
 
-**First public npm release: blocked by an out-of-band publication of `0.1.0`.** All correctness blockers are resolved in this tree and the release pipeline is implemented and documented, but the registry already contains a `0.1.0` built from the pre-fix tree without the gate. The corrected release must be `0.1.1` through the documented workflow; `0.1.0` stays published (deprecate, never auto-unpublish). "Workflow created" is not the same as "release completed" — do not mark §9 publication items complete until the registry contains the gated version.
+**First gated npm release: `0.1.1`, pending the GitHub Release trigger.** All correctness blockers are resolved in this tree and the release pipeline is implemented and documented. The registry's out-of-band `0.1.0` (pre-fix tree, no gate) stays published and cannot be republished; the gated release is `0.1.1` through the documented workflow. "Workflow created" is not the same as "release completed" — do not mark §9 publication items complete until the registry contains `0.1.1`.

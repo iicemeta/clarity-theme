@@ -1,26 +1,23 @@
-# Release Notes — v0.1.0
+# Release Notes — v0.1.1
 
-> Template for the `v0.1.0` GitHub Release. Keep npm package version, Git
+> Template for the `v0.1.1` GitHub Release. Keep npm package version, Git
 > tag, and GitHub Release version identical.
->
-> **Publication note:** the registry already contains an out-of-band
-> `clarity-theme@0.1.0` published from the pre-fix tree without this gate.
-> That version cannot be republished; the gated release is documented in
-> [RELEASE-NOTES-0.1.1](./RELEASE-NOTES-0.1.1.md). This file is kept as the
-> historical record for `0.1.0`.
 
 ## Release body
 
 ### Highlights
 
-- First npm release of Clarity Theme, the reusable Nuxt 4 Layer blog theme
-  extracted from [blog-v3](https://github.com/L33Z22L11/blog-v3).
+- First gated npm release of Clarity Theme, the reusable Nuxt 4 Layer blog
+  theme extracted from [blog-v3](https://github.com/L33Z22L11/blog-v3),
+  published through the OIDC workflow with provenance.
+- Corrects the out-of-band `0.1.0` registry artifact: it was published from
+  the pre-fix tree and fails typecheck against current dependencies.
 - Validated `clarity.config.ts` site configuration and a Content collection
   factory driven by that configuration.
 - Server/client configuration split: feeds, full stats rules, feature route
   flags, and `site.author.email` stay server-side.
-- Feature-off routes now return 404 at runtime in addition to being omitted
-  from static output; anti-mirror navigation is fixed and verified in a real
+- Feature-off routes return 404 at runtime in addition to being omitted from
+  static output; anti-mirror navigation is fixed and verified in a real
   browser.
 
 ### Installation
@@ -38,13 +35,14 @@ export default defineNuxtConfig({
 
 ### Migration
 
-- Follow the [Migration guide](../docs/MIGRATION.md) when moving an existing
+- Follow the [Migration guide](./MIGRATION.md) when moving an existing
   blog-v3 site. Articles, friend data, redirects, patches, deployment data,
   and secrets stay in your project.
 - The agent Skill `migrate-blog-v3-to-clarity` automates inventory,
   classification, planning, apply, validation, and rollback.
 - `article.useRandomPermalink` was removed before this release; random
   permalink generation belongs to your build scaffolding.
+- If you installed the broken `0.1.0` artifact, upgrade to `0.1.1`.
 
 ### Compatibility
 
@@ -68,9 +66,11 @@ export default defineNuxtConfig({
 
 ### Upgrade notes
 
+- From the broken `0.1.0` registry artifact: upgrade to `0.1.1`; the older
+  artifact fails typecheck inside the published package.
 - From a Git-commit install: replace the GitHub dependency with the npm
   package (`pnpm add clarity-theme`) and remove the commit pin.
-- Review the [Configuration](../docs/CONFIGURATION.md) and
-  [API](../docs/API.md) docs for the final v0.1.0 contract.
-- See [CHANGELOG](../CHANGELOG.md) for the complete 0.1.0 change list and
-  [COMPATIBILITY](../docs/COMPATIBILITY.md) for the verified matrix.
+- Review the [Configuration](./CONFIGURATION.md) and [API](./API.md) docs
+  for the v0.1 contract.
+- See [CHANGELOG](../CHANGELOG.md) for the complete change list and
+  [COMPATIBILITY](./COMPATIBILITY.md) for the verified matrix.

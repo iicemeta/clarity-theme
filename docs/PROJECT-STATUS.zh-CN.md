@@ -24,8 +24,8 @@
 | 仓库分支 | `master` |
 | Phase 20 开始时的 HEAD | `433d042ed3b626a048e84000ba2039102df61f28`（`docs: establish current reality-sync baseline`） |
 | 工作树 | 文档变更前干净并与 `origin/master` 同步 |
-| 包 | `clarity-theme` v0.1.0，MIT |
-| 分发状态 | npm 发布管线已就绪（OIDC 发布工作流、发布门禁、更新日志）。**一个有缺陷的 `clarity-theme@0.1.0` 已于 2026-09-22T07:28:22Z 被绕过流程发布**，发布者 `creampack <creampack@iicemeta.com>`，来自 P0 修复前的 gitHead `5a03778`，未经门禁、无 provenance；registry 消费者测试在其内部 typecheck 失败。修正后的门禁发布必须是 `0.1.1` |
+| 包 | `clarity-theme` v0.1.1，MIT |
+| 分发状态 | npm 发布管线已就绪（OIDC 发布工作流、发布门禁、更新日志）；门禁发布为 **`0.1.1`（tag `v0.1.1`）**。**一个有缺陷的 `clarity-theme@0.1.0` 已于 2026-09-22T07:28:22Z 被绕过流程发布**，发布者 `creampack <creampack@iicemeta.com>`，来自 P0 修复前的 gitHead `5a03778`，未经门禁、无 provenance；registry 消费者测试在其内部 typecheck 失败 |
 | 上游基线 | `blog-v3` 3.7.2，`main` @ `f6ea97d745517feb52f0c100e89acb36f0adc12f` |
 | 上游漂移 | 无：Phase 20 的一次直接远端头检查返回了 manifest 基线 commit |
 | 用于验证的本地运行时 | Node.js 24.15.0、pnpm 12.4.1、Nuxt 4.5.2、Vue 3.5.43 |
@@ -38,7 +38,7 @@
 | 字段 | 值 |
 | --- | --- |
 | 名称 | `clarity-theme` |
-| 版本 | `0.1.0` |
+| 版本 | `0.1.1` |
 | 许可证 | MIT |
 | 主页 / 仓库 | `https://github.com/iicemeta/clarity-theme` |
 | Node engine | `^22.19 \|\| ^24.11 \|\| >=26` |
@@ -343,6 +343,6 @@ Clarity Theme 本身不携带补丁。包管理器补丁是 workspace/安装根�
 
 ## 19. 当前里程碑
 
-**v0.1.0 发布候选——里程碑 1 与发布赋能完成。**
+**v0.1.1 门禁发布——里程碑 1 与发布赋能完成。**
 
-四个 P0 正确性阻塞项均已修复并有针对性测试，多模式统计语义已验证并锁定，npm 发布管线（发布门禁、更新日志、OIDC 工作流、provenance、registry 消费者测试）已实现。`0.1.0` 上 npm 之前剩余事项：commit 并打 tag 到确切发布 commit、在网站确认 npm 名称/Trusted Publisher、发布 GitHub Release，以及发布后的 registry 验证。推迟的 P1/P2 工作继续按[路线图](./ROADMAP.zh-CN.md)排序。
+四个 P0 正确性阻塞项均已修复并有针对性测试，多模式统计语义已验证并锁定，npm 发布管线（发布门禁、更新日志、OIDC 工作流、provenance、registry 消费者测试）已实现。门禁 `0.1.1` 上 npm 之前剩余事项：在网站配置 npm Trusted Publisher、发布 `v0.1.1` GitHub Release，以及发布后的 registry 验证。推迟的 P1/P2 工作继续按[路线图](./ROADMAP.zh-CN.md)排序。

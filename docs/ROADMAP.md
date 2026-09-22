@@ -8,7 +8,7 @@
 
 **Milestone 1 + release enablement complete (2026-09-22).**
 
-All four P0 correctness blockers are resolved and covered by tests, multi-pattern stats gained a regression test, and the npm release workflow (tag/version gate, release-check, OIDC publish, provenance, registry consumer test) is implemented. Actual publication of `0.1.0` remains a manual maintainer action. Future development starts with the remaining P1 items below.
+All four P0 correctness blockers are resolved and covered by tests, multi-pattern stats gained a regression test, and the npm release workflow (tag/version gate, release-check, OIDC publish, provenance, registry consumer test) is implemented. The gated release is `0.1.1` (the out-of-band registry `0.1.0` cannot be republished); actual publication remains a manual maintainer action. Future development starts with the remaining P1 items below.
 
 ## Completed
 
@@ -183,7 +183,7 @@ Implementation notes: config schema/runtime dual tracks, configuration docs, API
 
 > **Status (2026-09-22):** P1-2 is verified and regression-tested; P1-6 is
 > complete except the actual publication; P1-1/P1-3/P1-4/P1-5 are explicitly
-> deferred to Milestone 2 and recorded in the 0.1.0 release notes.
+> deferred to Milestone 2 and recorded in the 0.1.1 release notes.
 
 ### P1-1. Make external CSS/font origins configurable
 
@@ -462,7 +462,7 @@ First npm release readiness (status 2026-09-22):
 6. ✅ The upstream baseline is current (`sync:check`).
 7. ✅ Public configuration visibility is accurately documented; remote-origin defaults are documented as a deferred limitation.
 
-Remaining human gates: npm name/Trusted Publisher confirmation (the name has a previous unpublished tombstone), tag `v0.1.0`, GitHub Release, and the post-publish registry consumer test.
+Remaining human gates: npm Trusted Publisher configuration, the `v0.1.1` GitHub Release, and the post-publish registry consumer test.
 
 ## Upstream Maintenance
 
@@ -510,7 +510,7 @@ Scope: tag and publish the first package release, migrate documentation from Git
 
 Rationale: publication is a maintainership step, not a substitute for Milestone 1 correctness work. After release, semantic versioning and upstream drift maintenance become the governing constraints.
 
-**Status: pending manual execution** — tag `v0.1.0`, confirm the npm name/Trusted Publisher, publish the GitHub Release, then run `pnpm test:registry-consumer`.
+**Status: pending manual execution** — configure the npm Trusted Publisher, publish the `v0.1.1` GitHub Release, then run `pnpm test:registry-consumer`.
 
 ## Do Not Do Now
 

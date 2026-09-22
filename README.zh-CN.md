@@ -302,7 +302,7 @@ pnpm sync:verify  # 重新运行主题纯度与基线检查
 
 ## 发布状态
 
-Clarity Theme 是一个 **v0.1.0 npm 发布候选版本**。Layer/包边界、已校验配置、Content 工厂、渲染管线、服务端输出、playground、真实消费者验收、兼容性矩阵、三层 CI、上游同步基线、发布门禁与 OIDC 发布工作流均已实现。剩余的人工发布步骤见[发布检查清单](./docs/RELEASE-CHECKLIST.zh-CN.md)。
+Clarity Theme 是一个 **v0.1.1 门禁 npm 发布版本**。Layer/包边界、已校验配置、Content 工厂、渲染管线、服务端输出、playground、真实消费者验收、兼容性矩阵、三层 CI、上游同步基线、发布门禁与 OIDC 发布工作流均已实现。剩余的人工发布步骤见[发布检查清单](./docs/RELEASE-CHECKLIST.zh-CN.md)。
 
 [路线图](./docs/ROADMAP.zh-CN.md)中的 v0.1.0 正确性门禁已解决：服务端/客户端配置已拆分、功能关闭路由在运行时返回 404、反镜像导航已在真实浏览器中验证、no-op 随机固定链接字段已移除，多模式统计已增加回归测试。其余推迟事项记录在路线图与发布说明中。
 

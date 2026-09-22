@@ -38,7 +38,7 @@ git push origin v0.1.0
 
 ## 5. GitHub Release
 
-1. 在 tag（`v0.1.0`）上起草 GitHub Release，使用发布说明模板（[RELEASE-NOTES-0.1.0](./RELEASE-NOTES-0.1.0.md) 是首个版本的完整示例）。
+1. 在 tag（`v0.1.1`）上起草 GitHub Release，使用发布说明模板（[RELEASE-NOTES-0.1.1](./RELEASE-NOTES-0.1.1.md) 是门禁首发版本的完整示例；[RELEASE-NOTES-0.1.0](./RELEASE-NOTES-0.1.0.md) 记录绕过流程的 `0.1.0` 产物）。
 2. 发布 Release 会触发 `publish.yml` 工作流：检出 tag、校验 tag/version 契约、完整重跑有序验证套件、打包 `artifacts/clarity-theme-<version>.tgz`、审计并试运行该 tarball，最后发布。
 3. 不要在分支 push 时自动发布。GitHub Release 正是「人工确认发布版本」的环节。
 

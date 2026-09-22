@@ -24,8 +24,8 @@ Code, tests, CI, and the sync manifest override prose. A statement in this file 
 | Repository branch | `master` |
 | HEAD at Phase 20 start | `433d042ed3b626a048e84000ba2039102df61f28` (`docs: establish current reality-sync baseline`) |
 | Working tree | Clean and synchronized with `origin/master` before documentation changes |
-| Package | `clarity-theme` v0.1.0, MIT |
-| Distribution state | npm release pipeline ready (OIDC publish workflow, release gate, changelog). **A defective `clarity-theme@0.1.0` was published out-of-band at 2026-09-22T07:28:22Z** by `creampack <creampack@iicemeta.com>` from pre-P0 gitHead `5a03778`, without the gate or provenance; the registry consumer test fails typecheck inside it. The corrected gated release must be `0.1.1` |
+| Package | `clarity-theme` v0.1.1, MIT |
+| Distribution state | npm release pipeline ready (OIDC publish workflow, release gate, changelog); the gated release is **`0.1.1` from tag `v0.1.1`**. **A defective `clarity-theme@0.1.0` was published out-of-band at 2026-09-22T07:28:22Z** by `creampack <creampack@iicemeta.com>` from pre-P0 gitHead `5a03778`, without the gate or provenance; the registry consumer test fails typecheck inside it |
 | Upstream baseline | `blog-v3` 3.7.2, `main` @ `f6ea97d745517feb52f0c100e89acb36f0adc12f` |
 | Upstream drift | None: a Phase 20 direct remote-head check returned the manifest baseline commit |
 | Local runtime used for verification | Node.js 24.15.0, pnpm 12.4.1, Nuxt 4.5.2, Vue 3.5.43 |
@@ -38,7 +38,7 @@ The differential consumer outside this Git repository is a historical/manual env
 | Field | Value |
 | --- | --- |
 | Name | `clarity-theme` |
-| Version | `0.1.0` |
+| Version | `0.1.1` |
 | License | MIT |
 | Homepage / repository | `https://github.com/iicemeta/clarity-theme` |
 | Node engine | `^22.19 \|\| ^24.11 \|\| >=26` |
@@ -343,6 +343,6 @@ The old phase-based TODO lists are no longer the active planning track.
 
 ## 19. Current Milestone
 
-**v0.1.0 release candidate — Milestone 1 and release enablement complete.**
+**v0.1.1 gated release — Milestone 1 and release enablement complete.**
 
-All four P0 correctness blockers are fixed with targeted tests, the multi-pattern stats semantics are verified and locked, and the npm publication pipeline (release gate, changelog, OIDC workflow, provenance, registry consumer test) is implemented. What remains before `0.1.0` is on npm: commit and tag the exact release commit, confirm the npm name/Trusted Publisher on the website, publish the GitHub Release, and run the post-publish registry verification. Deferred P1/P2 work stays ordered in [ROADMAP](./ROADMAP.md).
+All four P0 correctness blockers are fixed with targeted tests, the multi-pattern stats semantics are verified and locked, and the npm publication pipeline (release gate, changelog, OIDC workflow, provenance, registry consumer test) is implemented. What remains before the gated `0.1.1` is on npm: configure the npm Trusted Publisher on the website, publish the `v0.1.1` GitHub Release, and run the post-publish registry verification. Deferred P1/P2 work stays ordered in [ROADMAP](./ROADMAP.md).

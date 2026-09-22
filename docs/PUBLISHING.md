@@ -52,9 +52,11 @@ git push origin v0.1.0
 
 ## 5. GitHub Release
 
-1. Draft a GitHub Release on the tag (`v0.1.0`) using the release-notes
-   template ([RELEASE-NOTES-0.1.0](./RELEASE-NOTES-0.1.0.md) is the filled
-   example for the first release).
+1. Draft a GitHub Release on the tag (`v0.1.1`) using the release-notes
+   template ([RELEASE-NOTES-0.1.1](./RELEASE-NOTES-0.1.1.md) is the filled
+   example for the gated first release;
+   [RELEASE-NOTES-0.1.0](./RELEASE-NOTES-0.1.0.md) documents the out-of-band
+   `0.1.0` artifact).
 2. Publishing the Release triggers the `publish.yml` workflow. The workflow
    checks out the tag, verifies the tag/version contract, reruns the complete
    ordered validation suite, packs `artifacts/clarity-theme-<version>.tgz`,
