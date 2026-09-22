@@ -725,7 +725,7 @@ function assertGenerateOutput(consumerDir) {
 	assert('SEO WebSite JSON-LD', index.includes('"@type":"WebSite"'))
 
 	// Markdown
-	const first = read(output, 'first/index.html')
+	const first = readGeneratedPage(output, '/first')
 	const firstPayload = read(output, 'first/_payload.json')
 	assert('Markdown 行内代码', first.includes('clarity.config.ts'))
 	assert('Markdown 粗体/删除线', first.includes('<strong>') && first.includes('<del>'))
@@ -734,7 +734,7 @@ function assertGenerateOutput(consumerDir) {
 	assert('Markdown fenced code（ProseCode）', first.includes('z-codeblock') || firstPayload.includes('const answer'))
 
 	// MDC
-	const mdc = read(output, 'mdc/index.html')
+	const mdc = readGeneratedPage(output, '/mdc')
 	assert('MDC Alert', mdc.includes('MDC 信息提示'))
 	assert('MDC Tip', mdc.includes('MDC 悬停提示'))
 	assert('MDC CardList', mdc.includes('card-list') && mdc.includes('MDC 卡片项'))
@@ -742,24 +742,24 @@ function assertGenerateOutput(consumerDir) {
 	assert('MDC Badge', mdc.includes('MDC'))
 
 	// Math
-	const math = read(output, 'math/index.html')
+	const math = readGeneratedPage(output, '/math')
 	assert('Math KaTeX 渲染', math.includes('katex'))
 
 	// Mermaid
-	const mermaid = read(output, 'mermaid/index.html')
+	const mermaid = readGeneratedPage(output, '/mermaid')
 	const mermaidPayload = read(output, 'mermaid/_payload.json')
 	assert('Mermaid 组件挂载', mermaid.includes('mermaid-diagram'))
 	assert('Mermaid 图源码传递', mermaidPayload.includes('graph TD'))
 
 	// Image
-	const image = read(output, 'image/index.html')
+	const image = readGeneratedPage(output, '/image')
 	assert('Markdown 图片渲染', image.includes('https://placehold.co/600x300/41b883/ffffff/png'))
 	assert('Pic 组件渲染', image.includes('Pic 图注'))
 	assert('Pic zoom 交互', image.includes('zoom-in'))
 
 	// permalink
-	assert('permalink 自定义路由生成', existsSync(join(output, 'custom', 'permalink', 'index.html')))
-	assert('permalink 原文件路由未生成', !existsSync(join(output, 'permalink', 'index.html')))
+	assert('permalink 自定义路由生成', generatedPageExists(output, customPermalink))
+	assert('permalink 原文件路由未生成', !generatedPageExists(output, '/permalink'))
 
 	// Atom
 	const atom = read(output, 'atom.xml')
@@ -808,6 +808,29 @@ function assertGenerateOutput(consumerDir) {
 
 	function read(base, path) {
 		return readFileSync(join(base, path), 'utf8')
+	}
+
+	/**
+	 * Nitro 的 autoSubfolderIndex 在 GitHub Actions / Cloudflare / Netlify 会关闭，
+	 * 此时 `/first` 生成 `first.html`；本地默认则生成 `first/index.html`。
+	 * Consumer 断言必须同时接受两种官方输出形态。
+	 */
+	function generatedPageExists(base, route) {
+		const normalizedRoute = route.replace(/^\//, '')
+		return existsSync(join(base, normalizedRoute, 'index.html'))
+			|| existsSync(join(base, `${normalizedRoute}.html`))
+	}
+
+	function readGeneratedPage(base, route) {
+		const normalizedRoute = route.replace(/^\//, '')
+		const candidates = [
+			join(base, normalizedRoute, 'index.html'),
+			join(base, `${normalizedRoute}.html`),
+		]
+		const file = candidates.find(path => existsSync(path))
+		if (!file)
+			throw new Error(`未找到页面产物：${candidates.join(' 或 ')}`)
+		return readFileSync(file, 'utf8')
 	}
 }
 
