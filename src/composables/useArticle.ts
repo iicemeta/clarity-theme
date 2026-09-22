@@ -1,5 +1,5 @@
-import type { MetaSlotsTree } from '../../remark-plugins/rehype-meta-slots'
-import type { ClarityContentRow } from '../../shared/types/content'
+import type { MetaSlotsTree } from '../remark-plugins/rehype-meta-slots'
+import type { ClarityContentRow } from '../shared/types/content'
 import type { ArticleOrderType, ArticleProps } from '../types/article'
 import { orderBy } from 'es-toolkit/array'
 

@@ -1,6 +1,6 @@
-import type { ClarityAppConfig } from '../../config/app'
-import type { ArticleSchema } from '../../config/content'
-import type { MetaSlotsTree } from '../../remark-plugins/rehype-meta-slots'
+import type { ClarityAppConfig } from '../config/app'
+import type { ArticleSchema } from '../config/content'
+import type { MetaSlotsTree } from '../remark-plugins/rehype-meta-slots'
 
 export type ArticleOrderType = keyof ClarityAppConfig['article']['order']
 

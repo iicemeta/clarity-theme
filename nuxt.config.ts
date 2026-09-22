@@ -12,13 +12,13 @@ const toThemePath = (path: string) => join(themeDir, path).replaceAll('\\', '/')
 function pluginPath(path: string) {
 	// 插件必须是 .mjs：@nuxt/content 以 Node 原生方式加载，
 	// 不允许 node_modules 内的 TS 文件（TS 剥离限制）
-	return pathToFileURL(join(themeDir, 'remark-plugins', `${path}.mjs`)).href
+	return pathToFileURL(join(themeDir, 'src', 'remark-plugins', `${path}.mjs`)).href
 }
 
 /**
  * Clarity Theme Layer 配置
  *
- * 站点数据（SEO、favicon、scripts 等）由 modules/clarity-config
+ * 站点数据（SEO、favicon、scripts 等）由 src/modules/clarity-config
  * 读取消费项目的 clarity.config.ts 后统一注入，此处仅包含 Theme 自身能力。
  */
 export default defineNuxtConfig({
@@ -50,18 +50,18 @@ export default defineNuxtConfig({
 	compatibilityDate: '2024-08-03',
 
 	components: [
-		{ path: toThemePath('app/components/partial'), prefix: 'Z' },
-		toThemePath('app/components'),
+		{ path: toThemePath('src/components/partial'), prefix: 'Z' },
+		toThemePath('src/components'),
 	],
 
 	// @keep-sorted
 	css: [
-		toThemePath('app/assets/css/animation.scss'),
-		toThemePath('app/assets/css/article.scss'),
-		toThemePath('app/assets/css/color.scss'),
-		toThemePath('app/assets/css/font.scss'),
-		toThemePath('app/assets/css/main.scss'),
-		toThemePath('app/assets/css/reusable.scss'),
+		toThemePath('src/assets/css/animation.scss'),
+		toThemePath('src/assets/css/article.scss'),
+		toThemePath('src/assets/css/color.scss'),
+		toThemePath('src/assets/css/font.scss'),
+		toThemePath('src/assets/css/main.scss'),
+		toThemePath('src/assets/css/reusable.scss'),
 	],
 
 	// @keep-sorted
@@ -72,6 +72,9 @@ export default defineNuxtConfig({
 
 	// @keep-sorted
 	modules: [
+		// 必须最先运行：把 src/ 仅应用到 Clarity 自身 layer，避免静态
+		// srcDir / serverDir / dir.* 经 c12 合并泄漏到 consumer root 配置。
+		toThemePath('src/modules/clarity-source-layout'),
 		'@bikariya/image-viewer',
 		'@bikariya/modals',
 		'@bikariya/shiki',
@@ -84,7 +87,7 @@ export default defineNuxtConfig({
 		'@vueuse/nuxt',
 		// Layer 配置中的相对 module 路径会以消费项目为基准解析，必须使用绝对路径；
 		// 且 clarity-config 必须先于 nuxt-llms 运行：后者在 setup 时读取注入的 llms 站点配置
-		toThemePath('modules/clarity-config'),
+		toThemePath('src/modules/clarity-config'),
 		'nuxt-llms',
 	],
 
@@ -112,8 +115,8 @@ export default defineNuxtConfig({
 		nodeTsConfig: {
 			// @keep-sorted
 			include: [
-				'../config/**/*.ts',
-				'../remark-plugins/**/*.ts',
+				'../src/config/**/*.ts',
+				'../src/remark-plugins/**/*.ts',
 			],
 		},
 	},
@@ -122,7 +125,7 @@ export default defineNuxtConfig({
 		css: {
 			preprocessorOptions: {
 				scss: {
-					additionalData: `@use "${toThemePath('app/assets/css/_variable.scss')}" as *;`,
+					additionalData: `@use "${toThemePath('src/assets/css/_variable.scss')}" as *;`,
 				},
 			},
 		},
@@ -189,7 +192,7 @@ ${homepage}
 
 	icon: {
 		customCollections: [
-			{ prefix: 'clarity', dir: toThemePath('app/assets/icons') },
+			{ prefix: 'clarity', dir: toThemePath('src/assets/icons') },
 		],
 		clientBundle: {
 			scan: {

@@ -9,14 +9,15 @@ This document describes the current implementation. It is subordinate to source 
 ```text
 clarity-theme (Nuxt Layer package)
 ├── nuxt.config.ts         Layer capabilities and module integration
-├── modules/clarity-config Consumer config discovery/injection
-├── app/                   UI, pages, components, stores, composables
-├── config/                Public config/content/schema API
-├── img/                   Pure image helper export
-├── remark-plugins/        Content pipeline plugins
-├── server/                Atom/OPML/stats routes
-├── shared/                Shared types and utilities
-└── public/                Generic feed style and font assets
+└── src/                   Theme runtime source (Layer srcDir)
+    ├── modules/           clarity-config consumer config discovery/injection
+    ├── assets/ components/ composables/ layouts/ pages/ plugins/ stores/ types/ utils/
+    ├── config/            Public config/content/schema API
+    ├── img/               Pure image helper export
+    ├── remark-plugins/    Content pipeline plugins
+    ├── server/            Atom/OPML/stats routes
+    ├── shared/            Shared types and utilities
+    └── public/            Generic feed style and font assets
 
 consumer blog
 ├── nuxt.config.ts         extends clarity-theme; deployment/site rules
@@ -33,14 +34,15 @@ The Theme supplies generic behavior. The consumer supplies all site-specific dat
 
 | Directory | Responsibility | In package? | Environment | Upstream sync relationship |
 | --- | --- | --- | --- | --- |
-| `app/` | UI, pages, layouts, components, composables, stores, plugins, styles, types, utilities | Yes | Theme runtime | Most listed subpaths are `include`; several files are adapted and `app/types/**`, `app/stores/**`, and `app/utils/**` are not explicitly classified |
-| `config/` | Public config/content/schema API and TS/MJS dual tracks | Yes | Build/Consumer API | Theme-derived contract layer; root transform files informed this replacement |
-| `img/` | Public pure image helper export | Yes | Consumer API | Theme-owned package export wrapping `app/utils/img.ts` types |
-| `modules/` | `clarity-config` build bridge and anti-mirror client | Yes | Nuxt build | `modules/**` is `include`, but the upstream anti-mirror module was replaced by the Theme config module |
-| `remark-plugins/` | Markdown AST transforms | Yes | Content build | Upstream-derived `.ts` plus Theme `.mjs`/`.d.mts` runtime tracks under `include` |
-| `server/` | Atom, OPML, and stats Nitro handlers | Yes | SSR/static generation | Upstream-derived and adapted; `server/**` is `include` |
-| `shared/` | Content row types and cross-boundary utilities | Yes | Theme runtime/server | Upstream-derived plus Theme additions; `shared/**` is `include` |
-| `public/` | Generic Atom XSL/CSS and bundled font | Yes | Static assets | `public/assets/**` and `public/fonts/**` are `include` |
+| `src/assets/` … `src/utils/` | UI, pages, layouts, components, composables, stores, plugins, styles, types, utilities | Yes | Theme runtime | Upstream `app/**` maps here via the sync `pathMap`; several files are adapted and `app/types/**`, `app/stores/**`, and `app/utils/**` are not explicitly classified |
+| `src/config/` | Public config/content/schema API and TS/MJS dual tracks | Yes | Build/Consumer API | Theme-derived contract layer; root transform files informed this replacement |
+| `src/img/` | Public pure image helper export | Yes | Consumer API | Theme-owned package export wrapping `src/utils/img.ts` types |
+| `src/modules/` | `clarity-config` build bridge and anti-mirror client | Yes | Nuxt build | Upstream `modules/**` is `include`, but the upstream anti-mirror module was replaced by the Theme config module |
+| `src/remark-plugins/` | Markdown AST transforms | Yes | Content build | Upstream-derived `.ts` plus Theme `.mjs`/`.d.mts` runtime tracks under `include` |
+| `src/server/` | Atom, OPML, and stats Nitro handlers | Yes | SSR/static generation | Upstream-derived and adapted; `server/**` is `include` |
+| `src/shared/` | Content row types and cross-boundary utilities | Yes | Theme runtime/server | Upstream-derived plus Theme additions; `shared/**` is `include` |
+| `src/public/` | Generic Atom XSL/CSS and bundled font | Yes | Static assets | `public/assets/**` and `public/fonts/**` are `include` |
+| `skills/` | Agent workflow skill (`migrate-blog-v3-to-clarity`) | No | Agent workflow | Theme-owned; excluded from package |
 | `playground/` | Minimal workspace consumer and compatibility fixtures | No | Development | Theme-owned; excluded from package |
 | `scripts/` | Verification, consumer/compatibility harnesses, sync tool | No | Development/test | Theme-owned; upstream `scripts/**` is excluded |
 | `tests/` | Sync regression suite | No | Test | Theme-owned; not explicitly classified for future upstream paths |
@@ -54,22 +56,27 @@ Root package/Layer metadata, workspace configuration, quality configs, CI, licen
 
 `clarity-theme` resolves to `nuxt.config.ts`. That config:
 
-- Registers Content, SEO, image, icon, color mode, Pinia, VueUse, Bikariya, LLMs, and the local clarity-config module.
+- Registers Content, SEO, image, icon, color mode, Pinia, VueUse, Bikariya, LLMs, and the local source-layout/clarity-config modules.
 - Uses package-absolute paths for Layer CSS, component directories, icons, modules, and SCSS variables.
 - Configures Markdown remark/rehype plugins through `file://` URLs to their `.mjs` runtime implementations.
 - Sets runtime build metadata, prerender platform behavior, Vite optimization, image densities/formats, link checker behavior, and disabled OG image generation.
 
 ### Build-time module
 
-`modules/clarity-config` runs before `nuxt-llms`. It discovers and validates consumer files, injects aliases and appConfig, derives SEO/head/route rules, and registers Theme Pinia stores and the Shiki fallback.
+`src/modules/clarity-source-layout` runs first. It applies `src/`,
+`src/modules/`, `src/public/`, `src/server/`, `src/shared/`, and the derived
+application directories to the Clarity layer metadata without leaking those
+values through c12 into the consumer root config.
+
+`src/modules/clarity-config` runs before `nuxt-llms`. It discovers and validates consumer files, injects aliases and appConfig, derives SEO/head/route rules, and registers Theme Pinia stores and the Shiki fallback.
 
 ### Runtime application
 
-`app/` contains the layout, pages, global/content/partial/post/widget/popover components, composables, stores, plugins, styles, and types. Nuxt auto-imports apply within the extended application.
+`src/` (the Layer `srcDir`) contains the layout, pages, global/content/partial/post/widget/popover components, composables, stores, plugins, styles, and types. Nuxt auto-imports apply within the extended application.
 
 ### Server
 
-`server/` contains three Nitro routes:
+`src/server/` contains three Nitro routes:
 
 - `GET /atom.xml`
 - `GET /subscriptions.opml`
@@ -85,7 +92,7 @@ They query the Content collection and read site/feed/stats configuration plus fe
 
 1. Consumer calls `defineClarityConfig()` in `clarity.config.ts`.
 2. The Zod schema fills defaults and rejects unknown/invalid fields immediately.
-3. `modules/clarity-config` discovers `clarity.config.ts` / `.mjs` / `.js`, loads it with jiti, and parses it a second time before depending on it.
+3. `src/modules/clarity-config` discovers `clarity.config.ts` / `.mjs` / `.js`, loads it with jiti, and parses it a second time before depending on it.
 4. The module maps parsed data:
    - `toPublicClarityConfig()` (client subset) plus derived header/footer defaults enter appConfig.
    - `toServerClarityConfig()` enters Nitro private runtime config for server handlers and feature route guards.
@@ -102,7 +109,7 @@ Configuration is strict. `integrations.scripts` is omitted from appConfig and co
 
 ## 5. App Config Flow
 
-The Theme's `app/app.config.ts` supplies only UI defaults under `clarity`:
+The Theme's `src/app.config.ts` supplies only UI defaults under `clarity`:
 
 - `component`
 - `footer`
@@ -147,7 +154,7 @@ Markdown processing is configured by the Layer:
 
 ### Atom
 
-`server/routes/atom.xml.get.ts` queries Content rows under `posts/%`, orders by updated date, limits according to `feed.limit`, builds absolute URLs from `site.url`, and emits Atom XML. `feed.enableStyle` controls the XSLT declaration.
+`src/server/routes/atom.xml.get.ts` queries Content rows under `posts/%`, orders by updated date, limits according to `feed.limit`, builds absolute URLs from `site.url`, and emits Atom XML. `feed.enableStyle` controls the XSLT declaration.
 
 ### Friend data
 
@@ -155,7 +162,7 @@ The module aliases `#clarity/feeds` to the consumer's `feeds.ts` / `.mjs` / `.js
 
 ### OPML
 
-`server/routes/subscriptions.opml.get.ts` combines the site's own feed entry with flattened friend entries that have a feed URL and emits OPML 2.0.
+`src/server/routes/subscriptions.opml.get.ts` combines the site's own feed entry with flattened friend entries that have a feed URL and emits OPML 2.0.
 
 ## 8. Server Route / Client Boundary
 
@@ -173,7 +180,7 @@ Server handlers no longer read feed/stats configuration through appConfig, so th
 | --- | --- | --- |
 | `#clarity/feeds` | Consumer feeds module or Theme empty fallback | Supported injection contract for Layer/server code |
 | `#clarity/config` | Consumer clarity config module path | Internal build alias / potential server-safe config source; not a stable standalone public export |
-| `~/shiki.config` | Consumer file when present; otherwise Theme `app/shiki.config.ts` | Supported fallback mechanism |
+| `~/shiki.config` | Consumer file when present; otherwise Theme `src/shiki.config.ts` | Supported fallback mechanism |
 
 The aliases prevent Theme code from assuming consumer directory layout.
 
@@ -189,10 +196,10 @@ The current duplicate path intentionally emits Nuxt warning `NUXT_B3011`; it is 
 
 This means several contracts intentionally have paired implementations:
 
-- `config/schema.ts` and `config/schema.mjs`
-- `config/define.ts` and `config/define.mjs`
-- `config/content.ts` and `config/content.mjs`
-- `img/index.ts` and `img/index.mjs`
+- `src/config/schema.ts` and `src/config/schema.mjs`
+- `src/config/define.ts` and `src/config/define.mjs`
+- `src/config/content.ts` and `src/config/content.mjs`
+- `src/img/index.ts` and `src/img/index.mjs`
 - each remark plugin's `.ts` type source and `.mjs` runtime
 
 They must remain behaviorally synchronized.

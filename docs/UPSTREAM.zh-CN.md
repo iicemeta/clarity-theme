@@ -27,6 +27,24 @@
 exclude > transform > manual > include > unknown
 ```
 
+### `pathMap`
+
+manifest 中所有 glob 与 `upstream` 块描述的都是**上游**（blog-v3）目录树。
+可选的 `pathMap` 对象在引擎读写 Theme 文件时，把上游目录前缀映射到
+**本地**目标位置。自 `src/` 源码目录迁移后，Theme 布局与上游不再一致：
+
+| 上游前缀 | 本地前缀 |
+| --- | --- |
+| `app/` | `src/` |
+| `modules/` | `src/modules/` |
+| `public/` | `src/public/` |
+| `remark-plugins/` | `src/remark-plugins/` |
+| `server/` | `src/server/` |
+| `shared/` | `src/shared/` |
+
+映射只作用于本地文件系统边界；分类、基线比对、冲突检测与回滚语义仍以
+上游路径为准。未声明 `pathMap` 的 manifest 保持恒等映射。
+
 ### `include`
 
 当主题副本仍与记录的基线一致时，被认为可以直接同步的路径：

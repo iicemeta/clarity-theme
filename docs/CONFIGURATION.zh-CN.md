@@ -2,8 +2,8 @@
 
 [English](./CONFIGURATION.md) | **简体中文**
 
-> 事实来源：`config/schema.ts` / `config/schema.mjs`、`modules/clarity-config/index.ts`、
-> `config/app.ts` 及其测试。当前项目状态汇总见
+> 事实来源：`src/config/schema.ts` / `src/config/schema.mjs`、`src/modules/clarity-config/index.ts`、
+> `src/config/app.ts` 及其测试。当前项目状态汇总见
 > [PROJECT-STATUS](./PROJECT-STATUS.zh-CN.md)；API 边界见 [API](./API.zh-CN.md)。
 
 本文是 Theme 对 Consumer 暴露的全部配置面。字段标记含义：

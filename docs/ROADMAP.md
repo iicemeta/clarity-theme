@@ -21,7 +21,7 @@ All four P0 correctness blockers are resolved and covered by tests, multi-patter
 - Tarball consumer acceptance, production SSR, real-browser rendering, dev hydration, contract, peer, purity, and upstream-sync tests.
 - Ordered CI pipeline plus weekly read-only upstream drift reporting.
 - Current architecture/API/upstream/patch/status documentation.
-- **P0-1 resolved:** server-consumed configuration (`feed.*`, full `stats.*`, feature route flags, `site.author.email`) moved to Nitro private runtimeConfig read through the internal `useClarityServerConfig()`; client appConfig now carries only the rendering-required subset (`config/public.ts`, `config/server.ts`, `server/utils/clarity.ts`).
+- **P0-1 resolved:** server-consumed configuration (`feed.*`, full `stats.*`, feature route flags, `site.author.email`) moved to Nitro private runtimeConfig read through the internal `useClarityServerConfig()`; client appConfig now carries only the rendering-required subset (`src/config/public.ts`, `src/config/server.ts`, `src/server/utils/clarity.ts`).
 - **P0-2 resolved:** disabled `features.atom` / `opml` / `stats` routes return 404 in dev/SSR runtime in addition to being absent from static output (server guards + `nuxt build` runtime assertions in `test:consumer`).
 - **P0-3 resolved:** anti-mirror navigation now derives the canonical host from `site.url` instead of assigning the full URL to `location.host`; a real-browser case navigates from a mirror-like hostname (`127.0.0.1` → `localhost`) in `test:compatibility`.
 - **P0-4 resolved:** the no-op `article.useRandomPermalink` field was removed from the schema, docs, migration mapping, and tests before the first semantic release.
@@ -87,7 +87,7 @@ Medium risk because Nitro bundling, appConfig typing, static generation, and pub
 - Turn the app-config boundary warning into a deterministic build/type boundary where Nuxt permits it.
 - Add payload and type assertions for the new split.
 
-Implementation notes: `modules/clarity-config`, `config/public.ts`, `config/app.ts`, `server/**`, `shared/utils/clarity.ts`, and the consumer/compatibility harnesses.
+Implementation notes: `src/modules/clarity-config`, `src/config/public.ts`, `src/config/app.ts`, `src/server/**`, `src/shared/utils/clarity.ts`, and the consumer/compatibility harnesses.
 
 ### P0-2. Give feature-off routes one runtime semantic
 
@@ -117,7 +117,7 @@ Low to medium risk; low cost. The main risk is accidentally disabling a route th
 
 A disabled feature must mean the route is absent in static output **and** returns 404 in dev/SSR. Implement this as a v0.1 bugfix before the first npm release; the configuration API does not change. Milestone 1.
 
-Implementation notes: feature state must be available to the server-only configuration source from P0-1; `server/**`; feature-off consumer and SSR cases.
+Implementation notes: feature state must be available to the server-only configuration source from P0-1; `src/server/**`; feature-off consumer and SSR cases.
 
 ### P0-3. Verify and correct anti-mirror navigation
 
@@ -308,7 +308,7 @@ Low risk if implemented as a contract check; medium cost to define meaningful pa
 
 Add a deterministic parity check for paired export names, schema defaults/strictness, and representative helper outputs before considering generation. Milestone 2.
 
-Implementation notes: verification/contract harness and paired files under `config/`, `img/`, and `remark-plugins/`.
+Implementation notes: verification/contract harness and paired files under `src/config/`, `src/img/`, and `src/remark-plugins/`.
 
 ### P1-5. Reduce the `plain-shiki` consumer patch
 

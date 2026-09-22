@@ -23,10 +23,10 @@ Components' private props, ordinary composables, utilities, module internals, ge
 | Import | Conditions | Runtime/type target | Public exports |
 | --- | --- | --- | --- |
 | `clarity-theme` | default | `./nuxt.config.ts` | Nuxt Layer root configuration |
-| `clarity-theme/config` | types / default | `config/index.d.mts` / `config/index.mjs` | `defineClarityConfig`, all Zod schemas listed below, and configuration types |
-| `clarity-theme/content` | types / default | `config/content.d.mts` / `config/content.mjs` | `createClarityContentConfig`, `ArticleSchema` type |
-| `clarity-theme/img` | types / default | `img/index.d.mts` / `img/index.mjs` | Image/avatar/favicon helpers and enums/constants |
-| `clarity-theme/schema` | types / default | `config/schema.d.mts` / `config/schema.mjs` | All `clarity*` Zod schemas and schema-derived types |
+| `clarity-theme/config` | types / default | `src/config/index.d.mts` / `src/config/index.mjs` | `defineClarityConfig`, all Zod schemas listed below, and configuration types |
+| `clarity-theme/content` | types / default | `src/config/content.d.mts` / `src/config/content.mjs` | `createClarityContentConfig`, `ArticleSchema` type |
+| `clarity-theme/img` | types / default | `src/img/index.d.mts` / `src/img/index.mjs` | Image/avatar/favicon helpers and enums/constants |
+| `clarity-theme/schema` | types / default | `src/config/schema.d.mts` / `src/config/schema.mjs` | All `clarity*` Zod schemas and schema-derived types |
 
 The root export is a Nuxt Layer entry, not a general JavaScript utility module.
 
@@ -200,11 +200,11 @@ export default defineNuxtConfig({
 
 The following are intentionally not public ESM APIs:
 
-- `modules/clarity-config` internals, including `toPublicClarityConfig`
-- ordinary `app/composables/*` other than the clarity accessors above
-- `app/stores/*`, internal utility functions, and generated type templates
+- `src/modules/clarity-config` internals, including `toPublicClarityConfig`
+- ordinary `src/composables/*` other than the clarity accessors above
+- `src/stores/*`, internal utility functions, and generated type templates
 - individual component props/styles unless covered by a documented rendering contract
 - remark plugin instances; Nuxt Layer configuration loads them internally
-- `shared/utils/*` helpers except where re-exported by a package entry or consumed through a documented feature
+- `src/shared/utils/*` helpers except where re-exported by a package entry or consumed through a documented feature
 
 The package includes these source files for Nuxt Layer compilation; inclusion in the tarball does not make every symbol public API.

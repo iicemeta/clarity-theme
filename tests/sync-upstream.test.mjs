@@ -240,6 +240,154 @@ it('failed post-apply verify rolls back all files and the manifest', () => {
 	assert.equal(gitStatus(fixture.theme), '')
 })
 
+/** 与真实 sync-manifest.json 保持一致的 src/ 源码布局映射 */
+const srcLayoutPathMap = {
+	'app/': 'src/',
+	'modules/': 'src/modules/',
+	'public/': 'src/public/',
+	'remark-plugins/': 'src/remark-plugins/',
+	'server/': 'src/server/',
+	'shared/': 'src/shared/',
+}
+
+const mappedInitialFiles = {
+	'app/assets/logo.svg': 'logo-old\n',
+	'app/components/Clean.vue': 'clean-old\n',
+	'modules/site.ts': 'module-old\n',
+	'public/assets/atom.css': 'atom-old\n',
+	'remark-plugins/remark-test.mjs': 'plugin-old\n',
+	'server/api/hello.get.ts': 'hello-old\n',
+	'shared/utils/link.ts': 'link-old\n',
+	'unmapped/keep.txt': 'keep-old\n',
+}
+
+const mappedInclude = [
+	'app/**',
+	'modules/**',
+	'public/**',
+	'remark-plugins/**',
+	'server/**',
+	'shared/**',
+	'unmapped/**',
+]
+
+it('pathMap applies every synced upstream prefix into the src/ layout', () => {
+	const updates = {
+		'app/assets/logo.svg': 'logo-new\n',
+		'app/components/Clean.vue': 'clean-new\n',
+		'modules/site.ts': 'module-new\n',
+		'public/assets/atom.css': 'atom-new\n',
+		'remark-plugins/remark-test.mjs': 'plugin-new\n',
+		'server/api/hello.get.ts': 'hello-new\n',
+		'shared/utils/link.ts': 'link-new\n',
+	}
+	const fixture = createFixture({
+		files: mappedInitialFiles,
+		manifestPatch: {
+			include: mappedInclude,
+			pathMap: srcLayoutPathMap,
+		},
+		updateUpstream(upstream) {
+			for (const [path, value] of Object.entries(updates)) {
+				writeFileSync(join(upstream, path), value)
+			}
+			commit(upstream, 'update all mapped prefixes')
+		},
+	})
+	const result = runApply(fixture)
+
+	assert.equal(result.status, 0)
+	assert.equal(read(fixture, 'src/assets/logo.svg'), 'logo-new\n')
+	assert.equal(read(fixture, 'src/components/Clean.vue'), 'clean-new\n')
+	assert.equal(read(fixture, 'src/modules/site.ts'), 'module-new\n')
+	assert.equal(read(fixture, 'src/public/assets/atom.css'), 'atom-new\n')
+	assert.equal(read(fixture, 'src/remark-plugins/remark-test.mjs'), 'plugin-new\n')
+	assert.equal(read(fixture, 'src/server/api/hello.get.ts'), 'hello-new\n')
+	assert.equal(read(fixture, 'src/shared/utils/link.ts'), 'link-new\n')
+	assert.match(result.stdout, /\+ src\/components\/Clean\.vue/)
+	assert.doesNotMatch(result.stdout, /\+ app\/components\/Clean\.vue/)
+	assert.equal(manifest(fixture).upstream.commit, fixture.head)
+})
+
+it('pathMap maps upstream deletions to their src/ destination', () => {
+	const fixture = createFixture({
+		files: mappedInitialFiles,
+		manifestPatch: {
+			include: mappedInclude,
+			pathMap: srcLayoutPathMap,
+		},
+		updateUpstream(upstream) {
+			rmSync(join(upstream, 'app/components/Clean.vue'))
+			commit(upstream, 'delete mapped file')
+		},
+	})
+	const result = runApply(fixture)
+
+	assert.equal(result.status, 0)
+	assert.equal(exists(join(fixture.theme, 'src/components/Clean.vue')), false)
+	assert.equal(read(fixture, 'src/assets/logo.svg'), 'logo-old\n')
+	assert.equal(manifest(fixture).upstream.commit, fixture.head)
+})
+
+it('pathMap conflicts compare the mapped local file against the upstream baseline', () => {
+	const fixture = createFixture({
+		files: mappedInitialFiles,
+		manifestPatch: {
+			include: mappedInclude,
+			pathMap: srcLayoutPathMap,
+		},
+		updateTheme(theme) {
+			writeFileSync(join(theme, 'src/components/Clean.vue'), 'theme-adapted\n')
+		},
+		updateUpstream(upstream) {
+			writeFileSync(join(upstream, 'app/components/Clean.vue'), 'clean-new\n')
+			writeFileSync(join(upstream, 'app/assets/logo.svg'), 'logo-new\n')
+			commit(upstream, 'update mapped files')
+		},
+	})
+	const result = runApply(fixture)
+
+	assert.equal(result.status, 1)
+	assert.match(result.stderr, /存在冲突/)
+	assert.equal(read(fixture, 'src/components/Clean.vue'), 'theme-adapted\n')
+	assert.equal(read(fixture, 'src/assets/logo.svg'), 'logo-old\n')
+	assert.equal(manifest(fixture).upstream.commit, fixture.baseline)
+})
+
+it('paths outside pathMap keep identity mapping', () => {
+	const fixture = createFixture({
+		files: mappedInitialFiles,
+		manifestPatch: {
+			include: mappedInclude,
+			pathMap: srcLayoutPathMap,
+		},
+		updateUpstream(upstream) {
+			writeFileSync(join(upstream, 'unmapped/keep.txt'), 'keep-new\n')
+			commit(upstream, 'update unmapped file')
+		},
+	})
+	const result = runApply(fixture)
+
+	assert.equal(result.status, 0)
+	assert.equal(read(fixture, 'unmapped/keep.txt'), 'keep-new\n')
+	assert.equal(manifest(fixture).upstream.commit, fixture.head)
+})
+
+it('invalid pathMap prefixes are rejected before any sync mode runs', () => {
+	const fixture = createFixture({
+		files: mappedInitialFiles,
+		manifestPatch: {
+			include: mappedInclude,
+			pathMap: { app: 'src/' },
+		},
+	})
+	const result = runApply(fixture)
+
+	assert.notEqual(result.status, 0)
+	assert.match(result.stderr, /pathMap .*必须是安全的相对目录前缀（以 \/ 结尾）/)
+	assert.equal(manifest(fixture).upstream.commit, fixture.baseline)
+})
+
 function createFixture(options = {}) {
 	const root = mkdtempSync(join(tmpdir(), 'clarity-sync-test-'))
 	const upstream = join(root, 'upstream')
@@ -259,12 +407,12 @@ function createFixture(options = {}) {
 	}
 
 	initGit(upstream)
-	writeInitialFiles(upstream)
+	writeInitialFiles(upstream, options.files ?? initialFiles)
 	commit(upstream, 'baseline')
 	manifest.upstream.commit = git(['rev-parse', 'HEAD'], upstream).trim()
 
 	initGit(theme)
-	writeInitialFiles(theme)
+	writeInitialFiles(theme, options.files ?? initialFiles, manifest.pathMap ?? {})
 	options.updateTheme?.(theme)
 	mkdirSync(join(theme, 'scripts'), { recursive: true })
 	writeFileSync(join(theme, 'scripts', 'verify-theme.mjs'), options.verifyFails
@@ -286,11 +434,21 @@ function createFixture(options = {}) {
 	}
 }
 
-function writeInitialFiles(directory) {
-	for (const [path, value] of Object.entries(initialFiles)) {
-		mkdirSync(join(directory, ...path.split('/').slice(0, -1)), { recursive: true })
-		writeFileSync(join(directory, path), value)
+function writeInitialFiles(directory, files, pathMap = {}) {
+	for (const [path, value] of Object.entries(files)) {
+		const mappedPath = mapPath(path, pathMap)
+		mkdirSync(join(directory, ...mappedPath.split('/').slice(0, -1)), { recursive: true })
+		writeFileSync(join(directory, mappedPath), value)
 	}
+}
+
+function mapPath(path, pathMap) {
+	for (const [from, to] of Object.entries(pathMap)) {
+		if (path.startsWith(from)) {
+			return `${to}${path.slice(from.length)}`
+		}
+	}
+	return path
 }
 
 function initGit(directory) {

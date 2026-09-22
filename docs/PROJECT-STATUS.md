@@ -47,10 +47,10 @@ The differential consumer outside this Git repository is a historical/manual env
 | Vue peer | `^3.5.42` |
 | Nuxt installed in development workspace | 4.5.2 |
 | Vue installed in development workspace | 3.5.43 |
-| Published package payload | `app/`, `config/`, `img/`, `modules/`, `public/`, `remark-plugins/`, `server/`, `shared/`, root Layer/config metadata, license, and README |
-| Excluded from package payload | `docs/`, `playground/`, `scripts/`, `tests/`, `.github/`, workspace and lock files, sync manifest |
+| Published package payload | `src/` (all Theme runtime source), root Layer/config metadata, license, and README |
+| Excluded from package payload | `docs/`, `playground/`, `scripts/`, `tests/`, `skills/`, `.github/`, workspace and lock files, sync manifest |
 
-The current `pnpm pack` audit reports 151 files, including 30 release-required files (the previous 28 plus `config/server.ts` and `server/utils/clarity.ts`) and the Chinese README (`README.zh-CN.md`). The package exposes five export entries, declares `publishConfig.access=public`, and has no patch directory. `CHANGELOG.md`, `scripts/release-check.mjs`, `scripts/test-registry-consumer.mjs`, and `.github/workflows/publish.yml` complete the publication pipeline.
+The `pnpm pack` audit reports 151 files (unchanged by the `src/` layout migration), including 30 release-required files (the previous 28 plus `src/config/server.ts` and `src/server/utils/clarity.ts`) and the Chinese README (`README.zh-CN.md`). The package exposes five export entries, declares `publishConfig.access=public`, and has no patch directory. `CHANGELOG.md`, `scripts/release-check.mjs`, `scripts/test-registry-consumer.mjs`, and `.github/workflows/publish.yml` complete the publication pipeline.
 
 ## 3. Upstream Baseline
 
@@ -100,7 +100,7 @@ The package is a single Nuxt Layer entry backed by a build-time configuration mo
 ```text
 consumer clarity.config.ts
   -> defineClarityConfig() validation/defaults
-  -> modules/clarity-config build-time load and second validation
+  -> src/modules/clarity-config build-time load and second validation
   -> appConfig / SEO / head / route rules / aliases
   -> Layer pages, components, server routes, and Content pipeline
 

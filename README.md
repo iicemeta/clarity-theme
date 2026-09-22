@@ -245,6 +245,57 @@ All documents are also available in 简体中文 as sibling `*.zh-CN.md` files.
 | [Changelog](./CHANGELOG.md) | Consumer-facing release history |
 | [Extraction history](./docs/history/2026-09-layer-extraction.md) | Historical phases and one-time differential validation |
 
+## Repository Layout
+
+The repository root is the engineering layer; all Theme runtime source lives
+under `src/`:
+
+```
+clarity-theme/
+├─ src/                  # Theme runtime source (Layer srcDir)
+│  ├─ assets/ components/ composables/ layouts/ middleware/
+│  ├─ pages/ plugins/ stores/ types/ utils/
+│  ├─ app.config.ts app.vue error.vue shiki.config.ts
+│  ├─ config/            # config API sources (npm ./config ./content ./schema)
+│  ├─ img/               # img API sources (npm ./img)
+│  ├─ modules/           # source-layout bootstrap + clarity-config modules
+│  ├─ public/ server/ shared/ remark-plugins/
+├─ skills/               # Agent workflow skills (not part of the npm package)
+├─ docs/                 # Human documentation
+├─ playground/           # Workspace-linked development consumer
+├─ scripts/  tests/      # Verification and tooling
+└─ nuxt.config.ts, package.json, sync-manifest.json, …
+```
+
+`nuxt.config.ts` stays at the package root. Its first module,
+`src/modules/clarity-source-layout`, applies the `src/` directory metadata to
+the Clarity layer only; static `srcDir`/`serverDir`/`dir.*` values are not
+used because c12 would merge them into consumer root config. npm, Git-commit,
+and local-directory installs therefore resolve the same layout without
+overriding a consumer's own application directories.
+
+The npm package, the Agent skill, and the docs are three separate concerns:
+
+- **`clarity-theme` (npm package)** — the runtime Nuxt Layer installed with
+  `extends: ['clarity-theme']`. Its `files` field ships only `src/` plus the
+  root entry files; dev assets never enter the tarball.
+- **`skills/migrate-blog-v3-to-clarity`** — the canonical Agent workflow for
+  migrating an existing blog-v3 project. It is versioned with the repository
+  but intentionally **not** bundled into the npm package.
+- **`docs/`** — human-readable documentation mirrored in English and Chinese.
+
+### Installing the migration skill
+
+```bash
+npx skills add iicemeta/clarity-theme --list   # discover available skills
+npx skills add iicemeta/clarity-theme --skill migrate-blog-v3-to-clarity
+```
+
+For development, `npx skills add ./skills --list` discovers the local copy.
+To migrate a blog-v3 site with an Agent, ask it to use the
+`migrate-blog-v3-to-clarity` skill; the human walkthrough remains
+[Migration](./docs/MIGRATION.md).
+
 ## Development
 
 ```bash
@@ -260,6 +311,7 @@ pnpm test:migration
 pnpm test:contract
 pnpm test:consumer
 pnpm test:compatibility
+pnpm pack --dry-run       # inspect the npm tarball without writing it
 ```
 
 CI derives Node and pnpm versions from package metadata. It runs lint/typecheck/verify/sync/migration/contract/peers on the fixed Node matrix, then playground generate, real consumer acceptance, and rendering compatibility on the primary Node version. A separate weekly workflow only detects and reports upstream drift.

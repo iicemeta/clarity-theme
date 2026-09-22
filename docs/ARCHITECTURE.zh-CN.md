@@ -9,14 +9,15 @@
 ```text
 clarity-theme (Nuxt Layer package)
 ├── nuxt.config.ts         Layer capabilities and module integration
-├── modules/clarity-config Consumer config discovery/injection
-├── app/                   UI, pages, components, stores, composables
-├── config/                Public config/content/schema API
-├── img/                   Pure image helper export
-├── remark-plugins/        Content pipeline plugins
-├── server/                Atom/OPML/stats routes
-├── shared/                Shared types and utilities
-└── public/                Generic feed style and font assets
+└── src/                   Theme runtime source (Layer srcDir)
+    ├── modules/           clarity-config consumer config discovery/injection
+    ├── assets/ components/ composables/ layouts/ pages/ plugins/ stores/ types/ utils/
+    ├── config/            Public config/content/schema API
+    ├── img/               Pure image helper export
+    ├── remark-plugins/    Content pipeline plugins
+    ├── server/            Atom/OPML/stats routes
+    ├── shared/            Shared types and utilities
+    └── public/            Generic feed style and font assets
 
 consumer blog
 ├── nuxt.config.ts         extends clarity-theme; deployment/site rules
@@ -33,14 +34,15 @@ consumer blog
 
 | 目录 | 职责 | 是否入包 | 环境 | 上游同步关系 |
 | --- | --- | --- | --- | --- |
-| `app/` | UI、页面、布局、组件、composables、stores、plugins、样式、类型、工具 | 是 | 主题运行时 | 大多数列出的子路径为 `include`；若干文件经过适配，`app/types/**`、`app/stores/**` 与 `app/utils/**` 未被显式分类 |
-| `config/` | 公共 config/content/schema API 与 TS/MJS 双轨 | 是 | 构建/消费者 API | 主题派生的契约层；根 transform 文件促成了这次替换 |
-| `img/` | 公共纯图片辅助导出 | 是 | 消费者 API | 主题持有的包导出，包装 `app/utils/img.ts` 类型 |
-| `modules/` | `clarity-config` 构建桥与反镜像客户端 | 是 | Nuxt 构建 | `modules/**` 为 `include`，但上游反镜像模块已被主题配置模块替换 |
-| `remark-plugins/` | Markdown AST 转换 | 是 | Content 构建 | 上游派生的 `.ts` 加上 `include` 下的主题 `.mjs`/`.d.mts` 运行时轨 |
-| `server/` | Atom、OPML 与统计的 Nitro handler | 是 | SSR/静态生成 | 上游派生并适配；`server/**` 为 `include` |
-| `shared/` | Content 行类型与跨边界工具 | 是 | 主题运行时/服务端 | 上游派生加主题新增；`shared/**` 为 `include` |
-| `public/` | 通用 Atom XSL/CSS 与内置字体 | 是 | 静态资源 | `public/assets/**` 与 `public/fonts/**` 为 `include` |
+| `src/assets/` … `src/utils/` | UI、页面、布局、组件、composables、stores、plugins、样式、类型、工具 | 是 | 主题运行时 | 上游 `app/**` 经 sync `pathMap` 映射到此；若干文件经过适配，`app/types/**`、`app/stores/**` 与 `app/utils/**` 未被显式分类 |
+| `src/config/` | 公共 config/content/schema API 与 TS/MJS 双轨 | 是 | 构建/消费者 API | 主题派生的契约层；根 transform 文件促成了这次替换 |
+| `src/img/` | 公共纯图片辅助导出 | 是 | 消费者 API | 主题持有的包导出，包装 `src/utils/img.ts` 类型 |
+| `src/modules/` | `clarity-config` 构建桥与反镜像客户端 | 是 | Nuxt 构建 | 上游 `modules/**` 为 `include`，但上游反镜像模块已被主题配置模块替换 |
+| `src/remark-plugins/` | Markdown AST 转换 | 是 | Content 构建 | 上游派生的 `.ts` 加上 `include` 下的主题 `.mjs`/`.d.mts` 运行时轨 |
+| `src/server/` | Atom、OPML 与统计的 Nitro handler | 是 | SSR/静态生成 | 上游派生并适配；`server/**` 为 `include` |
+| `src/shared/` | Content 行类型与跨边界工具 | 是 | 主题运行时/服务端 | 上游派生加主题新增；`shared/**` 为 `include` |
+| `src/public/` | 通用 Atom XSL/CSS 与内置字体 | 是 | 静态资源 | `public/assets/**` 与 `public/fonts/**` 为 `include` |
+| `skills/` | Agent 工作流 Skill（`migrate-blog-v3-to-clarity`） | 否 | Agent 工作流 | 主题持有；不打入包中 |
 | `playground/` | 最小 workspace 消费者与兼容性夹具 | 否 | 开发 | 主题持有；不打入包中 |
 | `scripts/` | 验证、消费者/兼容性测试装置、同步工具 | 否 | 开发/测试 | 主题持有；上游 `scripts/**` 被排除 |
 | `tests/` | 同步回归套件 | 否 | 测试 | 主题持有；未针对未来上游路径显式分类 |
@@ -54,22 +56,26 @@ consumer blog
 
 `clarity-theme` 解析到 `nuxt.config.ts`。该配置：
 
-- 注册 Content、SEO、图片、图标、色彩模式、Pinia、VueUse、Bikariya、LLMs 以及本地 clarity-config 模块。
+- 注册 Content、SEO、图片、图标、色彩模式、Pinia、VueUse、Bikariya、LLMs 以及本地 source-layout/clarity-config 模块。
 - 为 Layer CSS、组件目录、图标、模块与 SCSS 变量使用包内绝对路径。
 - 通过指向 `.mjs` 运行时实现的 `file://` URL 配置 Markdown remark/rehype 插件。
 - 设置运行时构建元数据、预渲染平台行为、Vite 优化、图片密度/格式、链接检查器行为，并禁用 OG 图片生成。
 
 ### 构建期模块
 
-`modules/clarity-config` 在 `nuxt-llms` 之前运行。它发现并校验使用方文件，注入别名与 appConfig，派生 SEO/head/路由规则，并注册主题 Pinia store 与 Shiki 回退。
+`src/modules/clarity-source-layout` 最先运行。它把 `src/`、
+`src/modules/`、`src/public/`、`src/server/`、`src/shared/` 与派生应用目录
+应用到 Clarity 自身 layer 元数据，避免这些值经 c12 泄漏到 consumer root 配置。
+
+`src/modules/clarity-config` 在 `nuxt-llms` 之前运行。它发现并校验使用方文件，注入别名与 appConfig，派生 SEO/head/路由规则，并注册主题 Pinia store 与 Shiki 回退。
 
 ### 运行时应用
 
-`app/` 包含布局、页面、全局/content/partial/post/widget/popover 组件、composables、stores、plugins、样式与类型。Nuxt 自动导入在被扩展的应用内生效。
+`src/`（Layer `srcDir`）包含布局、页面、全局/content/partial/post/widget/popover 组件、composables、stores、plugins、样式与类型。Nuxt 自动导入在被扩展的应用内生效。
 
 ### 服务端
 
-`server/` 包含三个 Nitro 路由：
+`src/server/` 包含三个 Nitro 路由：
 
 - `GET /atom.xml`
 - `GET /subscriptions.opml`
@@ -85,7 +91,7 @@ consumer blog
 
 1. 使用方在 `clarity.config.ts` 中调用 `defineClarityConfig()`。
 2. Zod schema 填充默认值，并立即拒绝未知/无效字段。
-3. `modules/clarity-config` 发现 `clarity.config.ts` / `.mjs` / `.js`，用 jiti 加载，并在依赖它之前进行第二次解析。
+3. `src/modules/clarity-config` 发现 `clarity.config.ts` / `.mjs` / `.js`，用 jiti 加载，并在依赖它之前进行第二次解析。
 4. 模块映射解析后的数据：
    - `toPublicClarityConfig()`（客户端子集）加上派生的 header/footer 默认值进入 appConfig。
    - `toServerClarityConfig()` 进入 Nitro 私有 runtime 配置，供服务端 handler 与 feature 路由守卫使用。
@@ -102,7 +108,7 @@ consumer blog
 
 ## 5. App Config 流
 
-主题的 `app/app.config.ts` 只提供 `clarity` 下的 UI 默认值：
+主题的 `src/app.config.ts` 只提供 `clarity` 下的 UI 默认值：
 
 - `component`
 - `footer`
@@ -147,7 +153,7 @@ Markdown 处理由 Layer 配置：
 
 ### Atom
 
-`server/routes/atom.xml.get.ts` 查询 `posts/%` 下的 Content 行，按更新日期排序，根据 `feed.limit` 截断，从 `site.url` 构建绝对 URL，并输出 Atom XML。`feed.enableStyle` 控制 XSLT 声明。
+`src/server/routes/atom.xml.get.ts` 查询 `posts/%` 下的 Content 行，按更新日期排序，根据 `feed.limit` 截断，从 `site.url` 构建绝对 URL，并输出 Atom XML。`feed.enableStyle` 控制 XSLT 声明。
 
 ### 友链数据
 
@@ -155,7 +161,7 @@ Markdown 处理由 Layer 配置：
 
 ### OPML
 
-`server/routes/subscriptions.opml.get.ts` 将站点自身的 feed 条目与展平后带 feed URL 的友链条目合并，输出 OPML 2.0。
+`src/server/routes/subscriptions.opml.get.ts` 将站点自身的 feed 条目与展平后带 feed URL 的友链条目合并，输出 OPML 2.0。
 
 ## 8. 服务端路由 / 客户端边界
 
@@ -173,7 +179,7 @@ Markdown 处理由 Layer 配置：
 | --- | --- | --- |
 | `#clarity/feeds` | 使用方 feeds 模块或主题空回退 | Layer/服务端代码受支持的注入契约 |
 | `#clarity/config` | 使用方 clarity 配置模块路径 | 内部构建别名 / 潜在的服务端安全配置来源；不是稳定的独立公共导出 |
-| `~/shiki.config` | 存在时指向使用方文件；否则指向主题 `app/shiki.config.ts` | 受支持的回退机制 |
+| `~/shiki.config` | 存在时指向使用方文件；否则指向主题 `src/shiki.config.ts` | 受支持的回退机制 |
 
 这些别名避免主题代码假设使用方的目录布局。
 
@@ -189,10 +195,10 @@ Markdown 处理由 Layer 配置：
 
 这意味着若干契约刻意拥有成对实现：
 
-- `config/schema.ts` 与 `config/schema.mjs`
-- `config/define.ts` 与 `config/define.mjs`
-- `config/content.ts` 与 `config/content.mjs`
-- `img/index.ts` 与 `img/index.mjs`
+- `src/config/schema.ts` 与 `src/config/schema.mjs`
+- `src/config/define.ts` 与 `src/config/define.mjs`
+- `src/config/content.ts` 与 `src/config/content.mjs`
+- `src/img/index.ts` 与 `src/img/index.mjs`
 - 每个 remark 插件的 `.ts` 类型源与 `.mjs` 运行时
 
 它们必须保持行为同步。

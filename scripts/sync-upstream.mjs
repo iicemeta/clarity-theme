@@ -17,6 +17,10 @@
  * 分类优先级：exclude > transform > manual > include > unknown。
  * unknown 变更会阻止 apply，避免未声明文件让基线静默前进。
  * apply 前要求 Theme 工作树干净（避免覆盖未提交修改）。
+ *
+ * 路径映射：manifest.pathMap（upstream 前缀 → 本地前缀）在写入/比对本地文件时生效；
+ * upstream app/* 对应本地 src/*（扁平化），modules/server/shared/public/remark-plugins
+ * 对应 src/ 下同名目录。分类 glob 始终描述 upstream 路径，不因映射而改写。
  */
 import { execFileSync } from 'node:child_process'
 import { existsSync, lstatSync, mkdirSync, mkdtempSync, readFileSync, rmSync, unlinkSync, writeFileSync } from 'node:fs'
@@ -357,7 +361,8 @@ function localState(path, virtual, themeTree) {
 		return virtual.get(path)
 	}
 
-	const localPath = safeThemePath(path)
+	const localThemePath = mapUpstreamPath(path)
+	const localPath = safeThemePath(localThemePath)
 	let stats
 	try {
 		stats = lstatSync(localPath)
@@ -378,7 +383,7 @@ function localState(path, virtual, themeTree) {
 	if (!stats.isFile()) {
 		return { kind: 'special' }
 	}
-	const tracked = themeTree.get(path)
+	const tracked = themeTree.get(localThemePath)
 	if (!tracked || tracked.type !== 'blob') {
 		return { kind: 'file', sha: null }
 	}
@@ -417,7 +422,7 @@ function applyTransactionally(operations, commit) {
 	const createdDirectories = []
 
 	const backup = (path) => {
-		const localPath = safeThemePath(path)
+		const localPath = localPathFor(path)
 		const stats = lstatSync(localPath)
 		if (!stats.isFile()) {
 			throw new Error(`无法安全应用 ${path}：本地不是普通文件`)
@@ -459,7 +464,7 @@ function applyTransactionally(operations, commit) {
 				unlinkSync(localPath)
 			}
 			else {
-				createdDirectories.push(...mkdirInsideTheme(dirname(operation.path)))
+				createdDirectories.push(...mkdirInsideTheme(dirname(mapUpstreamPath(operation.path))))
 				writeFileSync(localPath, operation.data)
 			}
 		}
@@ -476,12 +481,12 @@ function applyTransactionally(operations, commit) {
 }
 
 function localPathFor(path) {
-	return safeThemePath(path)
+	return safeThemePath(mapUpstreamPath(path))
 }
 
 function summarize(operations) {
-	const copied = operations.filter(operation => operation.type === 'write').map(operation => operation.path)
-	const deletions = operations.filter(operation => operation.type === 'delete').map(operation => operation.path)
+	const copied = operations.filter(operation => operation.type === 'write').map(operation => mapUpstreamPath(operation.path))
+	const deletions = operations.filter(operation => operation.type === 'delete').map(operation => mapUpstreamPath(operation.path))
 	return { copied, deletions }
 }
 
@@ -512,6 +517,20 @@ function classify(path) {
 		return 'include'
 	}
 	return 'unknown'
+}
+
+/**
+ * upstream（blog-v3）路径 → 本地 Theme 源码路径的前缀映射。
+ * `app/*` 扁平化进 `src/*`，其余同步目录保留层级（详见 sync-manifest.json 的 pathMap）；
+ * 未命中前缀的路径保持原样，manifest 未声明 pathMap 时行为与旧版完全一致。
+ */
+function mapUpstreamPath(path) {
+	for (const [from, to] of Object.entries(manifest.pathMap ?? {})) {
+		if (path.startsWith(from)) {
+			return `${to}${path.slice(from.length)}`
+		}
+	}
+	return path
 }
 
 function matchGlob(glob, path) {
@@ -563,7 +582,23 @@ function readManifest(path) {
 	if (manifest.transform !== undefined && (!Array.isArray(manifest.transform) || manifest.transform.some(glob => typeof glob !== 'string'))) {
 		throw new Error('sync-manifest.json 的 transform 必须是字符串数组')
 	}
+	if (manifest.pathMap !== undefined) {
+		if (typeof manifest.pathMap !== 'object' || manifest.pathMap === null || Array.isArray(manifest.pathMap)) {
+			throw new Error('sync-manifest.json 的 pathMap 必须是「upstream 前缀 → 本地前缀」对象')
+		}
+		for (const [from, to] of Object.entries(manifest.pathMap)) {
+			validatePathPrefix(from, 'pathMap 键（upstream 前缀）')
+			validatePathPrefix(to, `pathMap 值（${from} 的本地前缀）`)
+		}
+	}
 	return manifest
+}
+
+function validatePathPrefix(prefix, label) {
+	const safePrefix = /^[^\\/]+(?:\/[^\\/]+)*\/$/
+	if (typeof prefix !== 'string' || !safePrefix.test(prefix) || prefix.split('/').includes('..')) {
+		throw new Error(`sync-manifest.json 的 ${label} 必须是安全的相对目录前缀（以 / 结尾）：${JSON.stringify(prefix)}`)
+	}
 }
 
 function validateGitPath(path) {

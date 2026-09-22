@@ -8,7 +8,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url'
 
 const themeDir = fileURLToPath(new URL('..', import.meta.url))
 const fixtureDir = join(themeDir, 'tests/fixtures/blog-v3-consumer')
-const skillDir = join(themeDir, '.agents/skills/migrate-blog-v3-to-clarity')
+const skillDir = join(themeDir, 'skills/migrate-blog-v3-to-clarity')
 
 const plan = readJson(join(fixtureDir, 'migration-plan.json'))
 
@@ -72,7 +72,7 @@ describe('fake blog-v3 consumer fixture', () => {
 	})
 
 	it('maps root and nested source config into the real Clarity schema', async () => {
-		const { defineClarityConfig } = await import(pathToFileURL(join(themeDir, 'config/index.mjs')).href)
+		const { defineClarityConfig } = await import(pathToFileURL(join(themeDir, 'src/config/index.mjs')).href)
 		const source = read(join(fixtureDir, 'blog.config.ts'))
 		const mapped = defineClarityConfig(plan.expectedClarityConfig)
 
@@ -94,10 +94,10 @@ describe('fake blog-v3 consumer fixture', () => {
 	})
 
 	it('keeps the mapped schema compatible with the public Content factory contract', async () => {
-		const { defineClarityConfig } = await import(pathToFileURL(join(themeDir, 'config/index.mjs')).href)
-		const { createClarityContentConfig } = await import(pathToFileURL(join(themeDir, 'config/content.mjs')).href)
+		const { defineClarityConfig } = await import(pathToFileURL(join(themeDir, 'src/config/index.mjs')).href)
+		const { createClarityContentConfig } = await import(pathToFileURL(join(themeDir, 'src/config/content.mjs')).href)
 		const config = defineClarityConfig(plan.expectedClarityConfig)
-		const factorySource = read(join(themeDir, 'config/content.mjs'))
+		const factorySource = read(join(themeDir, 'src/config/content.mjs'))
 
 		// `defineCollection()` also converts the schema to JSON Schema and depends on
 		// Nuxt's build-time module resolution. Keep this fixture static here; real
@@ -112,7 +112,7 @@ describe('fake blog-v3 consumer fixture', () => {
 
 	it('requires app config to become a UI-only override', () => {
 		const source = read(join(fixtureDir, 'app/app.config.ts'))
-		const moduleSource = read(join(themeDir, 'modules/clarity-config/index.ts'))
+		const moduleSource = read(join(themeDir, 'src/modules/clarity-config/index.ts'))
 		const allowedMatch = moduleSource.match(/const uiConfigKeys = new Set\(\[(.*?)\]\)/)
 		const allowed = allowedMatch?.[1]
 			.split(',')

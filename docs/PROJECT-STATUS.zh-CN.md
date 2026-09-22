@@ -47,10 +47,10 @@
 | Vue peer | `^3.5.42` |
 | 开发 workspace 中安装的 Nuxt | 4.5.2 |
 | 开发 workspace 中安装的 Vue | 3.5.43 |
-| 发布包负载 | `app/`、`config/`、`img/`、`modules/`、`public/`、`remark-plugins/`、`server/`、`shared/`、根 Layer/config 元数据、许可证与 README |
-| 不打入包负载 | `docs/`、`playground/`、`scripts/`、`tests/`、`.github/`、workspace 与 lock 文件、同步 manifest |
+| 发布包负载 | `src/`（全部 Theme 运行时源码）、根 Layer/config 元数据、许可证与 README |
+| 不打入包负载 | `docs/`、`playground/`、`scripts/`、`tests/`、`skills/`、`.github/`、workspace 与 lock 文件、同步 manifest |
 
-当前 `pnpm pack` 审计报告 151 个文件，包括 30 个发布必需文件（原 28 个加上 `config/server.ts` 与 `server/utils/clarity.ts`）与中文 README（`README.zh-CN.md`）。该包暴露五个导出入口，声明 `publishConfig.access=public`，且没有补丁目录。`CHANGELOG.md`、`scripts/release-check.mjs`、`scripts/test-registry-consumer.mjs` 与 `.github/workflows/publish.yml` 构成完整发布管线。
+`pnpm pack` 审计报告 151 个文件（`src/` 布局迁移后数量不变），包括 30 个发布必需文件（原 28 个加上 `src/config/server.ts` 与 `src/server/utils/clarity.ts`）与中文 README（`README.zh-CN.md`）。该包暴露五个导出入口，声明 `publishConfig.access=public`，且没有补丁目录。`CHANGELOG.md`、`scripts/release-check.mjs`、`scripts/test-registry-consumer.mjs` 与 `.github/workflows/publish.yml` 构成完整发布管线。
 
 ## 3. 上游基线
 
@@ -100,7 +100,7 @@ Clarity Theme 是从上游博客实现中抽取的可复用 Nuxt 4 Layer。它�
 ```text
 consumer clarity.config.ts
   -> defineClarityConfig() validation/defaults
-  -> modules/clarity-config build-time load and second validation
+  -> src/modules/clarity-config build-time load and second validation
   -> appConfig / SEO / head / route rules / aliases
   -> Layer pages, components, server routes, and Content pipeline
 
