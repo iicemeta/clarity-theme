@@ -1,5 +1,8 @@
 # Upstream patch 审计
 
+> **Historical audit snapshot — no longer authoritative.**
+> The current nuanced patch boundary is summarized in [PATCHES](./PATCHES.md).
+
 审计日期：2026-09-21
 
 审计对象：

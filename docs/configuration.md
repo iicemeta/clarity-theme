@@ -1,5 +1,9 @@
 # Clarity Theme 配置契约（v0.1）
 
+> Source of truth: `config/schema.ts` / `config/schema.mjs`, `modules/clarity-config/index.ts`,
+> `config/app.ts`, and their tests. Current project state is summarized in
+> [PROJECT-STATUS](./PROJECT-STATUS.md); the API boundary is in [API](./API.md).
+
 本文是 Theme 对 Consumer 暴露的全部配置面。字段标记含义：
 
 - **Required**：Consumer 必须提供，缺省时 `defineClarityConfig()` 校验失败
@@ -9,12 +13,15 @@
   **⚠️ 遗留**（仅服务端消费，但当前仍随 appConfig 进 bundle，为已登记的架构债务）；
   **⚙️ 构建期**（不进 appConfig，由模块在构建期消费，可能出现在最终页面 HTML）
 
-配置入口只有两个：
+应用配置入口如下：
 
 | 文件 | 作用 | 校验 |
 | --- | --- | --- |
 | `clarity.config.ts` | 站点 / 内容 / 功能配置（`defineClarityConfig`） | zod schema（`clarity-theme/schema`） |
 | `app/app.config.ts` | UI 覆盖（`defineAppConfig({ clarity: ... })`） | TypeScript（`CustomAppConfig` 合并） |
+| `content.config.ts` | 调用 Theme 工厂生成 Content 集合 | `createClarityContentConfig` 内部再次 parse |
+| `feeds.ts` | 友链数据（`FeedGroup[]`） | TypeScript |
+| `runtimeConfig` | 环境与密钥；密钥仅允许 server-only 区 | Nuxt |
 
 ## clarity.config.ts
 
@@ -32,7 +39,7 @@
 | `favicon` | string | Default `'/favicon.svg'` | ✅ |
 | `author.name` | string | **Required**，非空 | ✅ |
 | `author.avatar` | string | Optional | ✅ |
-| `author.email` | string | Optional（进入 RSS / OPML） | ✅ |
+| `author.email` | string | Optional（进入 author meta / RSS / OPML） | ✅ |
 | `author.homepage` | string | Optional | ✅ |
 | `copyright` | `{ abbr?, name?, url? }` | Optional | ✅ |
 
@@ -42,7 +49,7 @@
 | --- | --- | --- | --- |
 | `defaultCategory` | string | Default `'未分类'` | ✅ |
 | `categories` | `Record<string, { icon?, color? }>` | Default `{}` | ✅ |
-| `types` | `Record<string, object>` | Default `{ tech: {} }`；**至少一项**（为空时 Content Schema 兜底回退 `tech`，但应显式配置） | ✅ |
+| `types` | `Record<string, object>` | Default `{ tech: {} }`；允许显式空对象，但 Content Schema 会兜底回退 `tech`，因此应显式配置 | ✅ |
 | `order` | `Record<string, string>`（排序字段 → 显示名） | Default `{ date: '创建日期', updated: '更新日期' }` | ✅ |
 | `useRandomPermalink` | boolean | Default `false`，仅构建脚手架使用 | ⚠️ 遗留（见 [config-api-audit §3](./config-api-audit.md)） |
 | `hidePostPrefix` | boolean | Default `true`，仅模块构建期使用 | ⚠️ 遗留（同上） |
@@ -119,7 +126,7 @@
 
 | 标识 | 方向 | 说明 |
 | --- | --- | --- |
-| `#clarity/config` | Consumer → Theme | 解析并校验后的完整配置 |
+| `#clarity/config` | Consumer → Theme | 指向消费者 clarity 配置模块的构建期 alias；该模块通常已由 `defineClarityConfig()` 返回完整配置，但 alias 本身不是独立公共 API |
 | `#clarity/feeds` | Consumer → Theme | 友链数据 |
 
 ## 模块选项（nuxt.config.ts）

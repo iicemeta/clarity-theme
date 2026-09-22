@@ -1,35 +1,46 @@
-# 上游 Patch 审计（devdoc2.0 Phase C）
+# Patch Strategy
 
-上游 `blog-v3` 通过 `pnpm patchedDependencies` 维护 4 个 patch。
-Theme 包本身**不携带任何 patch**（package-manager 层面无法随 npm 分发），
-判定结果：需要的 patch 由**消费项目**（如 `theme-based-blog-v3`）作为站点级 patch 持有。
+> Current source of truth: consumer `pnpm-workspace.yaml`, the actual patch files,
+> and the historical detailed audit. This page summarizes the current boundary;
+> it deliberately does not introduce a new patch design.
 
-判定框架：是否仍需要？→ 能否向上游提 PR？→ 是否值得 fork？→ 否则作为 consumer patch。
+上游 `blog-v3` 通过 `pnpm patchedDependencies` 启用 4 个 patch。
+Theme 包本身**不携带任何 patch**：pnpm patch 是安装工作区状态，不能随 npm package 自动传递；
+而且是否需要 patch 取决于消费者内容和图片/部署选择。需要 patch 时，由消费项目注册并维护。
+
+判定框架：是否仍需要？→ 能否用公开配置解决？→ 能否向上游提小 PR？→ 是否值得 fork？→ 否则作为 consumer patch。
 
 ## 审计结论
 
-| Patch | 内容 | 判定 | 状态 |
+| Patch | 修改内容 | 当前判定 | 状态 |
 | --- | --- | --- | --- |
-| `@nuxtjs/mdc` | ① 行内代码 `props.code` 传入原文 ② 移除 `detab`（保留 tab） | ① **已取代，删除**——`ProseCode.vue` 原生适配 MDC 插槽传值（有/无 patch 双兼容）② 仍需要，保留 consumer patch | ✅ 已精简 |
-| `@nuxt/image` | `parseDensities` 中 `parseInt` → `parseFloat`，支持 `1.5x` 小数密度 | 仍需要（Theme `densities: [1, 1.5, 2]` 依赖小数密度）| 🟡 consumer patch |
-| `ipx` | ICO 图片直接透传（sharp 无法处理 ICO） | 仍需要（favicon.ico 经 IPX 时不炸） | 🟡 consumer patch |
-| `plain-shiki` | `::highlight()` 选择器前补空格（后代组合器） | 仍需要（否则代码高亮颜色失效） | 🟡 consumer patch |
+| `@nuxtjs/mdc` | 移除 fenced code 的 `detab`，保留 tab | 迁移上游内容且需要 tab 原文保真时，consumer 需要 detab-only patch；行内代码 hunk 已由 Theme `ProseCode` 双模式兼容取代并删除 | ✅ 已精简为单 hunk |
+| `@nuxt/image` | density 解析 `parseInt` → `parseFloat` | 当前上游内容存在字符串小数 density 时需要；全局数字 density 配置本身不依赖 patch | 🟡 consumer patch / upstream PR 候选 |
+| `plain-shiki` | highlight selector 补后代组合器空格 | 短期 consumer patch；历史审计确认后续可评估在 Theme 侧传入公开 selector 配置后移除 | 🟡 短期 consumer patch |
+| `ipx` | ICO 原样透传，绕过 Sharp | 仅当 ICO 真的进入 IPX 时需要；当前 Theme favicon 是重定向，外部 ICO 默认直链，不是默认依赖 | ⚪ 可选站点 recipe |
 
-## 潜在上游 PR 候选
+差异测试工作区还存在 `patches/@vue__shared.patch`，但它的 `pnpm-workspace.yaml`
+没有注册该 patch，因此当前不生效。Theme 不迁移、不注册该文件。
 
-以下修改是低风险修复，适合向上游提 PR，被合并后可从消费项目移除：
+## 已登记的外部跟进候选
+
+历史审计登记过以下外部跟进方向。本任务没有提交 issue/PR，也没有设计新方案：
 
 1. **`@nuxt/image`**：`Number.parseInt` → `Number.parseFloat`
    （`densities` 支持小数；对应 issue：密度点对点显示）
 2. **`plain-shiki`**：`::highlight(name)` 选择器补后代空格
    （plain-shiki 高亮作用域 bug）
-3. **`ipx`**：ICO 透传分支（新增 format 支持，非破坏性）
+3. **`ipx`**：ICO / unsupported transform 语义需要先讨论，不能直接把现有
+   “忽略变换”行为当作通用修复
 
 `@nuxtjs/mdc` 的 detab 行为变更（tab 不转空格）影响所有用户的默认输出，
 是否被上游接受存疑，长期保留为 consumer patch。
 
-## 精简版 mdc patch
+## 为什么 Theme 不持有 Patch
 
-`theme-based-blog-v3/patches/@nuxtjs__mdc.patch` 已从上游完整 patch 精简为
-**仅 detab 一个 hunk**（行内代码 hunk 删除）。验证：`nuxt generate` 242 路由 0 错误，
-inline code 插槽渲染与 tab 保留同时正常。
+1. npm package 不能让 pnpm `patchedDependencies` 自动在消费者安装时生效。
+2. `files` 发布边界不包含 `patches/`。
+3. 即使分发 patch 文件，消费者仍必须复制并在自己的 package-manager 配置和 lockfile 中注册。
+4. patch 需求与站点内容、图片管线和部署环境相关，不适合变成所有使用者的默认行为。
+
+详细历史判定见 [patch-audit](./patch-audit.md)（Historical / no longer authoritative）。

@@ -1,5 +1,10 @@
 # Clarity Theme 只读工程审计
 
+> **Historical audit snapshot — no longer authoritative for current status.**
+> Many issues listed here were fixed or covered by later tests. Current facts live in
+> [PROJECT-STATUS](./PROJECT-STATUS.md). This file remains at its original path because
+> `scripts/verify-theme.mjs` has a path-specific attribution allowlist.
+
 > 审计日期：2026-09-21（Asia/Taipei）
 > 审计仓库：`D:\NewPartition\DEV\ClarityTheme\clarity-theme`
 > 审计方式：只读检查 + 全量命令执行，未修改任何代码（本文件为唯一新增交付物）

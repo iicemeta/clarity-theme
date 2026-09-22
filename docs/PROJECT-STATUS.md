@@ -1,0 +1,338 @@
+# Project Status
+
+> Snapshot date: 2026-09-22, Asia/Taipei. This document describes the current repository. Historical phase narratives and old one-off audit results are kept in [history](./history/2026-09-layer-extraction.md) or marked as historical audit records.
+
+## Documentation Source of Truth
+
+When documents disagree, precedence is:
+
+1. Current source code and package manifests
+2. `package.json` / `pnpm-lock.yaml` / `pnpm-workspace.yaml`
+3. Automated tests and compatibility contracts
+4. GitHub Actions workflows
+5. `sync-manifest.json`
+6. README and other documentation
+
+Code, tests, CI, and the sync manifest override prose. A statement in this file is not a substitute for those sources.
+
+## 1. Snapshot
+
+| Item | Current fact |
+| --- | --- |
+| Repository branch | `master` |
+| HEAD at audit | `e601eb5bdd6afb26471615878322dc394e260dc7` (`test: establish release compatibility matrix, fix llms and anti-mirror`) |
+| Working tree | Clean and synchronized with `origin/master` before documentation changes |
+| Package | `clarity-theme` v0.1.0, MIT |
+| Distribution state | Git-package workflow; no current npm artifact. An npm registry lookup on 2026-09-22 returned unpublished/unavailable for this package name |
+| Upstream baseline | `blog-v3` 3.7.2, `main` @ `f6ea97d745517feb52f0c100e89acb36f0adc12f` |
+| Upstream drift | None: `pnpm sync:check` reports the manifest baseline equals upstream `main` |
+| Local runtime used for verification | Node.js 24.15.0, pnpm 12.4.1, Nuxt 4.5.2, Vue 3.5.43 |
+| Current local verification | Lint, typecheck, purity verify, sync regression, contract, peers, playground generate, real consumer test, and rendering compatibility all pass |
+
+The differential consumer outside this Git repository is a historical/manual environment, not part of CI. Its persisted output predates the current Theme HEAD and must not be treated as a current release gate.
+
+## 2. Package / Runtime
+
+| Field | Value |
+| --- | --- |
+| Name | `clarity-theme` |
+| Version | `0.1.0` |
+| License | MIT |
+| Homepage / repository | `https://github.com/iicemeta/clarity-theme` |
+| Node engine | `^22.19 \|\| ^24.11 \|\| >=26` |
+| Package manager | `pnpm@12.4.1` |
+| Nuxt peer | `^4.5.2` |
+| Vue peer | `^3.5.42` |
+| Nuxt installed in development workspace | 4.5.2 |
+| Vue installed in development workspace | 3.5.43 |
+| Published package payload | `app/`, `config/`, `img/`, `modules/`, `public/`, `remark-plugins/`, `server/`, `shared/`, root Layer/config metadata, license, and README |
+| Excluded from package payload | `docs/`, `playground/`, `scripts/`, `tests/`, `.github/`, workspace and lock files, sync manifest |
+
+The current `pnpm pack` audit reports 148 files, including 28 release-required files. The package exposes five export entries and has no patch directory.
+
+## 3. Upstream Baseline
+
+- Upstream project: `blog-v3` on GitHub; the exact Git URL is stored in `sync-manifest.json`.
+- Baseline commit: `f6ea97d745517feb52f0c100e89acb36f0adc12f`.
+- Upstream version recorded by the manifest: 3.7.2.
+- Recorded upstream framework versions: Nuxt 4.5.2, Content dependency range `^3.16.0`.
+- Recorded sync time: 2026-09-21 16:40 +08:00.
+- Current remote `main` equals that commit.
+
+See [UPSTREAM](./UPSTREAM.md) for manifest categories, commands, conflict behavior, and known classification gaps.
+
+## 4. Project Positioning
+
+Clarity Theme is a reusable Nuxt 4 Layer extracted from the upstream blog implementation. It owns generic blog UI, routing, Markdown/MDC rendering, Content schema generation, SEO/feed/server outputs, and the configuration bridge.
+
+**Theme responsibilities**
+
+- Nuxt Layer configuration and dependency integration
+- Generic pages, layouts, components, styles, stores, and composables
+- Markdown, MDC, code highlighting, math, Mermaid, ABC music, and image rendering pipeline
+- `clarity.config.ts` schema, defaults, validation, and build-time injection
+- Content collection factory and article metadata schema
+- Atom, OPML, statistics, robots, sitemap, and LLMs output routes/configuration
+- UI defaults and the consumer override mechanism
+
+**Consumer responsibilities**
+
+- Site identity and public site metadata in `clarity.config.ts`
+- Articles and other content under `content/`
+- `content.config.ts` using `createClarityContentConfig()`
+- Optional `feeds.ts` friend data
+- UI and same-path component overrides
+- Runtime secrets, deployment configuration, redirects, analytics IDs, and site-level package patches
+
+**Theme non-responsibilities**
+
+- Storing any concrete blog content or upstream author data
+- Providing a comment backend, analytics backend, image service, database, or CMS
+- Carrying package-manager patches or consumer deployment rules
+- Automatically merging upstream changes without human review
+
+## 5. Current Architecture
+
+The package is a single Nuxt Layer entry backed by a build-time configuration module:
+
+```text
+consumer clarity.config.ts
+  -> defineClarityConfig() validation/defaults
+  -> modules/clarity-config build-time load and second validation
+  -> appConfig / SEO / head / route rules / aliases
+  -> Layer pages, components, server routes, and Content pipeline
+
+consumer app/app.config.ts
+  -> deep UI override, merged above Theme defaults and module-injected defaults
+
+consumer content/ + content.config.ts + optional feeds.ts
+  -> Content collection, article routes, friend page, Atom/OPML outputs
+```
+
+The complete boundary, configuration flow, content flow, server flow, aliases, and override mechanism are documented in [ARCHITECTURE](./ARCHITECTURE.md).
+
+## 6. Public API
+
+Explicit package exports:
+
+| Export | Purpose |
+| --- | --- |
+| `clarity-theme` | Nuxt Layer root (`nuxt.config.ts`) |
+| `clarity-theme/config` | `defineClarityConfig()` and configuration/schema types |
+| `clarity-theme/content` | `createClarityContentConfig()` and `ArticleSchema` |
+| `clarity-theme/img` | Pure image/avatar/favicon URL helpers |
+| `clarity-theme/schema` | Zod schemas and schema-derived types |
+
+The Layer also supports the `useClarity*` runtime auto-imports and same-path component overrides. These are Layer usage contracts, not independent ESM subpaths. The complete boundary is in [API](./API.md).
+
+## 7. Configuration Surface
+
+| Surface | Owner | Required? | Consumed at | Notes |
+| --- | --- | --- | --- | --- |
+| `clarity.config.ts` | Consumer | Yes; only `site` is required at top level | Definition time, module setup, Content build, appConfig, SEO, server routes | Strict Zod schema; unknown fields fail |
+| `app/app.config.ts` | Consumer | No | Runtime appConfig | Only UI groups; deep object merge, arrays replace wholesale |
+| `content.config.ts` | Consumer | Yes for Content | Content build | Calls the Theme factory with parsed site config |
+| `feeds.ts` | Consumer | No | Friend page and OPML | Falls back to empty data with warning |
+| `runtimeConfig` | Consumer | As needed | Nuxt runtime | Only valid place for real secrets |
+| `clarityConfig.configFile` module option | Consumer | No | Module setup | Overrides automatic config-file discovery |
+
+Field-level required/default/client visibility rules are maintained in [configuration](./configuration.md).
+
+## 8. Features
+
+Legend: ✅ Implemented, 🧪 Verified by current automated tests unless explicitly marked historical, ⚠️ Known limitation, 📌 Future work.
+
+| Capability | Status | Current facts |
+| --- | --- | --- |
+| Nuxt Layer entry | ✅ 🧪 | Workspace playground and independent tarball consumer generate successfully |
+| Public config/schema/content/img exports | ✅ 🧪 | Pure Node smoke, typecheck, and consumer generation cover all five entries |
+| Markdown | ✅ 🧪 | Headings, emphasis, links, lists, tasks, quotes, tables, footnotes, and inline code covered by SSR/browser/consumer assertions |
+| MDC components | ✅ 🧪 | Alert, Tip, Copy, CardList, Folding, Badge, and consumer Badge override covered; other implemented components are not exhaustively asserted |
+| Code and Shiki | ✅ 🧪 ⚠️ | Inline/fenced code, language, filename, meta, diff, tabs, highlighting, collapse defaults, and custom themes verified; plain-highlight behavior and exact colors depend on the patch environment, and Shiki imports remote esm.sh resources |
+| Math | ✅ 🧪 | Inline/block/aligned KaTeX SSR and browser rendering verified |
+| Mermaid | ✅ 🧪 | Two diagram types render SVG in a real browser; error fallback absence checked |
+| ABC music | ✅ 🧪 ⚠️ | Score SVG/paths verified; audio controls/sound fonts are not asserted |
+| Images | ✅ 🧪 ⚠️ | Markdown image and `Pic` figure/zoom markup verified; fractional `densities="1.5x"` behavior needs the consumer `@nuxt/image` patch |
+| Client search | ✅ 🧪 ⚠️ | MiniSearch modal, result text/link, and article navigation verified; keyboard navigation and ranking are not covered |
+| Article list | ✅ 🧪 | Sorting, category filtering, pagination, cover/metadata rendering covered at the current contract depth |
+| Archive | ✅ 🧪 ⚠️ | Year grouping and hydration verified; spacing/column controls and all interactive controls are not covered |
+| Pagination | ✅ 🧪 | Page 2 query, list switching, and hydration verified |
+| TOC | ✅ 🧪 ⚠️ | SSR structure and depth-4 pipeline verified; scroll synchronization is not asserted |
+| SEO | ✅ 🧪 ⚠️ | WebSite/article metadata, canonical, og site/name/description verified; empty og:image and missing image dimensions produce non-fatal warnings |
+| Robots | ✅ 🧪 | Sitemap declaration and configured disallow rules verified |
+| Sitemap | ✅ 🧪 | Base site, ordinary article, and permalink URLs verified |
+| LLMs | ✅ 🧪 | Site title/description output verified |
+| Atom | ✅ 🧪 | Default and `enableStyle=false`, limits, entries, permalinks, and XSLT branch verified |
+| OPML | ✅ 🧪 | Own feed and friend feed output verified |
+| Stats | ✅ 🧪 | Count, words, category, and annual JSON assertions pass |
+| 404/error route | ✅ 🧪 ⚠️ | Missing/permalink-source routes return 404 in SSR tests; the complete custom error UI is not asserted |
+| Permalink | ✅ 🧪 | Frontmatter `permalink` overrides source path and hides the source route |
+| `useRandomPermalink` | ✅ ⚠️ 📌 | Schema acceptance/build compatibility only; Theme does not generate random permalinks |
+| UI app-config override | ✅ 🧪 | Consumer `header.emojiTail` and playground pagination settings verified |
+| Component override | ✅ 🧪 ⚠️ | Same-path Badge override verified, with expected Nuxt duplicate-name warning |
+| Anti-mirror | ✅ 🧪 ⚠️ | Encoded blacklist/site script injection and disabled branch verified; actual browser redirect is not tested |
+| Twikoo | ✅ 🧪 ⚠️ | Enabled container/preload and disabled text/no-container branches verified; remote Twikoo initialization/UI is not tested |
+| Head scripts/integrations | ✅ ⚠️ | Build-time injection implemented; current automated fixtures use an empty script list, and the full historical differential site is not a current CI gate |
+| Widgets | ✅ ⚠️ | Stats/tech/log widgets render in covered page shells; widget registry combinations and changelog content are not systematically asserted |
+| Preview page | ✅ ⚠️ | Route exists and generates; no preview article fixture currently exercises the hidden list |
+| Responsive layout | ✅ ⚠️ | Implemented upstream UI; no viewport/drawer test automation |
+
+## 9. Testing
+
+| Command / check | What it actually verifies | Current result |
+| --- | --- | --- |
+| `pnpm lint` | ESLint across repository sources plus Stylelint for Theme/Playground Vue and SCSS | ✅ Pass |
+| `pnpm typecheck` | Playground `nuxt typecheck`, including Layer type generation and consumer-style app config types | ✅ Pass, with expected `NUXT_B3011` Badge warning |
+| `pnpm verify` | Static purity: forbidden upstream author/site identifiers, site files, and cross-project imports | ✅ Pass |
+| `pnpm test:sync` | 13 temporary-Git tests for sync fast-forward, conflicts, deletes, new files, transform/manual exclusion, unknown blocking, verify failure, and rollback | ✅ 13/13 |
+| `pnpm test:contract` | 39 contract rows and required feature/coverage references stay synchronized with generated `docs/COMPATIBILITY.md` | ✅ Pass |
+| `pnpm peers check` | Workspace peer dependency audit | ✅ No issues |
+| `pnpm generate` | Playground static generation through workspace Layer link | ✅ Pass; Nitro prerenders 51 routes; one expected link-checker warning |
+| `pnpm test:consumer` | Pack, tarball boundary/leak audit, export/type declaration graph, independent install, pure Node smoke, typecheck, and three generate variants | ✅ Pass |
+| `pnpm test:compatibility` | Contract, production build log scan, 24 SSR cases, 12 real-browser cases, 11 dev hydration routes | ✅ Pass; 51 assertion groups |
+| `pnpm sync:check` | Remote upstream head versus manifest baseline | ✅ Up to date |
+| `pnpm test:release` | Verify + real consumer + compatibility | Script exists; current local run executed its component commands with the broader CI set above |
+
+Current consumer variant facts:
+
+- Tarball: 148 files; 28 required files; five export entries.
+- Runtime contract derived from the current script: 100 assertion invocations plus 15 pure-Node smoke checks.
+- `default`: 42 prerendered routes.
+- `branches` (`enableStyle=false`, `hidePostPrefix=false`, Twikoo, anti-mirror): 42 prerendered routes.
+- `features-off` (Atom/OPML/stats off, random-permalink flag accepted): 39 prerendered routes.
+
+Compatibility warnings are non-fatal and are listed under Known Limitations.
+
+## 10. CI
+
+### `ci.yml`
+
+- Triggers: push/PR to `main` or `master`, plus manual dispatch.
+- Concurrency cancels older runs for the same reference.
+- Permissions: `contents: read`.
+- Versions derive from package metadata, not hand-written workflow values.
+- Node matrix is resolved from fixed engine branches: 22.19 and 24.11. The open `>=26` branch is not represented because no stable fixed branch is declared.
+- pnpm is installed by `pnpm/action-setup` reading `packageManager`.
+
+Stages are strictly ordered:
+
+1. **Layer 1 lint** on the Node matrix.
+2. **Layer 1 typecheck + verify + sync regression + compatibility contract + peers** on the Node matrix.
+3. **Layer 2 playground generate** on primary Node 24.11.
+4. **Layer 3 real consumer test + compatibility regression** on primary Node 24.11.
+
+### `sync.yml`
+
+- Scheduled every Monday at 03:00 UTC, plus manual dispatch.
+- Permissions: `contents: read`, `issues: write`.
+- Runs `pnpm sync:check --fail-on-update` without installing dependencies.
+- On drift, creates/reuses one `sync` Issue with `sync:diff` details and fails with a clear message.
+- Never applies, commits, or pushes changes.
+
+## 11. Upstream Sync
+
+The sync manifest divides paths into `include`, `exclude`, `transform`, and `manual`; unclassified changes block apply. `apply` only fast-forwards unmodified include files, detects adapted-file conflicts, runs purity verification transactionally, and advances the baseline only after success. Transform/manual files are reported but never overwritten.
+
+Important boundary fact: several upstream-derived paths (`app/stores/**`, `app/types/**`, `app/utils/**`) are not explicitly classified; two type files have already been adapted by Theme. Future upstream changes there will be treated as unknown and block apply. This is recorded as a manifest/documentation gap, not changed in this documentation-only task.
+
+Details: [UPSTREAM](./UPSTREAM.md).
+
+## 12. Patch Strategy
+
+Clarity Theme itself carries no patches. Package-manager patches are workspace/install-root state and do not transit with an npm package; they are also site-specific compatibility decisions.
+
+Current nuanced conclusions:
+
+- Migrating the upstream blog content currently needs the detab-only `@nuxtjs/mdc` consumer patch; the old inline-code hunk was removed because Theme supports both slot and `code` prop input.
+- Current upstream-content image props need the `@nuxt/image` fractional-density consumer patch.
+- `plain-shiki` is a short-term consumer patch; the prior audit identified a possible Theme-side selector configuration as future work.
+- `ipx` ICO passthrough is optional and only needed when an ICO is actually routed through IPX; it is not a default Theme requirement.
+- An additional `@vue/shared` patch file exists in the upstream/differential working copies but is not registered and does not activate.
+
+Details: [PATCHES](./PATCHES.md).
+
+## 13. Verified Capabilities
+
+Current automated evidence verifies:
+
+- Package boundary and absence of known upstream private data
+- All five package exports in Node and TypeScript
+- Real independent consumer installation from a tarball
+- Three configuration variants and their generated routes/files
+- Core Markdown/MDC/code/math/diagram/music/image rendering
+- Production SSR, real-browser rendering, and dev hydration
+- Search, theme toggle, pagination, archive, TOC, SEO, robots, sitemap, LLMs, Atom, OPML, stats, permalink, 404, anti-mirror injection, Twikoo branches, UI override, and component override at the stated contract depth
+- Upstream sync tool regression and current baseline freshness
+
+The full generated feature matrix is [COMPATIBILITY](./COMPATIBILITY.md).
+
+## 14. Known Limitations
+
+1. **Server-oriented configuration remains client-visible.** Feed/stats and several build-only article fields still flow through appConfig because server routes and shared readers use `useClarityConfig()`.
+2. **Feature-off is mostly prerender/head removal.** Server routes are not proven to return 404 at runtime when Atom/OPML/stats are disabled.
+3. **Regional CDN defaults are fixed.** KaTeX, Inter, and Google font links point to China-oriented mirror domains without a consumer override.
+4. **Automated tests run unpatched.** Tab preservation and fractional image-density behavior differ in the patched real blog environment; the differential environment is outside CI.
+5. **Differential consumer is not current or automated.** It is outside Git, points at an older local tarball, and its persisted output predates current HEAD.
+6. **Remote service behavior is not fully tested.** Twikoo initialization, anti-mirror navigation, ABC audio, search keyboard behavior, and image service failures are not asserted.
+7. **Several UI interactions lack tests.** Archive controls, code collapse/copy interactions, widget combinations, preview entry, responsive drawers/masks, and custom error UI are not systematically covered.
+8. **`useRandomPermalink` does not generate permalinks.** The Theme accepts the flag but expects build scaffolding owned elsewhere.
+9. **Same-path component override emits `NUXT_B3011`.** Functionality is verified, but the warning remains.
+10. **Compatibility has non-fatal warning classes.** Vue slot/readonly warnings, empty/undersized og:image, deprecated `twitter:card`, and external-resource warnings occur in dev/browser logs.
+11. **Shiki depends on remote esm.sh imports.** Restricted/offline builds may be affected.
+12. **Node 26+ is allowed but not CI-tested.** The engine's open range has no stable matrix representative.
+
+## 15. Technical Debt
+
+- Move server route configuration to a server-safe config source and narrow public appConfig.
+- Relax `useClarityArticle()` from the full article schema type so build-only fields can be removed.
+- Add runtime route guards for disabled features.
+- Make CDN/font origins configurable.
+- Address plain-shiki selector behavior in Theme and reduce consumer patch burden.
+- Re-engineer the differential consumer under version control and CI, with a reproducible package reference.
+- Complete sync-manifest classification for upstream-derived and Theme-owned paths.
+- Generalize purity checking beyond the current explicit upstream identifiers.
+- Keep TS type sources and `.mjs` runtime implementations synchronized; schema drift remains a manual risk.
+- Reduce component duplicate-name and SEO/meta warnings.
+- Expand interaction/accessibility/responsive tests.
+- Consider splitting the large consumer/compatibility scripts into more maintainable reporting modules without weakening coverage.
+
+## 16. Documentation Gaps
+
+Resolved by this document set:
+
+- There was no single current status, architecture, API, or upstream workflow entry point.
+- README mixed current facts with completed phase TODOs and one-off historical results.
+- Patch summary described `ipx` as generally required although the detailed audit found it optional.
+
+Still open:
+
+- `docs/COMPATIBILITY.md` is generated and intentionally contract-focused; it does not explain visual quality or uncovered interactions.
+- Historical audit files remain in their original paths because `verify-theme.mjs` has a path-specific allowlist; they are now marked non-authoritative rather than moved when movement would break verification.
+- The exact upstream Git URL is intentionally referenced through `sync-manifest.json` in non-README docs to avoid reintroducing upstream identity strings outside the current purity allowlist.
+- Field-level configuration documentation does not enumerate every internal component prop because those props are not stable public API.
+
+## 17. Future Work
+
+📌 Priority candidates, not implemented in this task:
+
+1. Server-safe configuration flow and feature route guards
+2. CDN/font configuration
+3. Differential consumer versioning and CI reproduction
+4. Sync manifest classification completeness
+5. Additional UI interaction, accessibility, responsive, service-failure, and preview tests
+6. plain-shiki Theme-side selector fix and upstream patch/PR follow-up
+7. Author-email visibility option
+8. Node 26 coverage once a fixed engine branch exists
+9. Decide and execute a first npm release workflow
+
+## 18. Non-goals / Not Planned
+
+- Clarity Theme will not bundle articles, author configuration, redirects, deployment configuration, analytics IDs, private tokens, or friend data.
+- It will not operate Twikoo, analytics, image proxy, search index, or comment services as a backend.
+- It will not carry consumer package-manager patches.
+- It will not automatically merge upstream changes.
+- It does not currently plan a CMS, database layer, general-purpose i18n framework, or visual regression system.
+
+## 19. Current Milestone
+
+Clarity Theme is a validated v0.1.0 pre-publish Layer candidate. The extraction/configuration/package/consumer/CI/upstream-sync work is implemented and automatically verified; remaining work is explicit limitation and debt reduction rather than unknown migration work. No release or code change is performed by this documentation milestone.
