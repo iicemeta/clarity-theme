@@ -50,6 +50,9 @@ Through the TypeScript entry:
 - `ClarityUiConfigInput`
 - `ClarityAppConfig`
 - `ClarityPublicConfig`
+- `ClarityPublicSiteConfig`
+- `ClarityPublicArticleConfig`
+- `ClarityPublicStatsConfig`
 - `ClarityPublicIntegrationsConfig`
 - `FeedEntry`
 - `FeedGroup`
@@ -142,12 +145,14 @@ The following auto-imported helpers are supported because consumer components ma
 
 | Helper | Returns |
 | --- | --- |
-| `useClarityConfig()` | Resolved public site configuration plus UI configuration |
-| `useClaritySite()` | Site section |
-| `useClarityArticle()` | Article configuration section |
+| `useClarityConfig()` | Client-visible public configuration subset plus UI configuration |
+| `useClaritySite()` | Client-visible site section (without `author.email`) |
+| `useClarityArticle()` | Client-visible article subset (`categories`, `order`) |
 | `useClaritySiteFeedEntry()` | Feed entry derived from site configuration |
 
 They require a Nuxt app context and are not standalone package subpath exports.
+
+Theme server routes use the internal `useClarityServerConfig()` helper, which reads the full site/feed/stats configuration and feature route flags from Nitro's private runtime config. It never enters the client bundle and is not a public package export.
 
 ## Public HTTP Features
 
@@ -159,7 +164,7 @@ When enabled, the Layer exposes these static/server outputs:
 | `GET /subscriptions.opml` | OPML subscriptions |
 | `GET /api/stats` | Article count, word count, annual/category/tag statistics |
 
-Generated SEO outputs also include `/robots.txt`, `/sitemap.xml`, and `/llms.txt` through configured Nuxt modules. Feature flags remove prerender/head wiring; runtime route disabling is not yet guaranteed.
+Generated SEO outputs also include `/robots.txt`, `/sitemap.xml`, and `/llms.txt` through configured Nuxt modules. Disabling `features.atom` / `opml` / `stats` removes prerender and head wiring **and** makes the route return 404 in dev/SSR runtime.
 
 ## Configuration Entry Points
 

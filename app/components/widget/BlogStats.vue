@@ -26,7 +26,7 @@ const blogStats = [{
 		tipPrefix: '构建于',
 	}),
 }, {
-	label: clarity.stats.includePaths.length ? '文章字数' : '总字数',
+	label: clarity.stats.postsOnly ? '文章字数' : '总字数',
 	value: computed(() => formatNumber(stats.value?.total?.words) || '--'),
 	tip: yearlyTip,
 }]

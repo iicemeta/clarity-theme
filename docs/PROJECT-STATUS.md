@@ -25,7 +25,7 @@ Code, tests, CI, and the sync manifest override prose. A statement in this file 
 | HEAD at Phase 20 start | `433d042ed3b626a048e84000ba2039102df61f28` (`docs: establish current reality-sync baseline`) |
 | Working tree | Clean and synchronized with `origin/master` before documentation changes |
 | Package | `clarity-theme` v0.1.0, MIT |
-| Distribution state | Git-package workflow; no current npm artifact. An npm registry lookup on 2026-09-22 returned unpublished/unavailable for this package name |
+| Distribution state | npm release pipeline ready (OIDC publish workflow, release gate, changelog). **A defective `clarity-theme@0.1.0` was published out-of-band at 2026-09-22T07:28:22Z** by `creampack <creampack@iicemeta.com>` from pre-P0 gitHead `5a03778`, without the gate or provenance; the registry consumer test fails typecheck inside it. The corrected gated release must be `0.1.1` |
 | Upstream baseline | `blog-v3` 3.7.2, `main` @ `f6ea97d745517feb52f0c100e89acb36f0adc12f` |
 | Upstream drift | None: a Phase 20 direct remote-head check returned the manifest baseline commit |
 | Local runtime used for verification | Node.js 24.15.0, pnpm 12.4.1, Nuxt 4.5.2, Vue 3.5.43 |
@@ -50,7 +50,7 @@ The differential consumer outside this Git repository is a historical/manual env
 | Published package payload | `app/`, `config/`, `img/`, `modules/`, `public/`, `remark-plugins/`, `server/`, `shared/`, root Layer/config metadata, license, and README |
 | Excluded from package payload | `docs/`, `playground/`, `scripts/`, `tests/`, `.github/`, workspace and lock files, sync manifest |
 
-The current `pnpm pack` audit reports 149 files, including 28 release-required files plus the Chinese README (`README.zh-CN.md`). The package exposes five export entries and has no patch directory.
+The current `pnpm pack` audit reports 151 files, including 30 release-required files (the previous 28 plus `config/server.ts` and `server/utils/clarity.ts`) and the Chinese README (`README.zh-CN.md`). The package exposes five export entries, declares `publishConfig.access=public`, and has no patch directory. `CHANGELOG.md`, `scripts/release-check.mjs`, `scripts/test-registry-consumer.mjs`, and `.github/workflows/publish.yml` complete the publication pipeline.
 
 ## 3. Upstream Baseline
 
@@ -136,6 +136,7 @@ The Layer also supports the `useClarity*` runtime auto-imports and same-path com
 | `content.config.ts` | Consumer | Yes for Content | Content build | Calls the Theme factory with parsed site config |
 | `feeds.ts` | Consumer | No | Friend page and OPML | Falls back to empty data with warning |
 | `runtimeConfig` | Consumer | As needed | Nuxt runtime | Only valid place for real secrets |
+| Nitro private runtime config (`runtimeConfig.clarity`) | Theme | Injected at build | Server routes only | Full site/feed/stats values plus feature route flags; read through the internal `useClarityServerConfig()` and never serialized to the client |
 | `clarityConfig.configFile` module option | Consumer | No | Module setup | Overrides automatic config-file discovery |
 
 Field-level required/default/client visibility rules are maintained in [configuration](./CONFIGURATION.md).
@@ -166,13 +167,12 @@ Legend: ✅ Implemented, 🧪 Verified by current automated tests unless explici
 | LLMs | ✅ 🧪 | Site title/description output verified |
 | Atom | ✅ 🧪 | Default and `enableStyle=false`, limits, entries, permalinks, and XSLT branch verified |
 | OPML | ✅ 🧪 | Own feed and friend feed output verified |
-| Stats | ✅ 🧪 | Count, words, category, and annual JSON assertions pass |
+| Stats | ✅ 🧪 | Count, words, category, and annual JSON assertions pass; multi-pattern `includePaths` union covered |
 | 404/error route | ✅ 🧪 ⚠️ | Missing/permalink-source routes return 404 in SSR tests; the complete custom error UI is not asserted |
 | Permalink | ✅ 🧪 | Frontmatter `permalink` overrides source path and hides the source route |
-| `useRandomPermalink` | ✅ ⚠️ 📌 | Schema acceptance/build compatibility only; Theme does not generate random permalinks |
 | UI app-config override | ✅ 🧪 | Consumer `header.emojiTail` and playground pagination settings verified |
 | Component override | ✅ 🧪 ⚠️ | Same-path Badge override verified, with expected Nuxt duplicate-name warning |
-| Anti-mirror | ✅ 🧪 ⚠️ | Encoded blacklist/site script injection and disabled branch verified; actual browser redirect is not tested |
+| Anti-mirror | ✅ 🧪 | Encoded blacklist/site script injection, disabled branch, and a real-browser navigation case from a mirror-like hostname to the canonical host verified |
 | Twikoo | ✅ 🧪 ⚠️ | Enabled container/preload and disabled text/no-container branches verified; remote Twikoo initialization/UI is not tested |
 | Head scripts/integrations | ✅ ⚠️ | Build-time injection implemented; current automated fixtures use an empty script list, and the full historical differential site is not a current CI gate |
 | Widgets | ✅ ⚠️ | Stats/tech/log widgets render in covered page shells; widget registry combinations and changelog content are not systematically asserted |
@@ -188,21 +188,23 @@ Legend: ✅ Implemented, 🧪 Verified by current automated tests unless explici
 | `pnpm verify` | Static purity: forbidden upstream author/site identifiers, site files, and cross-project imports | ✅ Pass |
 | `pnpm test:sync` | 13 temporary-Git tests for sync fast-forward, conflicts, deletes, new files, transform/manual exclusion, unknown blocking, verify failure, and rollback | ✅ 13/13 |
 | `pnpm test:migration` | Static Migration Skill contract plus fake blog-v3 fixture checks for discovery, schema mapping, UI boundary, Twikoo/feed/stats, redirects, patches, custom overrides, and protected assets | ✅ 10/10 |
-| `pnpm test:contract` | 39 contract rows and required feature/coverage references stay synchronized with generated `docs/COMPATIBILITY.md` | ✅ Pass |
+| `pnpm test:contract` | 41 contract rows and required feature/coverage references stay synchronized with generated `docs/COMPATIBILITY.md` | ✅ Pass |
 | `pnpm peers check` | Workspace peer dependency audit | ✅ No issues |
 | `pnpm generate` | Playground static generation through workspace Layer link | ✅ Pass; Nitro prerenders 51 routes; one expected link-checker warning |
-| `pnpm test:consumer` | Pack, tarball boundary/leak audit, export/type declaration graph, independent install, pure Node smoke, typecheck, and three generate variants | ✅ Pass |
-| `pnpm test:compatibility` | Contract, production build log scan, 24 SSR cases, 12 real-browser cases, 11 dev hydration routes | ✅ Pass; 51 assertion groups |
+| `pnpm test:consumer` | Pack, tarball boundary/leak audit, export/type declaration graph, independent install, pure Node smoke, typecheck, three generate variants, client-config boundary assertions, and a features-off runtime 404 server check | ✅ Pass |
+| `pnpm test:compatibility` | Contract, production build log scan, 24 SSR cases, 12 real-browser cases, 11 dev hydration routes, and the anti-mirror real-navigation dev case | ✅ Pass; 52 assertion groups |
 | `pnpm sync:check` | Remote upstream head versus manifest baseline | ✅ Up to date |
+| `pnpm release:check` | package.json/tag/CHANGELOG contract, exports/files integrity, pack success, and tarball boundary audit | ✅ Pass locally with `--allow-untagged`; exact-tag enforcement runs in `publish.yml` |
+| `pnpm test:registry-consumer` | Release-only: install the published version from the npm registry (no local tarball), exports smoke, typecheck, generate, and output assertions | ❌ Against the out-of-band `0.1.0` (expected): fails typecheck inside the published package; must pass against the gated `0.1.1` |
 | `pnpm test:release` | Verify + real consumer + compatibility | Script exists; current local run executed its component commands with the broader CI set above |
 
 Current consumer variant facts:
 
-- Tarball: 148 files; 28 required files; five export entries.
+- Tarball: 151 files; 30 required files; five export entries.
 - Runtime contract derived from the current script: 100 assertion invocations plus 15 pure-Node smoke checks.
 - `default`: 42 prerendered routes.
-- `branches` (`enableStyle=false`, `hidePostPrefix=false`, Twikoo, anti-mirror): 42 prerendered routes.
-- `features-off` (Atom/OPML/stats off, random-permalink flag accepted): 39 prerendered routes.
+- `branches` (`enableStyle=false`, `hidePostPrefix=false`, Twikoo, anti-mirror, multi-pattern stats): 42 prerendered routes.
+- `features-off` (Atom/OPML/stats off): 39 prerendered routes plus runtime 404 assertions through `nuxt build` and a real server.
 
 Compatibility warnings are non-fatal and are listed under Known Limitations.
 
@@ -231,6 +233,14 @@ Stages are strictly ordered:
 - Runs `pnpm sync:check --fail-on-update` without installing dependencies.
 - On drift, creates/reuses one `sync` Issue with `sync:diff` details and fails with a clear message.
 - Never applies, commits, or pushes changes.
+
+### `publish.yml`
+
+- Triggers only on `release: published` (human-confirmed GitHub Release); no push-to-branch publishing.
+- Permissions: `contents: read`, `id-token: write`; no `NPM_TOKEN` is stored.
+- Checks out the release tag, verifies tag = `v${package.json version}`, resolves Node/pnpm from package metadata.
+- Reruns the complete ordered suite serially, then `pnpm release:check`.
+- Packs `artifacts/clarity-theme-<version>.tgz`, audits it, records the SHA-256 checksum, dry-runs `npm publish`, and publishes that exact tarball with `--provenance` over OIDC.
 
 ## 11. Upstream Sync
 
@@ -271,16 +281,16 @@ The full generated feature matrix is [COMPATIBILITY](./COMPATIBILITY.md).
 
 ## 14. Known Limitations
 
-1. **Server-oriented configuration remains client-visible.** Feed/stats and several build-only article fields still flow through appConfig because server routes and shared readers use `useClarityConfig()`. This is a boundary defect, not evidence of secret storage in `clarity.config.ts`.
-2. **Feature-off is mostly prerender/head removal.** Server routes are not proven to return 404 at runtime when Atom/OPML/stats are disabled.
-3. **Anti-mirror navigation is unverified and likely malformed.** Script injection is verified, but the inherited client assigns the full `site.url` to `location.host`; a focused browser test and correction are required before release.
-4. **Multiple stats path patterns compose as an intersection.** The handler chains `where()` conditions inside its query group, while the documented array is naturally read as a union. Only a single-pattern fixture is tested.
+1. **Server/client configuration boundary is now enforced but the email visibility option is undecided.** Feed/stats/feature flags/build-only article fields and `site.author.email` are excluded from client appConfig and served through Nitro private runtime config. `site.author.email` remains intentionally public metadata (HTML `author` meta plus Atom/OPML output) pending the separate visibility decision.
+2. **Feature-off semantics are uniform.** Disabled Atom/OPML/stats routes are absent from static output and return 404 from dev/SSR runtime, verified against a real built server.
+3. **Anti-mirror navigation is verified.** The script derives the canonical host from `site.url`, and a real-browser case navigates from a mirror-like hostname back to the canonical host.
+4. **Multi-pattern stats are verified as a union.** `@nuxt/content` 3.16 joins conditions inside one `orWhere` group with `OR`; the earlier conjunctive-behavior claim was stale. A two-pattern consumer regression locks the behavior.
 5. **Regional CDN defaults are fixed.** KaTeX, Inter, and Google font links point to China-oriented mirror domains without a consumer override.
 6. **Automated Theme tests run unpatched.** This is the correct default environment, but tab preservation, fractional image density, and exact plain-Shiki scope therefore differ from the patched real blog environment.
 7. **Differential consumer is not current or automated.** It is outside Git, points at an older local tarball, and its persisted output predates current HEAD.
-8. **Remote service behavior is not fully tested.** Twikoo initialization, anti-mirror navigation, ABC audio, search keyboard behavior, and image service failures are not asserted.
+8. **Remote service behavior is not fully tested.** Twikoo initialization, ABC audio, search keyboard behavior, and image service failures are not asserted.
 9. **Several UI interactions lack tests.** Archive controls, code collapse/copy interactions, widget combinations, preview entry, responsive drawers/masks, and custom error UI are not systematically covered. This does not by itself mean those features are unimplemented.
-10. **`useRandomPermalink` does not generate permalinks.** The Theme accepts the flag but expects build scaffolding owned elsewhere.
+10. **Random permalink generation is out of scope by design.** The no-op `article.useRandomPermalink` field was removed before `0.1.0`; generation belongs to consumer build scaffolding, and `permalink` frontmatter remains the supported custom-route mechanism.
 11. **Same-path component override emits `NUXT_B3011`.** Functionality is verified, but the warning remains.
 12. **Compatibility has non-fatal warning classes.** Vue slot/readonly warnings, empty/undersized og:image, deprecated `twitter:card`, and external-resource warnings occur in dev/browser logs.
 13. **Shiki depends on remote esm.sh imports.** Restricted/offline builds may be affected.
@@ -290,8 +300,8 @@ The full generated feature matrix is [COMPATIBILITY](./COMPATIBILITY.md).
 
 The debt register is now maintained in [ROADMAP](./ROADMAP.md). Current headline items are:
 
-- **P0:** server/client configuration split, feature route guards, anti-mirror navigation verification/correction, and removal or explicit relocation of the no-op `useRandomPermalink` contract.
-- **P1:** configurable asset origins, multi-pattern stats correctness, sync-manifest classification, TS/MJS parity checking, `plain-shiki` patch reduction, and release workflow design.
+- **P0:** all resolved in this working tree (server/client configuration split, feature route guards, anti-mirror navigation verification/correction, and no-op permalink contract removal).
+- **P1:** multi-pattern stats verified and regression-tested; release workflow implemented (actual publish pending). Deferred: configurable asset origins, sync-manifest classification, TS/MJS parity checking, and `plain-shiki` patch reduction.
 - **P2:** incremental interaction/accessibility/responsive/service-failure coverage, warning reduction, offline Shiki support, author-email visibility, purity generalization, and harness maintainability.
 
 The former repeated bullet list duplicated these items across limitations and future work; use the roadmap IDs rather than creating parallel trackers.
@@ -316,10 +326,10 @@ Still open:
 
 Future implementation is ordered by [ROADMAP](./ROADMAP.md):
 
-1. **Milestone 1 — Core boundary and correctness hardening:** configuration boundary, route semantics, anti-mirror navigation, permalink contract, and stats path composition.
+1. **Milestone 1 — Core boundary and correctness hardening:** ✅ complete.
 2. **Milestone 2 — Compatibility and quality refinement:** asset origins, sync classification, dual-track parity, and `plain-shiki` strategy.
-3. **Milestone 3 — Release-candidate hardening:** release workflow, exact-commit verification, and final contract/documentation freeze.
-4. **Milestone 4 — Release and maintenance:** first npm release and incremental post-release coverage.
+3. **Milestone 3 — Release-candidate hardening:** ✅ complete (pipeline implemented; exact-tag run happens in the publish workflow).
+4. **Milestone 4 — Release and maintenance:** first npm release (manual gates pending) and incremental post-release coverage.
 
 The old phase-based TODO lists are no longer the active planning track.
 
@@ -333,6 +343,6 @@ The old phase-based TODO lists are no longer the active planning track.
 
 ## 19. Current Milestone
 
-**Phase 20 — Technical Debt Triage complete.**
+**v0.1.0 release candidate — Milestone 1 and release enablement complete.**
 
-The current state has been re-audited against code, manifests, tests, CI, and the upstream baseline. Existing limitations were classified into P0/P1/P2/Deferred/Won't Fix entries, false positives and duplicate trackers were identified, and future work is now ordered in [ROADMAP](./ROADMAP.md). No runtime code was changed in this phase.
+All four P0 correctness blockers are fixed with targeted tests, the multi-pattern stats semantics are verified and locked, and the npm publication pipeline (release gate, changelog, OIDC workflow, provenance, registry consumer test) is implemented. What remains before `0.1.0` is on npm: commit and tag the exact release commit, confirm the npm name/Trusted Publisher on the website, publish the GitHub Release, and run the post-publish registry verification. Deferred P1/P2 work stays ordered in [ROADMAP](./ROADMAP.md).

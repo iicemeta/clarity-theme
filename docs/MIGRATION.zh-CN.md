@@ -97,13 +97,17 @@ git log -1 --oneline
 
 ### 4.1 安装 Clarity Theme
 
-首次 npm 发布之前，锁定一个已审查的 Git commit：
+从 npm 安装已发布版本，并作为运行时依赖（而非开发依赖）：
+
+```bash
+pnpm add clarity-theme
+```
+
+如需使用未发布 commit 或调试具体变更，可回退到锁定 commit 的 Git 依赖：
 
 ```bash
 pnpm add github:iicemeta/clarity-theme#<commit>
 ```
-
-发布版本可用后，改用文档记载的包版本范围。将 Clarity 安装为运行时依赖，而不是开发依赖。
 
 ### 4.2 替换 `nuxt.config.ts` 中的应用入口
 
@@ -181,7 +185,6 @@ export default defineClarityConfig({
 		},
 		types: { tech: {}, story: {} },
 		order: { date: 'Created', updated: 'Updated' },
-		useRandomPermalink: false,
 		hidePostPrefix: true,
 		robotsNotIndex: ['/preview', '/previews/*'],
 	},
@@ -411,7 +414,7 @@ Clarity 提供：
 | `article.categories` | `article.categories` | icon/color 形态相同 |
 | `article.types` | `article.types` | 第一个键仍是默认版式 |
 | `article.order` | `article.order` | 排序字段 → 显示名 |
-| `article.useRandomPremalink` | `article.useRandomPermalink` | 修正源码拼写错误；当前是脚手架开关，不是生成器 |
+| `article.useRandomPremalink` | 无 Clarity 字段 | 0.1.0 发布前已移除：随机固定链接生成属于消费者构建脚手架；删除该字段，`permalink` frontmatter 保持不变 |
 | `article.hidePostPrefix` | `article.hidePostPrefix` | 控制 `/posts/` 前缀移除 |
 | `article.robotsNotIndex` | `article.robotsNotIndex` | 供给 robots 配置 |
 | `feed.limit` | `feed.limit` | 正整数 |
@@ -545,7 +548,7 @@ pnpm test:compatibility
 ### 配置被拒绝或被忽略
 
 - 使用精确的 Clarity 字段名；schema 拒绝未知字段。
-- 检查 `timeZone → timezone`、`timeEstablished → established` 与 `useRandomPremalink → useRandomPermalink`。
+- 检查 `timeZone → timezone` 与 `timeEstablished → established`；源码的 `useRandomPremalink` 开关在 Clarity 中没有对应字段，必须删除。
 - 保持 `site.url` 以斜杠结尾。
 - 确认 `clarity.config.ts` 在根目录，或被 `clarityConfig.configFile` 引用。
 - 从 app config 中移除旧的 `...blogConfig`。

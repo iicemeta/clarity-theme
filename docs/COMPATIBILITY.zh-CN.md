@@ -56,7 +56,7 @@
 | llms | site.url / title / description 注入 nuxt-llms | /llms.txt 输出站点标题、描述与内容索引 | `pnpm test:compatibility` | ✅ Automated<br>`compat:F-llms`<br>`consumer:generate-default` |
 | atom | feed.limit 与内容集合 | /atom.xml 输出站点 id、自引用与文章链接 | `pnpm test:compatibility && pnpm test:consumer` | ✅ Automated<br>`compat:F-atom`<br>`consumer:generate-default`<br>`consumer:generate-branches` |
 | opml | feeds.ts 友链数据 | /subscriptions.opml 输出站点自身与友链订阅 | `pnpm test:compatibility && pnpm test:consumer` | ✅ Automated<br>`compat:F-opml`<br>`consumer:generate-default` |
-| stats | stats.includePaths = posts/% | /api/stats 输出文章数、字数、分类与标签统计 | `pnpm test:compatibility && pnpm test:consumer` | ✅ Automated<br>`compat:F-stats`<br>`consumer:generate-default` |
+| stats | stats.includePaths = posts/%（或多模式并集） | /api/stats 输出文章数、字数、分类与标签统计；多个 includePaths 取并集 | `pnpm test:compatibility && pnpm test:consumer` | ✅ Automated<br>`compat:F-stats`<br>`consumer:generate-default`<br>`consumer:generate-branches` |
 | permalink | frontmatter permalink 覆盖文件路由 | 自定义路由可访问并生成，原文件路由 404 | `pnpm test:compatibility && pnpm test:consumer` | ✅ Automated<br>`compat:E-permalink`<br>`compat:E-permalink-source-hidden`<br>`compat:E-permalink-client`<br>`consumer:generate-default` |
 | 404 | 不存在的路由 | 返回 404 状态码与 Theme 404 页面 | `pnpm test:compatibility` | ✅ Automated<br>`compat:E-missing-page`<br>`compat:E-hidden-posts-prefix` |
 
@@ -65,13 +65,15 @@
 | 功能 | 输入 | 预期行为 | 测试命令 | 状态 |
 | --- | --- | --- | --- | --- |
 | enableStyle=false | consumer 分支配置 feed.enableStyle=false | atom.xml 仍生成，但不含 XSLT 样式声明 | `pnpm test:consumer` | ✅ Automated<br>`consumer:generate-branches` |
-| useRandomPermalink=true | consumer 分支配置 article.useRandomPermalink=true | schema 接受并保留该开关；构建不受影响（随机 permalink 生成属于构建脚手架，Theme 运行时只透传该配置） | `pnpm test:consumer` | ⚙️ Partial<br>`consumer:exports-smoke`<br>`consumer:generate-features-off` |
 | hidePostPrefix=false | consumer 分支配置 article.hidePostPrefix=false | 文章路由保留 /posts 前缀，无前缀路由不再生成 | `pnpm test:consumer` | ✅ Automated<br>`consumer:generate-branches` |
-| stats=false | consumer 分支配置 features.stats=false | routeRules 关闭预渲染，generate 产物中无 api/stats | `pnpm test:consumer` | ✅ Automated<br>`consumer:generate-features-off` |
-| atom=false | consumer 分支配置 features.atom=false | routeRules 关闭预渲染（产物无 atom.xml），head 无 alternate 声明 | `pnpm test:consumer` | ✅ Automated<br>`consumer:generate-features-off` |
-| opml=false | consumer 分支配置 features.opml=false | routeRules 关闭预渲染，generate 产物中无 subscriptions.opml | `pnpm test:consumer` | ✅ Automated<br>`consumer:generate-features-off` |
+| stats=false | consumer 分支配置 features.stats=false | routeRules 关闭预渲染（产物无 api/stats），dev/SSR 运行时返回 404 | `pnpm test:consumer` | ✅ Automated<br>`consumer:generate-features-off` |
+| atom=false | consumer 分支配置 features.atom=false | routeRules 关闭预渲染（产物无 atom.xml），head 无 alternate 声明，dev/SSR 运行时返回 404 | `pnpm test:consumer` | ✅ Automated<br>`consumer:generate-features-off` |
+| opml=false | consumer 分支配置 features.opml=false | routeRules 关闭预渲染，generate 产物中无 subscriptions.opml，dev/SSR 运行时返回 404 | `pnpm test:consumer` | ✅ Automated<br>`consumer:generate-features-off` |
 | antiMirror=false | 默认配置（playground 与 consumer 默认变体） | 不注入任何反镜像脚本与黑名单数据 | `pnpm test:compatibility && pnpm test:consumer` | ✅ Automated<br>`compat:F-site-shell`<br>`consumer:generate-default` |
 | antiMirror=true + blacklist | features.antiMirror={ blacklist: ['mirror.example.com'] } | 页面内联反镜像脚本，黑名单与站点 URL 以 base64 注入 | `pnpm test:consumer` | ✅ Automated<br>`consumer:generate-branches` |
+| antiMirror navigation (runtime) | dev 服务经镜像主机（127.0.0.1，黑名单命中）访问，site.url 指向 localhost 同端口 | 注入脚本在真实浏览器中把页面导航回规范主机，canonical 链接同步指向规范主机 | `pnpm test:compatibility` | ✅ Automated<br>`compat:anti-mirror-navigation` |
+| stats.includePaths multi-pattern | consumer 分支配置 stats.includePaths = ['posts/%', 'notes/%'] | 统计取两类内容的并集（posts 与 notes 都计入），非匹配页面仍排除 | `pnpm test:consumer` | ✅ Automated<br>`consumer:generate-branches` |
+| client config boundary | site.author.email / feed.* / 完整 stats.includePaths / 构建期 article 字段 | 以上字段不进入客户端 bundle；Atom 等服务端输出仍使用完整配置（email 保留在服务端） | `pnpm test:consumer` | ✅ Automated<br>`consumer:generate-default` |
 | Twikoo enabled | integrations.twikoo={ envId: 'https://twikoo.consumer.example' } | head 输出 preconnect，文章页渲染 #twikoo 容器 | `pnpm test:consumer` | ✅ Automated<br>`consumer:generate-branches` |
 | Twikoo disabled | 未配置 integrations.twikoo | 文章页显示“本文暂未开启评论”，不渲染 #twikoo 容器 | `pnpm test:consumer` | ✅ Automated<br>`consumer:generate-default` |
 | custom app.config | consumer app/app.config.ts 覆盖 header.emojiTail；playground 覆盖 pagination.perPage | UI 默认值被消费者覆盖并出现在渲染结果中 | `pnpm test:compatibility && pnpm test:consumer` | ✅ Automated<br>`compat:F-pagination`<br>`consumer:generate-default` |

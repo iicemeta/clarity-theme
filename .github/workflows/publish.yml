@@ -1,0 +1,159 @@
+# npm 发布流水线（只在人工确认的 GitHub Release 上触发）
+#
+# 职责链（严格串行）：
+#   checkout 发布 tag → tag/version 校验 → 依赖安装 → 完整有序验证
+#   → pnpm pack 到 artifacts/ → 审计最终 tarball → npm publish（OIDC/Trusted Publishing）
+#
+# 安全约定：
+#   - 不在 push master 时自动发布：GitHub Release 承担“人工确认发布版本”职责
+#   - 不使用长期 NPM_TOKEN：发布通过 npm Trusted Publishing / OIDC
+#   - 发布的必须是完整验证并审计过的同一个 tarball（artifacts/ 下的产物）
+
+name: Publish
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: publish-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    name: Validate and publish npm package
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    environment: npm
+    steps:
+      - name: Checkout release tag
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref }}
+          fetch-depth: 0
+
+      - name: Resolve expected version tag
+        id: version
+        run: |
+          set -euo pipefail
+          version="$(jq -r '.version' package.json)"
+          expected="v${version}"
+          actual="${GITHUB_REF_NAME}"
+
+          echo "version=${version}" >> "$GITHUB_OUTPUT"
+          echo "expected-tag=${expected}" >> "$GITHUB_OUTPUT"
+
+          if [ "${GITHUB_EVENT_NAME}" = "release" ] && [ "${actual}" != "${expected}" ]; then
+            echo "::error::Release tag ${actual} 与 package.json 版本 ${version} 不一致（期望 ${expected}），拒绝发布"
+            exit 1
+          fi
+
+          if ! git rev-parse -q --verify "refs/tags/${expected}" >/dev/null; then
+            echo "::error::Git tag ${expected} 不存在于当前检出，拒绝发布"
+            exit 1
+          fi
+
+          echo "tag/version 校验通过：${expected}"
+
+      - name: Resolve Node version from engines.node
+        id: node
+        run: |
+          set -euo pipefail
+          engines_node="$(jq -r '.engines.node // empty' package.json)"
+          primary=''
+          while IFS= read -r part; do
+            range="$(printf '%s' "$part" | tr -d '[:space:]')"
+            [ -n "$range" ] || continue
+            if [[ "$range" =~ ^[\^~]?([0-9]+)\.([0-9]+)(\.[0-9]+)?$ ]]; then
+              primary="${BASH_REMATCH[1]}.${BASH_REMATCH[2]}"
+            fi
+          done <<< "${engines_node//||/$'\n'}"
+          if [ -z "$primary" ]; then
+            echo "::error::engines.node（$engines_node）中找不到可固定的版本范围"
+            exit 1
+          fi
+          echo "primary=${primary}" >> "$GITHUB_OUTPUT"
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ steps.node.outputs.primary }} # 来自 engines.node 的主版本
+          cache: pnpm
+          registry-url: https://registry.npmjs.org
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # ---- 完整有序验证（与本地发布前序列一致，严格串行，不并行）----
+      - name: Lint
+        run: pnpm lint
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+      - name: Theme purity verification
+        run: pnpm verify
+
+      - name: Upstream sync tool regression
+        run: pnpm test:sync
+
+      - name: Migration skill regression
+        run: pnpm test:migration
+
+      - name: Compatibility contract
+        run: pnpm test:contract
+
+      - name: Peer dependency audit
+        run: pnpm peers check
+
+      - name: Playground static generation
+        run: pnpm generate
+
+      - name: Real tarball consumer test
+        run: pnpm test:consumer
+
+      - name: SSR / browser / hydration compatibility
+        run: pnpm test:compatibility
+
+      - name: Release gate（tag/version、CHANGELOG、pack、tarball 边界）
+        run: pnpm release:check
+
+      # ---- 生成并审计最终发布产物（发布同一个被审计过的 tarball）----
+      - name: Pack final release tarball
+        run: |
+          mkdir -p artifacts
+          pnpm pack --pack-destination artifacts/
+          tarball="artifacts/clarity-theme-${{ steps.version.outputs.version }}.tgz"
+          test -f "${tarball}"
+          echo "tarball=${tarball}" >> "$GITHUB_OUTPUT"
+
+      - name: Audit final release tarball
+        run: |
+          tarball="artifacts/clarity-theme-${{ steps.version.outputs.version }}.tgz"
+          echo "## npm 发布产物审计" >> "$GITHUB_STEP_SUMMARY"
+          echo '' >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+          tar -tzf "${tarball}" >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+          sha256sum "${tarball}" | tee -a "$GITHUB_STEP_SUMMARY"
+
+      - name: npm publish dry run（最终一致性检查）
+        run: npm publish ./artifacts/clarity-theme-${{ steps.version.outputs.version }}.tgz --access public --provenance --dry-run
+
+      - name: Publish to npm（Trusted Publishing / OIDC，无长期 token）
+        run: npm publish ./artifacts/clarity-theme-${{ steps.version.outputs.version }}.tgz --access public --provenance
+
+      - name: Publish verification summary
+        run: |
+          {
+            echo "## Published clarity-theme@${{ steps.version.outputs.version }}"
+            echo ''
+            echo "- Git tag: \`${{ steps.version.outputs.expected-tag }}\`"
+            echo "- Provenance: OIDC（npm Trusted Publishing，无 NPM_TOKEN）"
+            echo "- 发布后请运行：\`pnpm test:registry-consumer\`（真实 registry 消费验证）"
+          } >> "$GITHUB_STEP_SUMMARY"

@@ -75,7 +75,7 @@ Root package/Layer metadata, workspace configuration, quality configs, CI, licen
 - `GET /subscriptions.opml`
 - `GET /api/stats`
 
-They query the Content collection and read site/feed/stats configuration through appConfig.
+They query the Content collection and read site/feed/stats configuration plus feature route flags through Nitro's private runtime config (`useClarityServerConfig()`); disabled features return 404 at runtime.
 
 ### Development/test-only surfaces
 
@@ -87,7 +87,8 @@ They query the Content collection and read site/feed/stats configuration through
 2. The Zod schema fills defaults and rejects unknown/invalid fields immediately.
 3. `modules/clarity-config` discovers `clarity.config.ts` / `.mjs` / `.js`, loads it with jiti, and parses it a second time before depending on it.
 4. The module maps parsed data:
-   - `toPublicClarityConfig()` plus derived header/footer defaults enter appConfig.
+   - `toPublicClarityConfig()` (client subset) plus derived header/footer defaults enter appConfig.
+   - `toServerClarityConfig()` enters Nitro private runtime config for server handlers and feature route guards.
    - Site title/URL/language map to `nuxt.options.site`.
    - `article.robotsNotIndex` maps to robots disallow rules.
    - Site domain/title/description map to `nuxt-llms`.
@@ -97,7 +98,7 @@ They query the Content collection and read site/feed/stats configuration through
 5. A `content:file:afterParse` hook applies frontmatter `permalink` and optional `/posts` prefix removal.
 6. Anti-mirror, when configured with a blacklist, is serialized, minified, and injected as an inline head script.
 
-Configuration is strict. `integrations.scripts` is omitted from appConfig and consumed during build; other server-oriented fields remain appConfig-visible as recorded in PROJECT-STATUS.
+Configuration is strict. `integrations.scripts` is omitted from appConfig and consumed during build; `feed.*`, full `stats.*`, feature route flags, build-only article fields, and `site.author.email` are served through the server-only runtime config and do not enter appConfig.
 
 ## 5. App Config Flow
 
@@ -164,7 +165,7 @@ The module aliases `#clarity/feeds` to the consumer's `feeds.ts` / `.mjs` / `.js
 - Public runtime config exposes build environment and package versions.
 - Real secrets must remain in consumer `runtimeConfig`; appConfig and `clarity.config.ts` are not secret stores.
 
-Some feed/stats fields are currently read by server handlers through appConfig, so they remain in the client payload. This is known debt, not an intended security boundary.
+Server handlers no longer read feed/stats configuration through appConfig, so those fields stay out of the client payload. `site.author.email` remains intentionally public metadata (HTML `author` meta plus feed output) until the separate visibility decision.
 
 ## 9. Injection Aliases
 

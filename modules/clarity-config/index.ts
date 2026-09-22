@@ -1,5 +1,6 @@
 import type { Nuxt } from '@nuxt/schema'
 import type { ClarityConfig } from '../../config/schema'
+import type { ClarityServerConfig } from '../../config/server'
 import { existsSync } from 'node:fs'
 import { dirname, relative, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -16,6 +17,7 @@ import { minify } from 'oxc-minify'
 import vuePkg from 'vue/package.json'
 import { toPublicClarityConfig } from '../../config/public'
 import { clarityConfigSchema } from '../../config/schema'
+import { toServerClarityConfig } from '../../config/server'
 import handleMirror from './anti-mirror-client'
 
 const moduleDir = dirname(fileURLToPath(import.meta.url))
@@ -126,6 +128,12 @@ export default defineNuxtModule<ModuleOptions>({
 				},
 			},
 		})
+
+		// ---- 服务端专用配置：注入 Nitro 私有 runtimeConfig（不进入客户端 bundle）----
+		// Atom/OPML/stats 处理器与 feature 路由守卫从这里读取完整配置。
+		// 注意：Nuxt 会按消费者实际值推导 runtimeConfig 类型（可选字段可能被推断为必填），
+		// 此处以 Theme 声明的 ClarityServerConfig 为准，避免与消费者无关的推断形状冲突。
+		;(nuxt.options.runtimeConfig as { clarity?: ClarityServerConfig }).clarity = toServerClarityConfig(config)
 
 		// ---- SEO / site / robots / llms ----
 		nuxt.options.site = {

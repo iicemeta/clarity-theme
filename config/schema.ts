@@ -52,8 +52,6 @@ export const clarityArticleSchema = z.strictObject({
 	types: z.record(z.string(), z.looseObject({})).default({ tech: {} }),
 	/** 分类排序方式，键为排序字段，值为显示名称 */
 	order: z.record(z.string(), z.string()).default({ date: '创建日期', updated: '更新日期' }),
-	/** 新建文章时自动生成自定义链接（permalink/abbrlink），仅构建脚手架使用 */
-	useRandomPermalink: z.boolean().default(false),
 	/** 隐藏基于文件路由（非自定义链接）URL 中的 /post 路径前缀，仅模块构建期使用 */
 	hidePostPrefix: z.boolean().default(true),
 	/** 禁止搜索引擎收录的路径，仅模块构建期使用 */

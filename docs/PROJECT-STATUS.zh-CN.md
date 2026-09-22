@@ -25,7 +25,7 @@
 | Phase 20 开始时的 HEAD | `433d042ed3b626a048e84000ba2039102df61f28`（`docs: establish current reality-sync baseline`） |
 | 工作树 | 文档变更前干净并与 `origin/master` 同步 |
 | 包 | `clarity-theme` v0.1.0，MIT |
-| 分发状态 | Git 包工作流；当前没有 npm 产物。2026-09-22 的 npm 注册表查询显示该包名未发布/不可用 |
+| 分发状态 | npm 发布管线已就绪（OIDC 发布工作流、发布门禁、更新日志）。**一个有缺陷的 `clarity-theme@0.1.0` 已于 2026-09-22T07:28:22Z 被绕过流程发布**，发布者 `creampack <creampack@iicemeta.com>`，来自 P0 修复前的 gitHead `5a03778`，未经门禁、无 provenance；registry 消费者测试在其内部 typecheck 失败。修正后的门禁发布必须是 `0.1.1` |
 | 上游基线 | `blog-v3` 3.7.2，`main` @ `f6ea97d745517feb52f0c100e89acb36f0adc12f` |
 | 上游漂移 | 无：Phase 20 的一次直接远端头检查返回了 manifest 基线 commit |
 | 用于验证的本地运行时 | Node.js 24.15.0、pnpm 12.4.1、Nuxt 4.5.2、Vue 3.5.43 |
@@ -50,7 +50,7 @@
 | 发布包负载 | `app/`、`config/`、`img/`、`modules/`、`public/`、`remark-plugins/`、`server/`、`shared/`、根 Layer/config 元数据、许可证与 README |
 | 不打入包负载 | `docs/`、`playground/`、`scripts/`、`tests/`、`.github/`、workspace 与 lock 文件、同步 manifest |
 
-当前 `pnpm pack` 审计报告 149 个文件，包括 28 个发布必需文件与中文 README（`README.zh-CN.md`）。该包暴露五个导出入口，且没有补丁目录。
+当前 `pnpm pack` 审计报告 151 个文件，包括 30 个发布必需文件（原 28 个加上 `config/server.ts` 与 `server/utils/clarity.ts`）与中文 README（`README.zh-CN.md`）。该包暴露五个导出入口，声明 `publishConfig.access=public`，且没有补丁目录。`CHANGELOG.md`、`scripts/release-check.mjs`、`scripts/test-registry-consumer.mjs` 与 `.github/workflows/publish.yml` 构成完整发布管线。
 
 ## 3. 上游基线
 
@@ -136,6 +136,7 @@ Layer 还支持 `useClarity*` 运行时自动导入与同路径组件覆盖。�
 | `content.config.ts` | 使用方 | Content 必需 | Content 构建 | 用解析后的站点配置调用主题工厂 |
 | `feeds.ts` | 使用方 | 否 | 友链页与 OPML | 回退为空数据并警告 |
 | `runtimeConfig` | 使用方 | 按需 | Nuxt 运行时 | 真正密钥的唯一合法位置 |
+| Nitro 私有 runtime 配置（`runtimeConfig.clarity`） | 主题 | 构建期注入 | 仅服务端路由 | 完整 site/feed/stats 值与 feature 路由开关；经内部 `useClarityServerConfig()` 读取，绝不序列化到客户端 |
 | `clarityConfig.configFile` 模块选项 | 使用方 | 否 | 模块 setup | 覆盖自动配置文件发现 |
 
 字段级必填/默认值/客户端可见性规则维护在[配置说明](./CONFIGURATION.zh-CN.md)。
@@ -169,10 +170,9 @@ Layer 还支持 `useClarity*` 运行时自动导入与同路径组件覆盖。�
 | 统计 | ✅ 🧪 | 计数、字数、分类与年度 JSON 断言通过 |
 | 404/错误路由 | ✅ 🧪 ⚠️ | 缺失/固定链接源路由在 SSR 测试中返回 404；完整自定义错误 UI 未断言 |
 | 固定链接 | ✅ 🧪 | frontmatter `permalink` 覆盖源路径并隐藏源路由 |
-| `useRandomPermalink` | ✅ ⚠️ 📌 | 仅 schema 接受/构建兼容；主题不生成随机固定链接 |
 | UI app-config 覆盖 | ✅ 🧪 | 消费者 `header.emojiTail` 与 playground 分页设置已验证 |
 | 组件覆盖 | ✅ 🧪 ⚠️ | 同路径 Badge 覆盖已验证，伴随预期的 Nuxt 重名警告 |
-| 反镜像 | ✅ 🧪 ⚠️ | 编码黑名单/站点脚本注入与禁用分支已验证；真实浏览器重定向未测试 |
+| 反镜像 | ✅ 🧪 | 编码黑名单/站点脚本注入、禁用分支，以及从镜像类主机导航回规范主机的真实浏览器用例均已验证 |
 | Twikoo | ✅ 🧪 ⚠️ | 启用容器/preload 与禁用文本/无容器分支已验证；远程 Twikoo 初始化/UI 未测试 |
 | head 脚本/集成 | ✅ ⚠️ | 构建期注入已实现；当前自动化夹具使用空脚本列表，完整历史差分站点不是当前 CI 门槛 |
 | 小部件 | ✅ ⚠️ | stats/tech/log 小部件在已覆盖页面外壳中渲染；小部件注册组合与更新日志内容未被系统性断言 |
@@ -188,21 +188,23 @@ Layer 还支持 `useClarity*` 运行时自动导入与同路径组件覆盖。�
 | `pnpm verify` | 静态纯度：禁止的上游作者/站点标识、站点文件与跨项目导入 | ✅ 通过 |
 | `pnpm test:sync` | 13 个临时 Git 测试：同步快进、冲突、删除、新文件、transform/manual 排除、unknown 阻止、verify 失败与回滚 | ✅ 13/13 |
 | `pnpm test:migration` | 静态迁移 Skill 契约加伪 blog-v3 夹具检查：发现、schema 映射、UI 边界、Twikoo/feed/统计、重定向、补丁、自定义覆盖与受保护资产 | ✅ 10/10 |
-| `pnpm test:contract` | 39 个契约行与必需的功能/覆盖引用与生成的 `docs/COMPATIBILITY.md` 保持同步 | ✅ 通过 |
+| `pnpm test:contract` | 41 个契约行与必需的功能/覆盖引用与生成的 `docs/COMPATIBILITY.md` 保持同步 | ✅ 通过 |
 | `pnpm peers check` | workspace peer 依赖审计 | ✅ 无问题 |
 | `pnpm generate` | 经 workspace Layer 链接的 playground 静态生成 | ✅ 通过；Nitro 预渲染 51 条路由；一条预期的链接检查器警告 |
 | `pnpm test:consumer` | 打包、tarball 边界/泄漏审计、导出/类型声明图、独立安装、纯 Node 冒烟、typecheck 与三种生成变体 | ✅ 通过 |
-| `pnpm test:compatibility` | 契约、生产构建日志扫描、24 个 SSR 用例、12 个真实浏览器用例、11 条 dev 水合路由 | ✅ 通过；51 个断言组 |
+| `pnpm test:compatibility` | 契约、生产构建日志扫描、24 个 SSR 用例、12 个真实浏览器用例、11 条 dev 水合路由，以及反镜像真实导航 dev 用例 | ✅ 通过；52 个断言组 |
 | `pnpm sync:check` | 远端上游头对比 manifest 基线 | ✅ 最新 |
+| `pnpm release:check` | package.json/tag/CHANGELOG 契约、exports/files 完整性、pack 成功与 tarball 边界审计 | ✅ 本地以 `--allow-untagged` 通过；确切 tag 强制校验在 `publish.yml` 中执行 |
+| `pnpm test:registry-consumer` | 仅发布后：从 npm registry 安装已发布版本（无本地 tarball）、exports 冒烟、类型检查、generate 与产物断言 | ❌ 针对绕过流程的 `0.1.0`（预期）：在已发布包内部 typecheck 失败；必须对门禁后的 `0.1.1` 通过 |
 | `pnpm test:release` | verify + 真实消费者 + 兼容性 | 脚本存在；当前本地运行以上文更广的 CI 集合执行了其组件命令 |
 
 当前消费者变体事实：
 
-- Tarball：148 个文件；28 个必需文件；五个导出入口。
+- Tarball：151 个文件；30 个必需文件；五个导出入口。
 - 从当前脚本派生的运行时契约：100 次断言调用加 15 项纯 Node 冒烟检查。
 - `default`：42 条预渲染路由。
-- `branches`（`enableStyle=false`、`hidePostPrefix=false`、Twikoo、反镜像）：42 条预渲染路由。
-- `features-off`（Atom/OPML/统计关闭、随机固定链接开关被接受）：39 条预渲染路由。
+- `branches`（`enableStyle=false`、`hidePostPrefix=false`、Twikoo、反镜像、多模式统计）：42 条预渲染路由。
+- `features-off`（Atom/OPML/统计关闭）：39 条预渲染路由，外加经 `nuxt build` 与真实服务的运行时 404 断言。
 
 兼容性警告为非致命，列于已知限制。
 
@@ -231,6 +233,14 @@ Layer 还支持 `useClarity*` 运行时自动导入与同路径组件覆盖。�
 - 不安装依赖即运行 `pnpm sync:check --fail-on-update`。
 - 漂移时创建/复用一个带 `sync:diff` 详情的 `sync` Issue，并以明确消息失败。
 - 绝不 apply、commit 或 push 变更。
+
+### `publish.yml`
+
+- 仅在 `release: published`（人工确认的 GitHub Release）时触发；不在分支 push 时发布。
+- 权限：`contents: read`、`id-token: write`；不保存 `NPM_TOKEN`。
+- 检出发布 tag，校验 tag = `v${package.json version}`，并从包元数据解析 Node/pnpm。
+- 严格串行重跑完整有序套件，然后执行 `pnpm release:check`。
+- 打包 `artifacts/clarity-theme-<version>.tgz`、审计、记录 SHA-256 校验和、试运行 `npm publish`，并以 OIDC `--provenance` 发布该确切 tarball。
 
 ## 11. 上游同步
 
@@ -271,16 +281,16 @@ Clarity Theme 本身不携带补丁。包管理器补丁是 workspace/安装根�
 
 ## 14. 已知限制
 
-1. **面向服务端的配置仍对客户端可见。** feed/统计与若干仅构建期 article 字段仍流经 appConfig，因为服务端路由与共享读取方使用 `useClarityConfig()`。这是边界缺陷，不代表 `clarity.config.ts` 中存放了密钥。
-2. **功能关闭主要是预渲染/head 移除。** Atom/OPML/统计禁用时，服务端路由未被证明会在运行时返回 404。
-3. **反镜像导航未验证且可能有缺陷。** 脚本注入已验证，但继承的客户端把完整 `site.url` 赋给 `location.host`；发布前需要专项浏览器测试与修正。
-4. **多个统计路径模式组合成交集。** handler 在其查询组内串联 `where()` 条件，而文档中的数组自然被读作并集。只测试了单模式夹具。
+1. **服务端/客户端配置边界已强制执行，但 email 可见性选项未决。** feed/统计/feature 开关/仅构建期 article 字段与 `site.author.email` 已从客户端 appConfig 剥离，改由 Nitro 私有 runtime 配置提供服务。`site.author.email` 仍作为有意的公开元数据（HTML `author` meta 与 Atom/OPML 输出），等待单独的可见性决策。
+2. **功能关闭语义一致。** 禁用的 Atom/OPML/统计路由在静态产物中缺省，并在 dev/SSR 运行时返回 404（经真实构建服务验证）。
+3. **反镜像导航已验证。** 脚本从 `site.url` 派生规范主机，真实浏览器用例完成从镜像类主机到规范主机的导航。
+4. **多模式统计验证为并集。** `@nuxt/content` 3.16 对同一 `orWhere` 组内条件以 `OR` 连接；此前「交集」的描述已过时。双模式消费者回归锁定该行为。
 5. **区域 CDN 默认值固定。** KaTeX、Inter 与 Google 字体链接指向面向中国的镜像域名，无使用方覆盖。
 6. **自动化主题测试在无补丁环境运行。** 这是正确的默认环境，但 tab 保留、小数图片密度与精确 plain-Shiki 作用域因此与打了补丁的真实博客环境不同。
 7. **差分消费者不是当前的，也未自动化。** 它在 Git 之外，指向较旧的本地 tarball，其持久化输出早于当前 HEAD。
-8. **远程服务行为未被完全测试。** Twikoo 初始化、反镜像导航、ABC 音频、搜索键盘行为与图片服务失败未被断言。
+8. **远程服务行为未被完全测试。** Twikoo 初始化、ABC 音频、搜索键盘行为与图片服务失败未被断言。
 9. **若干 UI 交互缺少测试。** 归档控件、代码折叠/复制交互、小部件组合、预览入口、响应式抽屉/遮罩与自定义错误 UI 未被系统性覆盖。这本身不代表这些功能未实现。
-10. **`useRandomPermalink` 不生成固定链接。** 主题接受该开关，但期望由别处持有的构建脚手架完成生成。
+10. **随机固定链接生成在设计上超出范围。** no-op 的 `article.useRandomPermalink` 字段已在 `0.1.0` 前移除；生成属于消费者构建脚手架，`permalink` frontmatter 仍是受支持的自定义路由机制。
 11. **同路径组件覆盖触发 `NUXT_B3011`。** 功能已验证，但警告仍在。
 12. **兼容性存在非致命警告类别。** Vue slot/readonly 警告、空/过小 og:image、废弃的 `twitter:card` 与外部资源警告出现在 dev/浏览器日志。
 13. **Shiki 依赖远程 esm.sh 导入。** 受限/离线构建可能受影响。
@@ -290,8 +300,8 @@ Clarity Theme 本身不携带补丁。包管理器补丁是 workspace/安装根�
 
 技术债清单现维护在[路线图](./ROADMAP.zh-CN.md)。当前头条项：
 
-- **P0：** 服务端/客户端配置拆分、功能路由守卫、反镜像导航验证/修正、移除或显式迁移 no-op 的 `useRandomPermalink` 契约。
-- **P1：** 可配置资源源、多模式统计正确性、同步 manifest 分类、TS/MJS 一致性检查、`plain-shiki` 补丁缩减与发布工作流设计。
+- **P0：** 已在当前工作树全部解决（服务端/客户端配置拆分、功能路由守卫、反镜像导航验证/修正、no-op 固定链接契约移除）。
+- **P1：** 多模式统计已验证并加回归；发布工作流已实现（实际发布待执行）。推迟：可配置资源源、同步 manifest 分类、TS/MJS 一致性检查与 `plain-shiki` 补丁缩减。
 - **P2：** 增量的交互/无障碍/响应式/服务失败覆盖、警告削减、离线 Shiki 支持、作者 email 可见性、纯度泛化与测试装置可维护性。
 
 此前重复的列表在限制与未来工作之间重复了这些项；请使用路线图 ID，不要创建平行跟踪器。
@@ -316,10 +326,10 @@ Clarity Theme 本身不携带补丁。包管理器补丁是 workspace/安装根�
 
 未来实现按[路线图](./ROADMAP.zh-CN.md)排序：
 
-1. **里程碑 1——核心边界与正确性加固：** 配置边界、路由语义、反镜像导航、固定链接契约与统计路径组合。
+1. **里程碑 1——核心边界与正确性加固：** ✅ 完成。
 2. **里程碑 2——兼容性与质量细化：** 资源源、同步分类、双轨一致性与 `plain-shiki` 策略。
-3. **里程碑 3——发布候选加固：** 发布工作流、确切 commit 验证与最终契约/文档冻结。
-4. **里程碑 4——发布与维护：** 首次 npm 发布与发布后增量覆盖。
+3. **里程碑 3——发布候选加固：** ✅ 完成（管线已实现；确切 tag 校验在发布工作流中执行）。
+4. **里程碑 4——发布与维护：** 首次 npm 发布（人工门禁待办）与发布后增量覆盖。
 
 旧的基于阶段的 TODO 清单不再是活跃的规划轨道。
 
@@ -333,6 +343,6 @@ Clarity Theme 本身不携带补丁。包管理器补丁是 workspace/安装根�
 
 ## 19. 当前里程碑
 
-**Phase 20——技术债分诊完成。**
+**v0.1.0 发布候选——里程碑 1 与发布赋能完成。**
 
-当前状态已对照代码、manifest、测试、CI 与上游基线重新审计。既有限制被分类为 P0/P1/P2/Deferred/Won't Fix 条目，识别了误报与重复跟踪器，未来工作现按[路线图](./ROADMAP.zh-CN.md)排序。本阶段没有修改运行时代码。
+四个 P0 正确性阻塞项均已修复并有针对性测试，多模式统计语义已验证并锁定，npm 发布管线（发布门禁、更新日志、OIDC 工作流、provenance、registry 消费者测试）已实现。`0.1.0` 上 npm 之前剩余事项：commit 并打 tag 到确切发布 commit、在网站确认 npm 名称/Trusted Publisher、发布 GitHub Release，以及发布后的 registry 验证。推迟的 P1/P2 工作继续按[路线图](./ROADMAP.zh-CN.md)排序。

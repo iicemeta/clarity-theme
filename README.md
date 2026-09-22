@@ -25,13 +25,23 @@ Clarity Theme is a reusable **Nuxt 4 Layer blog theme** extracted from [L33Z22L1
 | Nuxt peer | `^4.5.2` |
 | Vue peer | `^3.5.42` |
 
-The package is not currently available from the npm registry. Install it as a Git dependency pinned to a reviewed commit until the first package release is published. Clarity is part of your application runtime, so install it as a regular dependency rather than a development dependency.
+Clarity is available from the npm registry as `clarity-theme`. It is part of your application runtime (the Nuxt build and static generation load the Layer directly), so install it as a regular dependency rather than a development dependency; a production install must still be able to resolve it.
 
 ## Installation
 
 ```bash
+pnpm add clarity-theme
+```
+
+### Git commit installation (development fallback)
+
+For unreleased commits, local debugging, or reviewing a specific change before it is published, install directly from GitHub instead:
+
+```bash
 pnpm add github:iicemeta/clarity-theme#<commit>
 ```
+
+This path is intended for development only. Released sites should consume the published npm version so installs are reproducible and covered by the release verification matrix.
 
 ## Quick Start
 
@@ -83,7 +93,9 @@ Place articles under `content/posts/` and other Content pages under `content/`.
 // feeds.ts
 import type { FeedGroup } from 'clarity-theme/config'
 
-export default [] satisfies FeedGroup[]
+const feeds: FeedGroup[] = []
+
+export default feeds
 ```
 
 Without this file, the friend page and OPML output use empty data and the build logs a warning.
@@ -229,6 +241,8 @@ All documents are also available in 简体中文 as sibling `*.zh-CN.md` files.
 | [Patches](./docs/PATCHES.md) | Consumer patch ownership and current conclusions |
 | [Release audit](./docs/RELEASE-AUDIT.md) | Pre-closing engineering audit and remaining release gates |
 | [Release checklist](./docs/RELEASE-CHECKLIST.md) | Exact final checks, remaining blockers, and verification evidence |
+| [Publishing](./docs/PUBLISHING.md) | Versioning, tags, GitHub Releases, OIDC publishing, provenance, and rollback policy |
+| [Changelog](./CHANGELOG.md) | Consumer-facing release history |
 | [Extraction history](./docs/history/2026-09-layer-extraction.md) | Historical phases and one-time differential validation |
 
 ## Development
@@ -267,9 +281,9 @@ The weekly workflow only detects and reports drift. It never applies, commits, o
 
 ## Release Status
 
-Clarity Theme is a **v0.1.0 pre-publish Layer candidate**. The Layer/package boundary, validated configuration, Content factory, rendering pipeline, server outputs, playground, real-consumer acceptance, compatibility matrix, three-layer CI, and upstream-sync baseline are implemented.
+Clarity Theme is a **v0.1.0 npm release candidate**. The Layer/package boundary, validated configuration, Content factory, rendering pipeline, server outputs, playground, real-consumer acceptance, compatibility matrix, three-layer CI, upstream-sync baseline, release gate, and OIDC publish workflow are implemented. See the [release checklist](./docs/RELEASE-CHECKLIST.md) for the exact remaining manual publication steps.
 
-The first npm release is intentionally still blocked by the P0 correctness items in [Roadmap](./docs/ROADMAP.md)—especially the server/client configuration split, feature-off route semantics, anti-mirror navigation verification, and the no-op random-permalink contract—and by an exact-commit release run. Migration documentation and repeatability are being completed in this release-closing phase.
+The v0.1.0 correctness gates from [Roadmap](./docs/ROADMAP.md) are resolved: server/client configuration is split, feature-off routes return 404 at runtime, anti-mirror navigation is verified in a real browser, the no-op random-permalink field is removed, and multi-pattern stats are covered by a regression test. Remaining deferred items are recorded in the roadmap and release notes.
 
 ## License
 

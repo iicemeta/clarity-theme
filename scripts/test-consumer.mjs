@@ -12,7 +12,7 @@ import { Buffer } from 'node:buffer'
  * files 字段越界、依赖声明缺失、exports 路径错误、
  * 类型声明引用不存在的文件、上游站点数据泄漏等。
  */
-import { execSync } from 'node:child_process'
+import { execSync, spawn } from 'node:child_process'
 import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { dirname, join, relative, resolve } from 'node:path'
@@ -34,6 +34,7 @@ const site = {
 	description: 'Clarity Theme npm package acceptance site.',
 	url: 'https://consumer.clarity-test.example/',
 	author: 'Consumer',
+	email: 'consumer@clarity-test.example',
 	established: '2026-09-21',
 }
 const friendFeed = 'https://friend.example.com/atom.xml'
@@ -41,6 +42,7 @@ const customPermalink = '/custom/permalink'
 const twikooEnv = 'https://twikoo.consumer.example'
 const mirrorDomain = 'mirror.example.com'
 const postCount = 7
+const noteCount = 1
 
 /** 配置分支矩阵：同一份安装产物上依次改写 clarity.config 后重新 generate */
 const consumerVariants = [
@@ -51,17 +53,17 @@ const consumerVariants = [
 	},
 	{
 		id: 'branches',
-		label: 'enableStyle=false + hidePostPrefix=false + Twikoo + antiMirror blacklist',
+		label: 'enableStyle=false + hidePostPrefix=false + Twikoo + antiMirror blacklist + 多模式 stats',
 		assert: consumerDir => assertGenerateOutput(consumerDir, 'branches'),
 	},
 	{
 		id: 'features-off',
-		label: 'atom / opml / stats 关闭 + useRandomPermalink=true',
+		label: 'atom / opml / stats 关闭（静态产物 + SSR 运行时 404）',
 		assert: consumerDir => assertGenerateOutput(consumerDir, 'features-off'),
 	},
 ]
 
-function main() {
+async function main() {
 	console.log(`▶ Real Consumer Test（发布验收）\n  工作目录：${workDir}\n`)
 
 	if (reuseDir) {
@@ -141,13 +143,19 @@ function main() {
 			variant.assert(consumerDir)
 		}
 
+		// ============================================================
+		// [10b] features-off 的 dev/SSR 运行时语义：禁用路由必须 404
+		// ============================================================
+		step(10, 10, 'features-off SSR 运行时断言（nuxt build + 真实服务）')
+		await assertFeatureOffRuntime(consumerDir)
+
 		console.log(`\n✔ Real Consumer Test 通过：tarball 边界、exports、类型、独立安装、${consumerVariants.length} 组配置分支的 generate 产物全部符合发布标准`)
 	}
 	catch (error) {
 		console.error('\n✖ Real Consumer Test 失败')
 		console.error(`  调试目录已保留：${workDir}`)
 		process.exitCode = 1
-		throw error
+		console.error(error)
 	}
 	finally {
 		if (!keep && process.exitCode !== 1) {
@@ -189,6 +197,7 @@ const requiredFiles = [
 	'config/schema.ts',
 	'config/schema.d.mts',
 	'config/schema.mjs',
+	'config/server.ts',
 	'img/index.ts',
 	'img/index.d.mts',
 	'img/index.mjs',
@@ -199,6 +208,7 @@ const requiredFiles = [
 	'public/assets/atom.css',
 	'public/fonts/AlimamaFangYuanTi.woff2',
 	'server/api/stats.get.ts',
+	'server/utils/clarity.ts',
 	'server/routes/atom.xml.get.ts',
 	'server/routes/subscriptions.opml.get.ts',
 ]
@@ -548,7 +558,13 @@ const rawConfig = {
 const config = defineClarityConfig(rawConfig)
 check('config defineClarityConfig 运行时可用', typeof defineClarityConfig === 'function')
 check('config 默认值填充', config.article.defaultCategory === '未分类' && config.features.atom === true)
-check('config useRandomPermalink=true 分支', defineClarityConfig({ ...rawConfig, article: { useRandomPermalink: true } }).article.useRandomPermalink === true)
+try {
+	defineClarityConfig({ ...rawConfig, article: { useRandomPermalink: true } })
+	check('config useRandomPermalink 已移除（strict schema 拒绝未知字段）', false)
+}
+catch {
+	check('config useRandomPermalink 已移除（strict schema 拒绝未知字段）', true)
+}
 
 // 3. clarity-theme/schema
 const schema = await import('clarity-theme/schema')
@@ -700,6 +716,17 @@ description: Consumer 友链页。
 友链页应渲染 feeds.ts 中的示例博客。
 `,
 
+		// ---- 多模式 stats 基准：notes/ 也计入 branches 变体统计 ----
+		'content/notes/note.md': `---
+title: Consumer Note 基准
+description: 验证 stats.includePaths 多模式并集选择。
+date: 2026-09-21 11:10
+categories: [技术]
+---
+
+这篇笔记位于 \`notes/\`，仅在 \`stats.includePaths\` 同时包含 \`posts/%\` 与 \`notes/%\` 时进入统计。
+`,
+
 		'public/favicon.svg': '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><rect width="16" height="16" fill="#41b883"/></svg>\n',
 	})
 }
@@ -712,12 +739,15 @@ description: Consumer 友链页。
  * clarity.config.ts 的分支化源码。
  *
  * - default：全部功能开启，Twikoo / antiMirror 关闭（默认值路径）
- * - branches：服务端输出与路由分支（enableStyle / hidePostPrefix / Twikoo / antiMirror）
- * - features-off：可选功能关闭 + useRandomPermalink（schema 接受性）
+ * - branches：服务端输出与路由分支（enableStyle / hidePostPrefix / Twikoo / antiMirror / 多模式 stats）
+ * - features-off：可选功能关闭（静态产物缺失 + SSR 运行时 404）
  */
 function clarityConfigSource(variant) {
 	const branches = variant === 'branches'
 	const featuresOff = variant === 'features-off'
+	const includePaths = branches
+		? `['posts/%', 'notes/%']`
+		: `['posts/%']`
 
 	const article = [
 		'\tarticle: {',
@@ -726,7 +756,6 @@ function clarityConfigSource(variant) {
 		'\t\t},',
 		'\t\trobotsNotIndex: [\'/secret\'],',
 		branches && '\t\thidePostPrefix: false,',
-		featuresOff && '\t\tuseRandomPermalink: true,',
 		'\t},',
 	].filter(Boolean)
 
@@ -757,7 +786,7 @@ export default defineClarityConfig({
 		url: '${site.url}',
 		established: '${site.established}',
 		favicon: '/favicon.svg',
-		author: { name: '${site.author}' },
+		author: { name: '${site.author}', email: '${site.email}' },
 	},
 ${article.join('\n')}
 	feed: {
@@ -765,7 +794,7 @@ ${article.join('\n')}
 		enableStyle: ${branches ? 'false' : 'true'},
 	},
 	stats: {
-		includePaths: ['posts/%'],
+		includePaths: ${includePaths},
 	},
 ${integrations.join('\n')}
 ${features.join('\n')}
@@ -895,6 +924,7 @@ function assertGenerateOutput(consumerDir, variant = 'default') {
 	// Atom
 	const atom = read(output, 'atom.xml')
 	assert('Atom 站点配置', atom.includes(`<id>${site.url}</id>`))
+	assert('Atom 服务端配置保留 author.email', atom.includes(site.email))
 	assert('Atom 自引用', atom.includes(`${site.url}atom.xml`))
 	assert('Atom 文章标题', atom.includes('Consumer Markdown 基准'))
 	assert('Atom permalink 链接', atom.includes(`${site.url.replace(/\/$/, '')}${customPermalink}`))
@@ -936,9 +966,21 @@ function assertGenerateOutput(consumerDir, variant = 'default') {
 	assert('Shiki 自定义 light 主题', bundle.includes('GitHub Light'))
 	assert('Shiki 自定义 dark 主题', bundle.includes('GitHub Dark Default'))
 	assert('Shiki Theme 默认主题被覆盖', !bundle.includes('Catppuccin Latte') && !bundle.includes('One Dark Pro'))
+
+	// P0-1：客户端 bundle 边界 —— 服务端/构建期配置不得进入 appConfig
+	// 注意：site.author.email 是公开元数据（HTML head author meta 与 Atom 都会输出，
+	// 见 ROADMAP「保留现有公开 feed/meta 输出」），因此这里只断言配置形状不泄漏：
+	assert(
+		'客户端 bundle 无构建期 article 字段',
+		!bundle.includes('useRandomPermalink') && !bundle.includes('hidePostPrefix') && !bundle.includes('robotsNotIndex'),
+	)
+	assert('客户端 bundle 无完整 stats.includePaths', !bundle.includes('includePaths'))
+	assert('客户端 bundle 无 feed 服务端配置', !bundle.includes('enableStyle'))
+	assert('公开 author meta 仍输出 email（HTML 元数据契约）', index.includes(site.email))
+	assert('BlogStats 使用派生的 postsOnly 展示事实', index.includes('文章字数'))
 }
 
-/** branches 变体：enableStyle=false + hidePostPrefix=false + Twikoo + antiMirror blacklist */
+/** branches 变体：enableStyle=false + hidePostPrefix=false + Twikoo + antiMirror blacklist + 多模式 stats */
 function assertBranchesOutput(output) {
 	const index = read(output, 'index.html')
 	assert('Twikoo preconnect 注入', index.includes(`<link rel="preconnect" href="${twikooEnv}">`))
@@ -968,9 +1010,18 @@ function assertBranchesOutput(output) {
 
 	const robots = read(output, 'robots.txt')
 	assert('branches 变体 robotsNotIndex 生效', robots.includes('Disallow: /secret'))
+
+	// P1-2：多模式 stats 必须取并集（posts/% OR notes/%），而非不可能同时满足的交集
+	const stats = JSON.parse(read(output, 'api/stats'))
+	assert(
+		'Stats 多模式并集计数',
+		stats.total?.posts === postCount + noteCount,
+		`posts=${stats.total?.posts}（期望 ${postCount + noteCount}：${postCount} 篇 posts + ${noteCount} 篇 notes）`,
+	)
+	assert('Stats 多模式字数统计', stats.total?.words > 0)
 }
 
-/** features-off 变体：atom / opml / stats 关闭 + useRandomPermalink=true（构建接受性） */
+/** features-off 变体：atom / opml / stats 关闭（静态产物断言；运行时 404 由 assertFeatureOffRuntime 覆盖） */
 function assertFeaturesOffOutput(output) {
 	assert('atom=false 不生成 atom.xml', !existsSync(join(output, 'atom.xml')))
 	assert('opml=false 不生成 subscriptions.opml', !existsSync(join(output, 'subscriptions.opml')))
@@ -980,9 +1031,93 @@ function assertFeaturesOffOutput(output) {
 	assert('atom=false 无 alternate 声明', !index.includes('application/atom+xml'))
 
 	const first = readGeneratedPage(output, '/first')
-	assert('useRandomPermalink=true 不影响构建路由', first.includes('Consumer Markdown 基准'))
+	assert('features-off 不影响文章路由', first.includes('Consumer Markdown 基准'))
 	assert('features-off 变体 Twikoo 仍关闭', first.includes('本文暂未开启评论'))
 	assert('permalink 路由仍生成', generatedPageExists(output, customPermalink))
+}
+
+/**
+ * P0-2：feature-off 的运行时语义。
+ *
+ * 静态 generate 只证明「文件不存在」；这里用真实 nuxt build + Nitro 服务验证
+ * dev/SSR 部署下禁用的路由同样返回 404，且不影响其余页面渲染。
+ */
+async function assertFeatureOffRuntime(consumerDir) {
+	run('pnpm', consumerDir, ['exec', 'nuxt', 'build'])
+
+	const serverEntry = join(consumerDir, '.output', 'server', 'index.mjs')
+	assert('features-off 构建产物包含 server 入口', existsSync(serverEntry))
+
+	const port = 20000 + Math.floor(Math.random() * 20000)
+	const child = spawn(process.execPath, [serverEntry], {
+		cwd: consumerDir,
+		stdio: 'ignore',
+		env: {
+			...process.env,
+			HOST: '127.0.0.1',
+			PORT: String(port),
+			NITRO_PORT: String(port),
+			NODE_ENV: 'production',
+			FORCE_COLOR: '0',
+			NO_COLOR: '1',
+		},
+	})
+	const baseUrl = `http://127.0.0.1:${port}`
+	try {
+		await waitForServer(child, baseUrl)
+		console.log(`      ✓ production 服务就绪 ${baseUrl}`)
+
+		const home = await fetch(`${baseUrl}/`)
+		assert('feature-off 服务仍可渲染首页', home.status === 200, `status=${home.status}`)
+		await home.body?.cancel().catch(() => {})
+
+		for (const route of ['/atom.xml', '/subscriptions.opml', '/api/stats']) {
+			const res = await fetch(`${baseUrl}${route}`)
+			assert(`feature-off 运行时 404：${route}`, res.status === 404, `status=${res.status}`)
+			await res.body?.cancel().catch(() => {})
+		}
+	}
+	finally {
+		await killTree(child)
+	}
+}
+
+async function waitForServer(child, baseUrl) {
+	const deadline = Date.now() + 30000
+	while (Date.now() < deadline) {
+		if (child.exitCode !== null)
+			throw new Error(`features-off 服务提前退出（code ${child.exitCode}）`)
+		try {
+			const res = await fetch(`${baseUrl}/`, { signal: AbortSignal.timeout(2000) })
+			if (res.status < 500)
+				return
+			await res.body?.cancel().catch(() => {})
+		}
+		catch {}
+		await new Promise(resolve => setTimeout(resolve, 500))
+	}
+	throw new Error('features-off 服务启动超时（30s）')
+}
+
+async function killTree(child) {
+	if (child.exitCode !== null || child.killed)
+		return
+	if (process.platform === 'win32') {
+		try {
+			execSync(`taskkill /PID ${child.pid} /T /F`, { stdio: 'ignore' })
+		}
+		catch {}
+	}
+	else {
+		child.kill('SIGTERM')
+	}
+	await new Promise((resolve) => {
+		const timer = setTimeout(resolve, 10000)
+		child.once('exit', () => {
+			clearTimeout(timer)
+			resolve()
+		})
+	})
 }
 
 function read(base, path) {

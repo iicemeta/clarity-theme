@@ -6,9 +6,9 @@
 
 ## 当前里程碑
 
-**Phase 20——技术债分诊完成。**
+**里程碑 1 + 发布赋能完成（2026-09-22）。**
 
-本阶段没有修改功能代码。当前代码状态仍是 [PROJECT-STATUS](./PROJECT-STATUS.zh-CN.md) 描述的已完整验证的 v0.1.0 发布前候选。未来开发从下文里程碑 1 开始，而不是重新调查旧的阶段叙述。
+四个 P0 正确性阻塞项全部解决并有测试覆盖，多模式统计增加了回归测试，npm 发布工作流（tag/version 门禁、release-check、OIDC 发布、provenance、registry 消费者测试）已实现。`0.1.0` 的实际发布仍是维护者的人工动作。未来开发从下文剩余 P1 项开始。
 
 ## 已完成
 
@@ -21,6 +21,12 @@
 - Tarball 消费者验收、生产 SSR、真实浏览器渲染、dev 水合、契约、peer、纯度与上游同步测试。
 - 有序 CI 管线，加每周只读上游漂移报告。
 - 当前的架构/API/上游/补丁/状态文档。
+- **P0-1 已解决：** 服务端消费配置（`feed.*`、完整 `stats.*`、feature 路由开关、`site.author.email`）移入 Nitro 私有 runtimeConfig，经内部 `useClarityServerConfig()` 读取；客户端 appConfig 仅保留渲染必需子集（`config/public.ts`、`config/server.ts`、`server/utils/clarity.ts`）。
+- **P0-2 已解决：** 关闭 `features.atom` / `opml` / `stats` 后，路由在 dev/SSR 运行时返回 404，同时静态产物缺省（服务端守卫 + `test:consumer` 的 `nuxt build` 运行时断言）。
+- **P0-3 已解决：** 反镜像导航改为从 `site.url` 派生规范主机，不再把完整 URL 赋给 `location.host`；`test:compatibility` 中的真实浏览器用例从镜像类主机（`127.0.0.1` → `localhost`）完成导航验证。
+- **P0-4 已解决：** no-op 的 `article.useRandomPermalink` 字段已在首个语义发布前从 schema、文档、迁移映射与测试中移除。
+- **P1-2 已验证：** `@nuxt/content` 3.16 对同一 `orWhere` 组内条件以 `OR` 连接，多个 `stats.includePaths` 本就是并集；修正了过时的「合取」描述，并增加多模式消费者回归（`posts/%` + `notes/%`）锁定语义。
+- **P1-6 除实际发布外完成：** `CHANGELOG.md`、`publishConfig`、`scripts/release-check.mjs`、`scripts/test-registry-consumer.mjs`、`.github/workflows/publish.yml` 与 `docs/PUBLISHING.md` 建立了发布管线。
 
 这些陈述描述的是已实现且已验证的能力，而不只是意图。确切覆盖与边界见 [PROJECT-STATUS](./PROJECT-STATUS.zh-CN.md) 与[兼容性说明](./COMPATIBILITY.zh-CN.md)。
 
@@ -39,6 +45,8 @@
 允许把过宽的运行时 appConfig 形态作为 v0.1 修正收窄，但不应为实现它而重新设计公共配置输入与包导出面。
 
 ## P0——必须解决
+
+> **状态（2026-09-22）：以下四个 P0 项均已解决。** 问题描述保留为修复的审计记录，修复摘要见「已完成」。
 
 ### P0-1. 把服务端消费的配置移出客户端可见的 appConfig
 
@@ -170,6 +178,8 @@ feature-off 消费者变体只证明 schema 接受与构建兼容。
 实现备注：配置 schema/运行时双轨、配置文档、API 文档、消费者契约与 Content 测试。
 
 ## P1——下一步
+
+> **状态（2026-09-22）：** P1-2 已验证并加回归测试；P1-6 除实际发布外完成；P1-1/P1-3/P1-4/P1-5 显式推迟到里程碑 2，并记录在 0.1.0 发布说明中。
 
 ### P1-1. 使外部 CSS/字体来源可配置
 
@@ -438,15 +448,17 @@ P1 发布赋能，在里程碑 3 执行，且只在 P0 工作与选定的 P1 契
 
 ## 发布就绪
 
-首次 npm 发布应被阻塞，直到：
+首次 npm 发布就绪状态（2026-09-22）：
 
-1. 每个 P0 项都已实现并有自动化测试覆盖。
-2. 里程碑 2–3 中选定的 P1 API 变更完成；被推迟的 P1/P2 项有显式发布说明条目。
-3. 完整有序验证套件在发布代码 commit 上通过，而不只是更早的代码等价 commit。
-4. 真实 tarball 安装与 npm publish 演练通过。
-5. 包版本/tag、更新日志、provenance 与回滚流程已定义。
-6. 上游基线是最新的，或发布显式记录已审查的差量。
-7. 公共配置可见性与远程来源默认值被准确文档化。
+1. ✅ 每个 P0 项都已实现并有自动化测试覆盖。
+2. ✅/推迟——P1-2 已验证并测试；P1-6 除实际发布外完成；P1-1、P1-3、P1-4、P1-5 显式推迟并在发布说明中记录（见 `CHANGELOG.md` 与发布说明模板的已知限制）。
+3. ⏳ 完整有序验证套件必须在打了 tag 的确切发布 commit 上通过；当前工作树已在打 tag 前本地通过有序套件。
+4. ⏳ 真实 tarball 安装通过（`test:consumer`）；npm publish 演练必须在 `publish.yml` 中于打了 tag 的 commit 上通过。
+5. ✅ 包版本/tag 契约、更新日志、provenance 与回滚流程已定义（`docs/PUBLISHING.md`）。
+6. ✅ 上游基线最新（`sync:check`）。
+7. ✅ 公共配置可见性已准确文档化；远程来源默认值作为推迟限制记录。
+
+剩余人工门禁：确认 npm 名称/Trusted Publisher（该名称存在历史 unpublish 墓碑记录）、打 `v0.1.0` tag、发布 GitHub Release，以及发布后运行 registry 消费者测试。
 
 ## 上游维护
 
@@ -468,6 +480,8 @@ P1 发布赋能，在里程碑 3 执行，且只在 P0 工作与选定的 P1 契
 
 退出标准：服务端/客户端配置边界有断言；feature-off 路由返回 404 且从静态输出消失；反镜像导航在真实浏览器行使；no-op 固定链接契约被移除或显式迁移；多模式统计被测试；完整有序验证套件通过。
 
+**状态：完成（2026-09-22）。**
+
 ### 里程碑 2——兼容性与质量细化
 
 范围：P1-1、P1-3、P1-4、P1-5，以及这些变更引入的针对性测试。
@@ -484,11 +498,15 @@ P1 发布赋能，在里程碑 3 执行，且只在 P0 工作与选定的 P1 契
 
 退出标准：满足上文发布就绪清单，除实际 npm 发布之外。
 
+**状态：完成（2026-09-22）**——发布门禁、发布工作流、发布文档、更新日志与 registry 消费者测试已实现；工作流本身需从打了 tag 的 GitHub Release 触发运行。
+
 ### 里程碑 4——发布与维护
 
 范围：打 tag 并发布首个包版本，把文档从 Git 锁定语言迁移到已发布包范围，监控安装/CI，并开始增量 P2 覆盖。
 
 理由：发布是维护步骤，不能替代里程碑 1 的正确性工作。发布后，语义化版本与上游漂移维护成为主导约束。
+
+**状态：等待人工执行**——打 `v0.1.0` tag、确认 npm 名称/Trusted Publisher、发布 GitHub Release，然后运行 `pnpm test:registry-consumer`。
 
 ## 现在不要做
 

@@ -80,7 +80,6 @@ describe('fake blog-v3 consumer fixture', () => {
 		assert.equal(mapped.site.established, '2020-01-01')
 		assert.equal(mapped.site.timezone, 'Asia/Taipei')
 		assert.equal(mapped.article.defaultCategory, 'General')
-		assert.equal(mapped.article.useRandomPermalink, true)
 		assert.equal(mapped.feed.limit, 20)
 		assert.equal(mapped.feed.enableStyle, false)
 		assert.deepEqual(mapped.stats.includePaths, ['posts/%'])

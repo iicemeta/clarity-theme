@@ -14,7 +14,10 @@ const builder = new XmlBuilder({
 })
 
 export default defineEventHandler(async (event) => {
-	const { site, feed } = useClarityConfig()
+	const { site, feed, features } = useClarityServerConfig()
+	if (!features.atom) {
+		throw createError({ statusCode: 404, statusMessage: 'Atom feed is disabled' })
+	}
 	const themeInfo = runtimeConfig.public.clarity as { theme: string, themeVersion: string, themeHomepage: string }
 
 	function formatIsoDate(date?: string) {

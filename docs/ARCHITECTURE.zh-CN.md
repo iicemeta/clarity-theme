@@ -75,7 +75,7 @@ consumer blog
 - `GET /subscriptions.opml`
 - `GET /api/stats`
 
-它们查询 Content 集合，并通过 appConfig 读取站点/feed/统计配置。
+它们查询 Content 集合，并通过 Nitro 私有 runtime 配置（`useClarityServerConfig()`）读取站点/feed/统计配置与 feature 路由开关；禁用的功能在运行时返回 404。
 
 ### 仅开发/测试的表面
 
@@ -87,7 +87,8 @@ consumer blog
 2. Zod schema 填充默认值，并立即拒绝未知/无效字段。
 3. `modules/clarity-config` 发现 `clarity.config.ts` / `.mjs` / `.js`，用 jiti 加载，并在依赖它之前进行第二次解析。
 4. 模块映射解析后的数据：
-   - `toPublicClarityConfig()` 加上派生的 header/footer 默认值进入 appConfig。
+   - `toPublicClarityConfig()`（客户端子集）加上派生的 header/footer 默认值进入 appConfig。
+   - `toServerClarityConfig()` 进入 Nitro 私有 runtime 配置，供服务端 handler 与 feature 路由守卫使用。
    - 站点 title/URL/language 映射到 `nuxt.options.site`。
    - `article.robotsNotIndex` 映射到 robots disallow 规则。
    - 站点域名/标题/描述映射到 `nuxt-llms`。
@@ -97,7 +98,7 @@ consumer blog
 5. 一个 `content:file:afterParse` 钩子应用 frontmatter `permalink` 与可选的 `/posts` 前缀移除。
 6. 反镜像在配置了黑名单时，会被序列化、压缩并注入为内联 head 脚本。
 
-配置是严格的。`integrations.scripts` 被排除在 appConfig 之外并在构建期消费；其他面向服务端的字段仍保持 appConfig 可见，详见 PROJECT-STATUS 的记载。
+配置是严格的。`integrations.scripts` 被排除在 appConfig 之外并在构建期消费；`feed.*`、完整 `stats.*`、feature 路由开关、仅构建期 article 字段与 `site.author.email` 通过服务端专用 runtime 配置提供，不进入 appConfig。
 
 ## 5. App Config 流
 
@@ -164,7 +165,7 @@ Markdown 处理由 Layer 配置：
 - 公共运行时配置暴露构建环境与包版本。
 - 真正的密钥必须保留在使用方 `runtimeConfig` 中；appConfig 与 `clarity.config.ts` 不是密钥存储。
 
-目前部分 feed/统计字段由服务端 handler 通过 appConfig 读取，因此它们仍留在客户端 payload 中。这是已知技术债，不是有意设计的安全边界。
+服务端 handler 不再通过 appConfig 读取 feed/统计配置，这些字段不再进入客户端 payload。`site.author.email` 仍作为有意的公开元数据（HTML `author` meta 与 feed 输出），等待单独的可见性决策。
 
 ## 9. 注入别名
 

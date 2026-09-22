@@ -157,6 +157,31 @@ async function main() {
 			devServer = null
 			scanLogFile(join(reportDir, 'dev.log'), 'dev')
 		}
+
+		// ---- 5. dev 模式 anti-mirror 真实导航（P0-3）----
+		// 用 127.0.0.1 模拟镜像主机、localhost 作为规范主机：
+		// 注入脚本必须把浏览器从 127.0.0.1:<port> 导航回 localhost:<port>。
+		if (browser && !flags.noDev) {
+			const mirrorPort = 20000 + Math.floor(Math.random() * 20000)
+			const mirrorServer = await startServer({
+				log: 'mirror-dev.log',
+				title: '启动 dev 服务（anti-mirror 导航验证）',
+				dev: true,
+				port: mirrorPort,
+				timeout: 240000,
+				env: {
+					CLARITY_COMPAT_SITE_URL: `http://localhost:${mirrorPort}/`,
+					CLARITY_COMPAT_ANTI_MIRROR_BLACKLIST: '127.0.0.1',
+				},
+			})
+			try {
+				await assertAntiMirrorNavigation(browser, mirrorServer.baseUrl, `localhost:${mirrorPort}`)
+			}
+			finally {
+				await stopServer(mirrorServer)
+				scanLogFile(join(reportDir, 'mirror-dev.log'), 'dev')
+			}
+		}
 		else if (!flags.noBrowser) {
 			console.log('[7/7] 跳过 dev hydration 阶段')
 			skipped.push('dev hydration 阶段被 --no-dev 跳过或无浏览器')
@@ -267,9 +292,9 @@ function scanLogFile(logFile, label) {
 /* 服务管理                                                            */
 /* ------------------------------------------------------------------ */
 
-async function startServer({ log, title, dev = false, timeout = 90000 }) {
+async function startServer({ log, title, dev = false, timeout = 90000, port, env = {} }) {
 	console.log(`      ${title.replace(/^\[\d\/6\]\s*/, '')}`)
-	const port = 20000 + Math.floor(Math.random() * 20000)
+	port ??= 20000 + Math.floor(Math.random() * 20000)
 	const command = dev
 		? [process.execPath, nuxtBin, 'dev', '--port', String(port), '--host', '127.0.0.1']
 		: [process.execPath, serverEntry]
@@ -278,6 +303,7 @@ async function startServer({ log, title, dev = false, timeout = 90000 }) {
 		cwd: playgroundDir,
 		env: {
 			...process.env,
+			...env,
 			HOST: '127.0.0.1',
 			PORT: String(port),
 			NITRO_PORT: String(port),
@@ -466,6 +492,52 @@ async function assertBrowserCases(browser, baseUrl, cases) {
 	}
 }
 
+/**
+ * P0-3：anti-mirror 真实浏览器导航验证。
+ *
+ * 从镜像主机（127.0.0.1:<port>，命中黑名单）打开页面后，
+ * 注入脚本必须完成一次真实导航回到规范主机（localhost:<port>）。
+ */
+async function assertAntiMirrorNavigation(browser, baseUrl, expectedHost) {
+	const testCase = { id: 'anti-mirror-navigation' }
+	console.log(`      mirror 主机导航断言：${baseUrl} → ${expectedHost}`)
+	const page = await browser.open(`${baseUrl}/`, { timeout: 60000 })
+
+	for (const entry of page.exceptions) {
+		fail(testCase, 'Nuxt / Vue runtime', `未捕获异常：${entry}`)
+	}
+	for (const entry of page.console) {
+		if (entry.type === 'error' && !consoleAllowRules.some(re => re.test(entry.text))) {
+			fail(testCase, 'Nuxt / Vue runtime', `console.error：${entry.text}`)
+		}
+	}
+
+	let actualHost = ''
+	try {
+		const redirected = await waitFor(async () => {
+			actualHost = await browser.evaluate('location.host')
+			return actualHost === expectedHost
+		}, 15000, 250)
+		if (!redirected)
+			throw new Error(`15s 内未导航回规范主机（当前 ${actualHost || '(unknown)'}）`)
+	}
+	catch (error) {
+		fail(testCase, 'anti-mirror navigation', error.message)
+		return
+	}
+
+	const canonical = await browser.evaluate(
+		'document.querySelector(\'link[rel="canonical"]\')?.href ?? \'\'',
+	).catch(() => '')
+	if (canonical && !canonical.includes(expectedHost)) {
+		fail(testCase, 'anti-mirror navigation', `canonical 链接仍指向镜像：${canonical}`)
+		return
+	}
+
+	passedCount += 1
+	console.log(`      ✓ ${testCase.id}（${baseUrl} → http://${expectedHost}/）`)
+}
+
 function checkEqual(testCase, name, actual, expected) {
 	if (actual !== expected)
 		fail(testCase, name.includes('status 404') ? '404' : 'routing', `${name}：期望 ${expected}，实际 ${actual}`)
@@ -496,6 +568,7 @@ function compatibilityCaseIds() {
 		...ssrCases.map(item => item.id),
 		...browserCases.map(item => item.id),
 		...hydrationRoutes.map(item => `${item.id}-hydration`),
+		'anti-mirror-navigation',
 	])
 }
 

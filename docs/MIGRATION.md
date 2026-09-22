@@ -97,13 +97,17 @@ The order below keeps a recoverable boundary: install the Layer first, replace c
 
 ### 4.1 Install Clarity Theme
 
-Before the first npm release, pin a reviewed Git commit:
+Install the released npm package as a runtime dependency (not a development dependency):
+
+```bash
+pnpm add clarity-theme
+```
+
+For unreleased commits or debugging a specific change, fall back to a pinned Git dependency:
 
 ```bash
 pnpm add github:iicemeta/clarity-theme#<commit>
 ```
-
-After a released version exists, use the documented package range instead. Install Clarity as a runtime dependency, not a development dependency.
 
 ### 4.2 Replace the application entry in `nuxt.config.ts`
 
@@ -181,7 +185,6 @@ export default defineClarityConfig({
 		},
 		types: { tech: {}, story: {} },
 		order: { date: 'Created', updated: 'Updated' },
-		useRandomPermalink: false,
 		hidePostPrefix: true,
 		robotsNotIndex: ['/preview', '/previews/*'],
 	},
@@ -411,7 +414,7 @@ If an asset must move to repair a broken path, make that a separate reviewed cha
 | `article.categories` | `article.categories` | Same icon/color shape |
 | `article.types` | `article.types` | First key remains the default layout |
 | `article.order` | `article.order` | Sort field → display name |
-| `article.useRandomPremalink` | `article.useRandomPermalink` | Corrects the source typo; currently a scaffolding flag, not a generator |
+| `article.useRandomPremalink` | no Clarity field | Removed before 0.1.0: random permalink generation belongs to consumer build scaffolding; drop the field and keep `permalink` frontmatter as-is |
 | `article.hidePostPrefix` | `article.hidePostPrefix` | Controls `/posts/` prefix removal |
 | `article.robotsNotIndex` | `article.robotsNotIndex` | Feeds robots configuration |
 | `feed.limit` | `feed.limit` | Positive integer |
@@ -545,7 +548,7 @@ These commands validate the Theme's fixtures and packed consumer; they do not re
 ### Configuration is rejected or ignored
 
 - Use the exact Clarity field names; schemas reject unknown fields.
-- Check `timeZone → timezone`, `timeEstablished → established`, and `useRandomPremalink → useRandomPermalink`.
+- Check `timeZone → timezone` and `timeEstablished → established`; the source `useRandomPremalink` flag has no Clarity equivalent and must be removed.
 - Keep `site.url` slash-terminated.
 - Confirm `clarity.config.ts` is at the root or referenced by `clarityConfig.configFile`.
 - Remove old `...blogConfig` from app config.

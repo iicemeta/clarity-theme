@@ -25,13 +25,23 @@ Clarity Theme 是一个从 [L33Z22L11/blog-v3](https://github.com/L33Z22L11/blog
 | Nuxt peer | `^4.5.2` |
 | Vue peer | `^3.5.42` |
 
-该包目前尚未发布到 npm 注册表。在第一个包版本发布之前，请以锁定到已审查 commit 的 Git 依赖方式安装。Clarity 属于应用运行时的一部分，因此请将其安装为常规依赖（dependency），而不是开发依赖（devDependency）。
+Clarity 已通过 npm 注册表以 `clarity-theme` 分发。它属于应用运行时的一部分（Nuxt 构建与静态生成会直接加载 Layer），因此请将其安装为常规依赖（dependency），而不是开发依赖（devDependency）；生产环境安装也必须能解析到它。
 
 ## 安装
 
 ```bash
+pnpm add clarity-theme
+```
+
+### Git commit 安装（开发回退方式）
+
+如需使用未发布的 commit、本地调试，或在发布前审查某个具体变更，可以直接从 GitHub 安装：
+
+```bash
 pnpm add github:iicemeta/clarity-theme#<commit>
 ```
+
+该方式仅用于开发场景。正式站点应使用已发布的 npm 版本，以保证安装可复现并被发布验证矩阵覆盖。
 
 ## 快速开始
 
@@ -83,7 +93,9 @@ export default createClarityContentConfig(clarityConfig)
 // feeds.ts
 import type { FeedGroup } from 'clarity-theme/config'
 
-export default [] satisfies FeedGroup[]
+const feeds: FeedGroup[] = []
+
+export default feeds
 ```
 
 如果没有这个文件，友链页面和 OPML 输出会使用空数据，并且构建时会记录一条警告。
@@ -250,6 +262,8 @@ UI 分组、同路径组件覆盖、CSS 覆盖、服务端/路由自定义与 Sh
 | [补丁说明](./docs/PATCHES.zh-CN.md) | 使用方补丁归属与当前结论 |
 | [发布审计](./docs/RELEASE-AUDIT.zh-CN.md) | 收尾前工程审计与剩余发布门槛 |
 | [发布清单](./docs/RELEASE-CHECKLIST.zh-CN.md) | 确切的最终检查、剩余阻塞项与验证证据 |
+| [发布指南](./docs/PUBLISHING.zh-CN.md) | 版本管理、tag、GitHub Release、OIDC 发布、provenance 与回滚策略 |
+| [更新日志](./CHANGELOG.md) | 面向使用者的发布历史 |
 | [抽取历史](./docs/history/2026-09-layer-extraction.zh-CN.md) | 历史阶段与一次性差分验证 |
 
 ## 开发
@@ -288,9 +302,9 @@ pnpm sync:verify  # 重新运行主题纯度与基线检查
 
 ## 发布状态
 
-Clarity Theme 是一个 **v0.1.0 发布前 Layer 候选版本**。Layer/包边界、已校验配置、Content 工厂、渲染管线、服务端输出、playground、真实消费者验收、兼容性矩阵、三层 CI 与上游同步基线均已实现。
+Clarity Theme 是一个 **v0.1.0 npm 发布候选版本**。Layer/包边界、已校验配置、Content 工厂、渲染管线、服务端输出、playground、真实消费者验收、兼容性矩阵、三层 CI、上游同步基线、发布门禁与 OIDC 发布工作流均已实现。剩余的人工发布步骤见[发布检查清单](./docs/RELEASE-CHECKLIST.zh-CN.md)。
 
-首次 npm 发布仍被[路线图](./docs/ROADMAP.zh-CN.md)中的 P0 正确性事项刻意阻塞——尤其是服务端/客户端配置拆分、功能关闭时的路由语义、反镜像导航验证与 no-op 随机固定链接契约——同时还需要一次在确切 commit 上的发布运行。迁移文档与可复现性正在本次收尾阶段完成。
+[路线图](./docs/ROADMAP.zh-CN.md)中的 v0.1.0 正确性门禁已解决：服务端/客户端配置已拆分、功能关闭路由在运行时返回 404、反镜像导航已在真实浏览器中验证、no-op 随机固定链接字段已移除，多模式统计已增加回归测试。其余推迟事项记录在路线图与发布说明中。
 
 ## 许可证
 

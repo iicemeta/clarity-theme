@@ -52,7 +52,6 @@ export const clarityArticleSchema = z.strictObject({
 	})).default({}),
 	types: z.record(z.string(), z.looseObject({})).default({ tech: {} }),
 	order: z.record(z.string(), z.string()).default({ date: '创建日期', updated: '更新日期' }),
-	useRandomPermalink: z.boolean().default(false),
 	hidePostPrefix: z.boolean().default(true),
 	robotsNotIndex: z.array(z.string()).default([]),
 })

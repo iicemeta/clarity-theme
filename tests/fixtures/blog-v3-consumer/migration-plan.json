@@ -29,7 +29,6 @@
       },
       "types": { "tech": {}, "story": {} },
       "order": { "date": "Created", "updated": "Updated" },
-      "useRandomPermalink": true,
       "hidePostPrefix": true,
       "robotsNotIndex": ["/preview"]
     },

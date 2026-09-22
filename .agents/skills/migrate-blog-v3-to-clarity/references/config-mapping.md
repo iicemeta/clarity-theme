@@ -28,7 +28,7 @@ The tested source baseline is blog-v3 3.7.2 at Clarity's recorded sync commit. V
 | `article.categories` | `article.categories` | Default `{}` | `AUTO` | Same icon/color structure |
 | `article.types` | `article.types` | Default `{ tech: {} }` | `AUTO` | First key is default layout |
 | `article.order` | `article.order` | Date/updated defaults | `AUTO` | `pagination.sortOrder` must reference a key |
-| `article.useRandomPremalink` (upstream typo) | `article.useRandomPermalink` | Default `false` | `REVIEW` | Only a scaffolding flag in current Clarity; it does not generate links |
+| `article.useRandomPremalink` (upstream typo) | no Clarity field | — | `REVIEW` | Removed in Clarity 0.1.0: random permalink generation belongs to consumer build scaffolding, not the Theme |
 | `article.hidePostPrefix` | `article.hidePostPrefix` | Default `true` | `AUTO` | Removes `/posts` for file-routed articles |
 | `article.robotsNotIndex` | `article.robotsNotIndex` | Default `[]` | `AUTO` | Feeds robots config |
 

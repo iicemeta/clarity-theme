@@ -1,6 +1,6 @@
 import type { ClarityAppConfig } from '../../config/app'
 import type { FeedEntry } from '../../config/feed'
-import type { ClarityArticleConfig, ClaritySiteConfig } from '../../config/schema'
+import type { ClaritySiteConfig } from '../../config/schema'
 
 /** 获取完整 Clarity 配置（站点配置 + UI 配置） */
 export function useClarityConfig(): ClarityAppConfig {
@@ -12,8 +12,8 @@ export function useClaritySite(): ClaritySiteConfig {
 	return useClarityConfig().site
 }
 
-/** 获取文章配置（分类、类型、排序等） */
-export function useClarityArticle(): ClarityArticleConfig {
+/** 获取文章配置的客户端子集（分类图标/颜色、排序方式） */
+export function useClarityArticle(): ClarityAppConfig['article'] {
 	return useClarityConfig().article
 }
 

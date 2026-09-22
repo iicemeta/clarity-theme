@@ -26,7 +26,10 @@ function flattenGroups(groups: FeedGroup[], timeZone: string) {
 }
 
 export default defineEventHandler(async () => {
-	const { site } = useClarityConfig()
+	const { site, features } = useClarityServerConfig()
+	if (!features.opml) {
+		throw createError({ statusCode: 404, statusMessage: 'OPML subscription output is disabled' })
+	}
 	const feeds = (await import('#clarity/feeds')).default as FeedGroup[]
 	const myFeed: FeedEntry = {
 		author: site.author.name,

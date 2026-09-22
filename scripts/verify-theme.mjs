@@ -45,10 +45,13 @@ const forbiddenImportPatterns = [
 const attributionAllowList = new Set([
 	'LICENSE',
 	'README.md',
+	'CHANGELOG.md',
 	'docs/theme-audit.md',
+	'docs/RELEASE-NOTES-0.1.0.md',
 	'package.json',
 	'sync-manifest.json',
 	'scripts/test-consumer.mjs',
+	'scripts/release-check.mjs',
 	'scripts/verify-theme.mjs',
 ])
 

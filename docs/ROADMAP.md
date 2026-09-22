@@ -6,9 +6,9 @@
 
 ## Current Milestone
 
-**Phase 20 — Technical Debt Triage complete.**
+**Milestone 1 + release enablement complete (2026-09-22).**
 
-No feature code was changed in this phase. The current code state remains the fully verified v0.1.0 pre-publish candidate described in [PROJECT-STATUS](./PROJECT-STATUS.md). Future development starts with Milestone 1 below, not with re-investigation of the old phase narratives.
+All four P0 correctness blockers are resolved and covered by tests, multi-pattern stats gained a regression test, and the npm release workflow (tag/version gate, release-check, OIDC publish, provenance, registry consumer test) is implemented. Actual publication of `0.1.0` remains a manual maintainer action. Future development starts with the remaining P1 items below.
 
 ## Completed
 
@@ -21,6 +21,12 @@ No feature code was changed in this phase. The current code state remains the fu
 - Tarball consumer acceptance, production SSR, real-browser rendering, dev hydration, contract, peer, purity, and upstream-sync tests.
 - Ordered CI pipeline plus weekly read-only upstream drift reporting.
 - Current architecture/API/upstream/patch/status documentation.
+- **P0-1 resolved:** server-consumed configuration (`feed.*`, full `stats.*`, feature route flags, `site.author.email`) moved to Nitro private runtimeConfig read through the internal `useClarityServerConfig()`; client appConfig now carries only the rendering-required subset (`config/public.ts`, `config/server.ts`, `server/utils/clarity.ts`).
+- **P0-2 resolved:** disabled `features.atom` / `opml` / `stats` routes return 404 in dev/SSR runtime in addition to being absent from static output (server guards + `nuxt build` runtime assertions in `test:consumer`).
+- **P0-3 resolved:** anti-mirror navigation now derives the canonical host from `site.url` instead of assigning the full URL to `location.host`; a real-browser case navigates from a mirror-like hostname (`127.0.0.1` → `localhost`) in `test:compatibility`.
+- **P0-4 resolved:** the no-op `article.useRandomPermalink` field was removed from the schema, docs, migration mapping, and tests before the first semantic release.
+- **P1-2 verified:** `@nuxt/content` 3.16 joins conditions inside one `orWhere` group with `OR`, so multiple `stats.includePaths` already form a union; the stale conjunctive-behavior claim is corrected and a multi-pattern consumer regression (`posts/%` + `notes/%`) now locks the semantics.
+- **P1-6 complete except actual publish:** `CHANGELOG.md`, `publishConfig`, `scripts/release-check.mjs`, `scripts/test-registry-consumer.mjs`, `.github/workflows/publish.yml`, and `docs/PUBLISHING.md` establish the release pipeline.
 
 These statements describe implemented and verified capability, not merely intent. The exact coverage and boundaries are in [PROJECT-STATUS](./PROJECT-STATUS.md) and [COMPATIBILITY](./COMPATIBILITY.md).
 
@@ -39,6 +45,10 @@ The following contracts should not be redesigned while Milestone 1 is in progres
 Narrowing an over-broad runtime appConfig shape is allowed as a v0.1 correction, but the public configuration input and package export surface should not be redesigned to accomplish it.
 
 ## P0 — Must Resolve
+
+> **Status (2026-09-22): all four P0 items below are resolved.** The problem
+> statements are kept as the audit trail for the fixes summarized under
+> Completed.
 
 ### P0-1. Move server-consumed configuration out of client-visible appConfig
 
@@ -170,6 +180,10 @@ Before the first semantic package release, remove the no-op from the Theme's pub
 Implementation notes: config schema/runtime dual tracks, configuration docs, API docs, consumer contract, and Content tests.
 
 ## P1 — Next
+
+> **Status (2026-09-22):** P1-2 is verified and regression-tested; P1-6 is
+> complete except the actual publication; P1-1/P1-3/P1-4/P1-5 are explicitly
+> deferred to Milestone 2 and recorded in the 0.1.0 release notes.
 
 ### P1-1. Make external CSS/font origins configurable
 
@@ -438,15 +452,17 @@ A visual regression system, CMS, database layer, and general i18n framework rema
 
 ## Release Readiness
 
-A first npm release should be blocked until:
+First npm release readiness (status 2026-09-22):
 
-1. Every P0 item is implemented and covered by automated tests.
-2. The chosen P1 API changes in Milestones 2–3 are complete; postponed P1/P2 items have explicit release-notes entries.
-3. The complete ordered verification suite passes on the release code commit, not merely on a prior code-equivalent commit.
-4. A real tarball install and npm publish dry run pass.
-5. Package version/tag, changelog, provenance, and rollback procedure are defined.
-6. The upstream baseline is current or the release explicitly documents the reviewed delta.
-7. Public configuration visibility and remote-origin defaults are accurately documented.
+1. ✅ Every P0 item is implemented and covered by automated tests.
+2. ✅/deferred — P1-2 verified and tested; P1-6 complete except actual publish; P1-1, P1-3, P1-4, P1-5 are explicitly deferred with release-notes entries (see Known limitations in `CHANGELOG.md` and the release-notes template).
+3. ⏳ The complete ordered verification suite must pass on the exact tagged release commit; the current working tree passed the ordered suite locally before tagging.
+4. ⏳ A real tarball install passes (`test:consumer`); the npm publish dry run must pass on the tagged commit in `publish.yml`.
+5. ✅ Package version/tag contract, changelog, provenance, and rollback procedure are defined (`docs/PUBLISHING.md`).
+6. ✅ The upstream baseline is current (`sync:check`).
+7. ✅ Public configuration visibility is accurately documented; remote-origin defaults are documented as a deferred limitation.
+
+Remaining human gates: npm name/Trusted Publisher confirmation (the name has a previous unpublished tombstone), tag `v0.1.0`, GitHub Release, and the post-publish registry consumer test.
 
 ## Upstream Maintenance
 
@@ -468,6 +484,8 @@ Rationale: resolve public semantics, route behavior, and high-confidence correct
 
 Exit criteria: server/client config boundary asserted; feature-off routes return 404 and vanish from static output; anti-mirror navigation exercised in a real browser; no-op permalink contract removed or explicitly relocated; multi-pattern stats tested; full ordered verification suite passes.
 
+**Status: complete (2026-09-22).**
+
 ### Milestone 2 — Compatibility and quality refinement
 
 Scope: P1-1, P1-3, P1-4, P1-5, and targeted tests introduced by those changes.
@@ -484,11 +502,15 @@ Rationale: freeze API behavior before publication and verify the exact release c
 
 Exit criteria: release readiness checklist above is satisfied except for the actual npm publication.
 
+**Status: complete (2026-09-22)** — release gate, publish workflow, publishing documentation, changelog, and registry consumer test are implemented; the workflow itself must run from the tagged GitHub Release.
+
 ### Milestone 4 — Release and maintenance
 
 Scope: tag and publish the first package release, migrate documentation from Git-pin language to the released package range, monitor installation/CI, and begin incremental P2 coverage.
 
 Rationale: publication is a maintainership step, not a substitute for Milestone 1 correctness work. After release, semantic versioning and upstream drift maintenance become the governing constraints.
+
+**Status: pending manual execution** — tag `v0.1.0`, confirm the npm name/Trusted Publisher, publish the GitHub Release, then run `pnpm test:registry-consumer`.
 
 ## Do Not Do Now
 

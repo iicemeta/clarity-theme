@@ -14,7 +14,10 @@ interface CategoryEntry {
 }
 
 export default defineEventHandler(async (event) => {
-	const { site, stats: statsConfig } = useClarityConfig()
+	const { site, stats: statsConfig, features } = useClarityServerConfig()
+	if (!features.stats) {
+		throw createError({ statusCode: 404, statusMessage: 'Stats output is disabled' })
+	}
 
 	const stats = {
 		total: { posts: 0, words: 0 },
@@ -27,10 +30,14 @@ export default defineEventHandler(async (event) => {
 
 	const query = queryCollection(event, 'content' as never)
 	if (statsConfig.includePaths.length) {
-		query.orWhere(group => statsConfig.includePaths.reduce(
-			(group, path) => group.where('stem', 'LIKE', path),
-			group,
-		))
+		// @nuxt/content 3.16+ 的 orWhere 组内条件以 OR 连接：
+		// 多个 includePaths 必须取并集（posts/% + notes/% → 两类文章都计入）。
+		query.orWhere((group) => {
+			for (const path of statsConfig.includePaths) {
+				group.where('stem', 'LIKE', path)
+			}
+			return group
+		})
 	}
 	const posts = await query.all() as ClarityContentRow[]
 

@@ -169,27 +169,27 @@ No `.agents/skills/migrate-blog-v3-to-clarity/` skill exists. Required missing a
 
 ## 9. Release-Blocking Items
 
-Before the first public package release, the following must be complete:
+Status update (2026-09-22):
 
-1. Resolve or explicitly defer with release notes all ROADMAP P0 correctness items.
-2. Complete user migration, configuration, and customization documentation.
-3. Add the migration Skill and knowledge references.
-4. Add repeatable migration fixture/static validation.
-5. Run the complete ordered verification suite on the exact release commit.
-6. Run a real tarball install and npm publish dry run.
-7. Define package version/tag, changelog, provenance, and rollback.
-8. Confirm upstream baseline freshness or document the reviewed delta.
-9. Confirm package exports, files, license, author metadata, and privacy leakage checks.
-10. Generate and review `docs/RELEASE-CHECKLIST.md`.
+1. ✅ All ROADMAP P0 correctness items are resolved; P1 deferrals are recorded in the release notes.
+2. ✅ Migration, configuration, and customization documentation is complete.
+3. ✅ The migration Skill and knowledge references exist.
+4. ✅ Repeatable migration fixture/static validation exists.
+5. ⏳ The complete ordered verification suite passed on this working tree; it must rerun on the exact tagged commit (automatic in `publish.yml`).
+6. ⏳ Real tarball install passes (`test:consumer`); the npm publish dry run executes in `publish.yml` on the tagged commit.
+7. ✅ Package version/tag contract, changelog, provenance, and rollback are defined in `docs/PUBLISHING.md`.
+8. ✅ Upstream baseline is current.
+9. ✅ Package exports, files, license, metadata, and leakage checks pass, enforced by `pnpm release:check`.
+10. ✅ `docs/RELEASE-CHECKLIST.md` is generated and reviewed.
 
-Documentation and Skill completion are release-closing work, but they do not by themselves replace the P0 correctness gate.
+Remaining human gates: npm name/ownership confirmation (the name carries a 2025-10-16 unpublished tombstone), Trusted Publisher configuration, the `v0.1.0` tag and GitHub Release, and the post-publish registry consumer test.
 
 ## 10. Optional Enhancements
 
 - Add a machine-readable migration inventory template.
 - Extend fixture validation from static classification to a generated temporary consumer and typecheck/generate run.
 - Add a dedicated migration report format for agents.
-- Add release provenance and tag automation after the P0 work is complete.
+- Add post-release automation for registry drift monitoring.
 - Add targeted accessibility, responsive, interaction, and remote-service failure tests.
 - Make remote CSS/font origins configurable.
 - Add offline/restricted Shiki build coverage.
@@ -197,6 +197,6 @@ Documentation and Skill completion are release-closing work, but they do not by 
 
 ## 11. Audit Conclusion
 
-The Layer extraction, package boundary, configuration schema, Content factory, real-consumer test, compatibility regression, playground, CI, upstream manifest, and patch audit are substantially in place. The remaining work is correctly focused on release closure and safe migration rather than another Theme extraction.
+The Layer extraction, package boundary, configuration schema, Content factory, real-consumer test, compatibility regression, playground, CI, upstream manifest, and patch audit are substantially in place. The former P0 correctness blockers (server/client configuration split, feature-off runtime semantics, anti-mirror navigation, no-op permalink contract) are now fixed with targeted tests, and the release pipeline (release gate, changelog, OIDC publish workflow with provenance, registry consumer test) is implemented.
 
-The highest-priority next steps are documentation and migration infrastructure, followed by exact-commit verification. Known runtime P0 defects must remain explicit release blockers and must not be hidden by documentation completion.
+The highest-priority next step is the manual release sequence: confirm the npm name/ownership, configure Trusted Publishing, tag `v0.1.0`, publish the GitHub Release, and verify the registry package. Deferred P1/P2 items stay explicitly recorded in the roadmap and release notes.

@@ -63,7 +63,6 @@ export default defineClarityConfig({
 		},
 		types: { tech: {}, story: {} },
 		order: { date: 'Created', updated: 'Updated' },
-		useRandomPermalink: false,
 		hidePostPrefix: true,
 		robotsNotIndex: ['/preview', '/previews/*'],
 	},
@@ -106,7 +105,7 @@ export default defineClarityConfig({
 | `favicon` | string | Default `'/favicon.svg'` | ✅ |
 | `author.name` | string | **Required**，非空 | ✅ |
 | `author.avatar` | string | Optional | ✅ |
-| `author.email` | string | Optional（进入 author meta / RSS / OPML） | ✅ |
+| `author.email` | string | Optional（进入 author meta / Atom / OPML 公开元数据） | ⚙️ 仅服务端消费（不进 appConfig；作为公开元数据出现在 HTML head 与 feed 输出） |
 | `author.homepage` | string | Optional | ✅ |
 | `copyright` | `{ abbr?, name?, url? }` | Optional | ✅ |
 
@@ -118,9 +117,8 @@ export default defineClarityConfig({
 | `categories` | `Record<string, { icon?, color? }>` | Default `{}` | ✅ |
 | `types` | `Record<string, object>` | Default `{ tech: {} }`；允许显式空对象，但 Content Schema 会兜底回退 `tech`，因此应显式配置 | ✅ |
 | `order` | `Record<string, string>`（排序字段 → 显示名） | Default `{ date: '创建日期', updated: '更新日期' }` | ✅ |
-| `useRandomPermalink` | boolean | Default `false`，仅构建脚手架使用 | ⚠️ 遗留（见 [config-api-audit §3](./config-api-audit.md)） |
-| `hidePostPrefix` | boolean | Default `true`，仅模块构建期使用 | ⚠️ 遗留（同上） |
-| `robotsNotIndex` | string[] | Default `[]`，仅模块构建期使用 | ⚠️ 遗留（同上） |
+| `hidePostPrefix` | boolean | Default `true`，仅模块构建期使用 | ⚙️ 仅构建期（不进 appConfig / 客户端 bundle） |
+| `robotsNotIndex` | string[] | Default `[]`，仅模块构建期使用 | ⚙️ 仅构建期（不进 appConfig / 客户端 bundle） |
 
 `types` 的**第一个键是默认文章版式**；`ui.pagination.sortOrder` 必须是 `order` 的键名。
 
@@ -128,14 +126,14 @@ export default defineClarityConfig({
 
 | 字段 | 类型 | 约束 / Default | 可见性 |
 | --- | --- | --- | --- |
-| `limit` | number | 正整数，Default `50` | ⚠️ 仅服务端消费（RSS 生成），但当前仍随 appConfig 进入客户端 bundle（[config-api-audit §3](./config-api-audit.md) 登记的遗留项） |
-| `enableStyle` | boolean | Default `true`（XSLT 样式页） | ⚠️ 同上 |
+| `limit` | number | 正整数，Default `50` | ⚙️ 仅服务端消费（Atom 生成，不进 appConfig / 客户端 bundle） |
+| `enableStyle` | boolean | Default `true`（XSLT 样式页） | ⚙️ 同上 |
 
 ### stats
 
 | 字段 | 类型 | 约束 / Default | 可见性 |
 | --- | --- | --- | --- |
-| `includePaths` | string[] | Default `[]`（统计全部内容）；SQL LIKE 语法（`%` / `_`），匹配 `content/` 下不含扩展名的路径 | ⚠️ 遗留（仅 stats API 服务端消费，仍随 appConfig 进 bundle） |
+| `includePaths` | string[] | Default `[]`（统计全部内容）；SQL LIKE 语法（`%` / `_`），匹配 `content/` 下不含扩展名的路径；**多模式取并集**（`['posts/%', 'notes/%']` 同时计入两类内容） | ⚙️ 仅 stats API 服务端消费（完整规则不进 appConfig；客户端仅获得派生的 `stats.postsOnly` 展示事实） |
 
 ### integrations
 
@@ -153,10 +151,10 @@ export default defineClarityConfig({
 
 | 字段 | 类型 | 约束 / Default | 可见性 |
 | --- | --- | --- | --- |
-| `atom` | boolean | Default `true`，`/atom.xml` | ✅（`features` 对象整体随 appConfig 进 bundle；开关本身由模块构建期消费） |
-| `opml` | boolean | Default `true`，`/subscriptions.opml` | ✅（同上） |
-| `stats` | boolean | Default `true`，统计 API（服务端）与归档页（客户端） | ✅（同上） |
-| `antiMirror` | `boolean \| { blacklist: string[] }` | Default `false`。**Theme 不携带任何默认黑名单**：镜像站域名必须由消费者在 `blacklist` 中提供；`true`（等价于空黑名单）会**跳过脚本注入并输出 WARN**，需改用 `{ blacklist: [...] }` 显式提供域名 | ✅（客户端反镜像脚本；黑名单与站点 URL 以 base64 内联进页面） |
+| `atom` | boolean | Default `true`，`/atom.xml`；关闭时静态产物缺省且 dev/SSR 运行时返回 404 | ⚙️ 构建期路由规则 + 服务端运行时守卫（不进 appConfig） |
+| `opml` | boolean | Default `true`，`/subscriptions.opml`；关闭语义同上 | ⚙️ 同上 |
+| `stats` | boolean | Default `true`，统计 API（服务端）；关闭语义同上 | ⚙️ 同上 |
+| `antiMirror` | `boolean \| { blacklist: string[] }` | Default `false`。**Theme 不携带任何默认黑名单**：镜像站域名必须由消费者在 `blacklist` 中提供；`true`（等价于空黑名单）会**跳过脚本注入并输出 WARN**，需改用 `{ blacklist: [...] }` 显式提供域名。脚本会把镜像主机导航回 `site.url` 的规范主机 | ⚙️ 构建期注入客户端脚本（黑名单与站点 URL 以 base64 内联进页面，不进 appConfig） |
 
 ### changelog
 

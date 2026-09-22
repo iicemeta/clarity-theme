@@ -5,6 +5,9 @@
   "packageManager": "pnpm@12.4.1",
   "description": "Clarity Theme — 从 blog-v3 提取的可复用 Nuxt 4 Layer 博客主题",
   "license": "MIT",
+  "publishConfig": {
+    "access": "public"
+  },
   "homepage": "https://github.com/iicemeta/clarity-theme",
   "repository": {
     "type": "git",
@@ -64,6 +67,8 @@
     "test:release": "pnpm verify && pnpm test:consumer && pnpm test:compatibility",
     "test:consumer": "node scripts/test-consumer.mjs",
     "test:compatibility": "node scripts/test-compatibility.mjs",
+    "test:registry-consumer": "node scripts/test-registry-consumer.mjs",
+    "release:check": "node scripts/release-check.mjs",
     "sync:check": "node scripts/sync-upstream.mjs check",
     "sync:diff": "node scripts/sync-upstream.mjs diff",
     "sync:apply": "node scripts/sync-upstream.mjs apply",

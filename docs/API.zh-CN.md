@@ -50,6 +50,9 @@ function defineClarityConfig(config: ClarityConfigInput): ClarityConfig
 - `ClarityUiConfigInput`
 - `ClarityAppConfig`
 - `ClarityPublicConfig`
+- `ClarityPublicSiteConfig`
+- `ClarityPublicArticleConfig`
+- `ClarityPublicStatsConfig`
 - `ClarityPublicIntegrationsConfig`
 - `FeedEntry`
 - `FeedGroup`
@@ -142,12 +145,14 @@ categories/tags/type/draft 的默认值来自解析后的配置与 Content schem
 
 | 辅助函数 | 返回值 |
 | --- | --- |
-| `useClarityConfig()` | 解析后的公共站点配置加上 UI 配置 |
-| `useClaritySite()` | site 分区 |
-| `useClarityArticle()` | article 配置分区 |
+| `useClarityConfig()` | 客户端可见的公共配置子集加上 UI 配置 |
+| `useClaritySite()` | 客户端可见的 site 分区（不含 `author.email`） |
+| `useClarityArticle()` | 客户端可见的 article 子集（`categories`、`order`） |
 | `useClaritySiteFeedEntry()` | 由站点配置派生的 feed 条目 |
 
 它们需要 Nuxt 应用上下文，不是独立的包子路径导出。
+
+Theme 服务端路由使用内部 `useClarityServerConfig()` 助手，从 Nitro 私有 runtimeConfig 读取完整 site/feed/stats 配置与 feature 路由开关。它不会进入客户端 bundle，也不是公开的包导出。
 
 ## 公共 HTTP 功能
 
@@ -159,7 +164,7 @@ categories/tags/type/draft 的默认值来自解析后的配置与 Content schem
 | `GET /subscriptions.opml` | OPML 订阅 |
 | `GET /api/stats` | 文章数、字数、年度/分类/标签统计 |
 
-生成的 SEO 输出还包括通过配置的 Nuxt 模块产出的 `/robots.txt`、`/sitemap.xml` 与 `/llms.txt`。功能开关会移除预渲染/head 接线；运行时路由禁用尚无保证。
+生成的 SEO 输出还包括通过配置的 Nuxt 模块产出的 `/robots.txt`、`/sitemap.xml` 与 `/llms.txt`。关闭 `features.atom` / `opml` / `stats` 会移除预渲染与 head 接线，**并且**使路由在 dev/SSR 运行时返回 404。
 
 ## 配置入口
 

@@ -169,27 +169,27 @@ Layer 当前提供通用 UI、布局、页面、组件、样式、composables、
 
 ## 9. 发布阻塞项
 
-首次公开包发布前，以下必须完成：
+状态更新（2026-09-22）：
 
-1. 解决或以发布说明显式延后所有 ROADMAP P0 正确性事项。
-2. 完成用户迁移、配置与自定义文档。
-3. 添加迁移 Skill 与知识参考。
-4. 添加可重复的迁移夹具/静态验证。
-5. 在确切的发布 commit 上运行完整有序验证套件。
-6. 运行真实 tarball 安装与 npm publish 演练。
-7. 定义包版本/tag、更新日志、provenance 与回滚。
-8. 确认上游基线新鲜度，或文档化已审查的差量。
-9. 确认包导出、文件、许可证、作者元数据与隐私泄漏检查。
-10. 生成并评审 `docs/RELEASE-CHECKLIST.md`。
+1. ✅ 所有 ROADMAP P0 正确性事项已解决；P1 推迟项已记录在发布说明中。
+2. ✅ 用户迁移、配置与自定义文档已完成。
+3. ✅ 迁移 Skill 与知识参考已存在。
+4. ✅ 可重复的迁移夹具/静态验证已存在。
+5. ⏳ 完整有序验证套件在当前工作树通过；必须在确切 tag commit 上重跑（`publish.yml` 自动执行）。
+6. ⏳ 真实 tarball 安装通过（`test:consumer`）；npm publish 演练在 `publish.yml` 中于 tag commit 上执行。
+7. ✅ 包版本/tag 契约、更新日志、provenance 与回滚已在 `docs/PUBLISHING.zh-CN.md` 定义。
+8. ✅ 上游基线最新。
+9. ✅ 包导出、文件、许可证、元数据与泄漏检查通过，由 `pnpm release:check` 强制执行。
+10. ✅ `docs/RELEASE-CHECKLIST.md` 已生成并评审。
 
-文档与 Skill 完成是收尾工作，但它们本身不能替代 P0 正确性门槛。
+剩余人工门禁：确认 npm 名称/所有权（该名称带有 2025-10-16 的 unpublish 墓碑记录）、配置 Trusted Publisher、打 `v0.1.0` tag 并发布 GitHub Release，以及发布后的 registry 消费者测试。
 
 ## 10. 可选增强
 
 - 添加机器可读的迁移盘点模板。
 - 把夹具验证从静态分类扩展为生成临时消费者并运行 typecheck/generate。
 - 为 Agent 添加专用迁移报告格式。
-- 在 P0 工作完成后添加发布 provenance 与 tag 自动化。
+- 添加发布后的 registry 漂移监控自动化。
 - 添加针对性的无障碍、响应式、交互与远程服务失败测试。
 - 使远程 CSS/字体来源可配置。
 - 添加离线/受限 Shiki 构建覆盖。
@@ -197,6 +197,6 @@ Layer 当前提供通用 UI、布局、页面、组件、样式、composables、
 
 ## 11. 审计结论
 
-Layer 抽取、包边界、配置 schema、Content 工厂、真实消费者测试、兼容性回归、playground、CI、上游 manifest 与补丁审计已基本到位。剩余工作正确聚焦于发布收尾与安全迁移，而不是又一次主题抽取。
+Layer 抽取、包边界、配置 schema、Content 工厂、真实消费者测试、兼容性回归、playground、CI、上游 manifest 与补丁审计已基本到位。此前的 P0 正确性阻塞项（服务端/客户端配置拆分、feature-off 运行时语义、反镜像导航、no-op 固定链接契约）已修复并有针对性测试，发布管线（发布门禁、更新日志、带 provenance 的 OIDC 发布工作流、registry 消费者测试）已实现。
 
-最高优先级的下一步是文档与迁移基础设施，其次是确切 commit 验证。已知的运行时 P0 缺陷必须保持显式发布阻塞项，不能被文档完成掩盖。
+最高优先级的下一步是人工发布序列：确认 npm 名称/所有权、配置 Trusted Publishing、打 `v0.1.0` tag、发布 GitHub Release，并验证 registry 中的包。推迟的 P1/P2 事项继续显式记录在路线图与发布说明中。

@@ -1,11 +1,16 @@
 import { defineClarityConfig } from 'clarity-theme/config'
 
+// 兼容性测试钩子：仅在 scripts/test-compatibility.mjs 显式注入环境变量时生效，
+// 用于在真实浏览器中验证 anti-mirror 从镜像主机导航回规范主机。
+const compatSiteUrl = process.env.CLARITY_COMPAT_SITE_URL
+const compatAntiMirrorBlacklist = process.env.CLARITY_COMPAT_ANTI_MIRROR_BLACKLIST
+
 export default defineClarityConfig({
 	site: {
 		title: 'Clarity Playground',
 		subtitle: 'Clarity Theme 示例站点',
 		description: 'Clarity Theme 的最小可运行示例，用于验证 Layer 独立构建与站点配置注入。',
-		url: 'https://clarity-theme.example.com/',
+		url: compatSiteUrl ?? 'https://clarity-theme.example.com/',
 		language: 'zh-CN',
 		timezone: 'Asia/Shanghai',
 		established: '2026-01-01',
@@ -53,7 +58,9 @@ export default defineClarityConfig({
 		atom: true,
 		opml: true,
 		stats: true,
-		antiMirror: false,
+		antiMirror: compatAntiMirrorBlacklist
+			? { blacklist: compatAntiMirrorBlacklist.split(',').filter(Boolean) }
+			: false,
 	},
 
 	changelog: [
