@@ -8,6 +8,14 @@
     "content": "^3.16.0",
     "syncedAt": "2026-09-21T16:40:00+08:00"
   },
+  "pathMap": {
+    "app/": "src/",
+    "modules/": "src/modules/",
+    "public/": "src/public/",
+    "remark-plugins/": "src/remark-plugins/",
+    "server/": "src/server/",
+    "shared/": "src/shared/"
+  },
   "include": [
     "app/assets/**",
     "app/components/**",

@@ -177,7 +177,7 @@ const allowedRootFiles = new Set([
 	'package.json',
 	'nuxt.config.ts',
 ])
-const allowedDirs = ['app/', 'config/', 'img/', 'modules/', 'public/', 'remark-plugins/', 'server/', 'shared/']
+const allowedDirs = ['src/']
 
 /** 发布必须存在的最小文件集（缺一即视为破坏性发布） */
 const requiredFiles = [
@@ -185,39 +185,39 @@ const requiredFiles = [
 	'README.md',
 	'package.json',
 	'nuxt.config.ts',
-	'app/shiki.config.ts',
-	'config/index.ts',
-	'config/index.d.mts',
-	'config/index.mjs',
-	'config/define.ts',
-	'config/define.mjs',
-	'config/content.ts',
-	'config/content.d.mts',
-	'config/content.mjs',
-	'config/schema.ts',
-	'config/schema.d.mts',
-	'config/schema.mjs',
-	'config/server.ts',
-	'img/index.ts',
-	'img/index.d.mts',
-	'img/index.mjs',
-	'modules/clarity-config/index.ts',
-	'remark-plugins/remark-code-component.mjs',
-	'remark-plugins/rehype-meta-slots.mjs',
-	'public/assets/atom.xsl',
-	'public/assets/atom.css',
-	'public/fonts/AlimamaFangYuanTi.woff2',
-	'server/api/stats.get.ts',
-	'server/utils/clarity.ts',
-	'server/routes/atom.xml.get.ts',
-	'server/routes/subscriptions.opml.get.ts',
+	'src/shiki.config.ts',
+	'src/config/index.ts',
+	'src/config/index.d.mts',
+	'src/config/index.mjs',
+	'src/config/define.ts',
+	'src/config/define.mjs',
+	'src/config/content.ts',
+	'src/config/content.d.mts',
+	'src/config/content.mjs',
+	'src/config/schema.ts',
+	'src/config/schema.d.mts',
+	'src/config/schema.mjs',
+	'src/config/server.ts',
+	'src/img/index.ts',
+	'src/img/index.d.mts',
+	'src/img/index.mjs',
+	'src/modules/clarity-config/index.ts',
+	'src/remark-plugins/remark-code-component.mjs',
+	'src/remark-plugins/rehype-meta-slots.mjs',
+	'src/public/assets/atom.xsl',
+	'src/public/assets/atom.css',
+	'src/public/fonts/AlimamaFangYuanTi.woff2',
+	'src/server/api/stats.get.ts',
+	'src/server/utils/clarity.ts',
+	'src/server/routes/atom.xml.get.ts',
+	'src/server/routes/subscriptions.opml.get.ts',
 ]
 
 /** 明确禁止进入 tarball 的路径模式（上游文章 / 私密配置 / 开发资产） */
 const forbiddenPathRules = [
 	[/^content\//, '上游文章目录'],
 	[/^playground\//, 'playground 示例文章'],
-	[/^docs\/|^tests\/|^scripts\/|^\.github\//, '开发资产'],
+	[/^docs\/|^tests\/|^scripts\/|^skills\/|^\.github\//, '开发资产'],
 	[/^clarity\.config\.(ts|mjs|js)$/, '上游私密站点配置'],
 	[/^feeds\.(ts|mjs|js)$/, '上游友链数据'],
 	[/^(redirects\.json|edgeone\.json|sync-manifest\.json)$/, '上游站点配置'],
@@ -304,7 +304,7 @@ function auditExports(packageDir) {
 	}
 
 	// 重点检查三个 .d.mts：引用链上的每个相对文件都必须真实存在于 tarball
-	for (const declaration of ['config/index.d.mts', 'config/content.d.mts', 'config/schema.d.mts', 'img/index.d.mts']) {
+	for (const declaration of ['src/config/index.d.mts', 'src/config/content.d.mts', 'src/config/schema.d.mts', 'src/img/index.d.mts']) {
 		assert(`${declaration} 进入 tarball`, existsSync(join(packageDir, declaration)))
 	}
 

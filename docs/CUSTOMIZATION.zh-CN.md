@@ -220,7 +220,7 @@ export default defineNuxtConfig({
 }
 ```
 
-`app/assets/css/_variable.scss` 中的 SCSS 变量与 mixin 是内部构建细节。自定义属性与可见选择器是更安全的自定义点，但重大视觉变更应使用组件覆盖加显式测试。
+`src/assets/css/_variable.scss` 中的 SCSS 变量与 mixin 是内部构建细节。自定义属性与可见选择器是更安全的自定义点，但重大视觉变更应使用组件覆盖加显式测试。
 
 ## 5. 自定义页面、布局、插件与模块
 
@@ -246,9 +246,9 @@ modules/
 Clarity 提供：
 
 ```text
-server/api/stats.get.ts
-server/routes/atom.xml.get.ts
-server/routes/subscriptions.opml.get.ts
+src/server/api/stats.get.ts
+src/server/routes/atom.xml.get.ts
+src/server/routes/subscriptions.opml.get.ts
 ```
 
 你的项目可以添加：

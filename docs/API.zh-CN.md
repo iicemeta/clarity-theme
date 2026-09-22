@@ -23,10 +23,10 @@
 | 导入 | 条件 | 运行时/类型目标 | 公共导出 |
 | --- | --- | --- | --- |
 | `clarity-theme` | default | `./nuxt.config.ts` | Nuxt Layer 根配置 |
-| `clarity-theme/config` | types / default | `config/index.d.mts` / `config/index.mjs` | `defineClarityConfig`、下文列出的全部 Zod schema 与配置类型 |
-| `clarity-theme/content` | types / default | `config/content.d.mts` / `config/content.mjs` | `createClarityContentConfig`、`ArticleSchema` 类型 |
-| `clarity-theme/img` | types / default | `img/index.d.mts` / `img/index.mjs` | 图片/头像/favicon 辅助函数与枚举/常量 |
-| `clarity-theme/schema` | types / default | `config/schema.d.mts` / `config/schema.mjs` | 全部 `clarity*` Zod schema 与由 schema 派生的类型 |
+| `clarity-theme/config` | types / default | `src/config/index.d.mts` / `src/config/index.mjs` | `defineClarityConfig`、下文列出的全部 Zod schema 与配置类型 |
+| `clarity-theme/content` | types / default | `src/config/content.d.mts` / `src/config/content.mjs` | `createClarityContentConfig`、`ArticleSchema` 类型 |
+| `clarity-theme/img` | types / default | `src/img/index.d.mts` / `src/img/index.mjs` | 图片/头像/favicon 辅助函数与枚举/常量 |
+| `clarity-theme/schema` | types / default | `src/config/schema.d.mts` / `src/config/schema.mjs` | 全部 `clarity*` Zod schema 与由 schema 派生的类型 |
 
 根导出是 Nuxt Layer 入口，不是通用的 JavaScript 工具模块。
 
@@ -200,11 +200,11 @@ export default defineNuxtConfig({
 
 以下内容刻意不作为公共 ESM API：
 
-- `modules/clarity-config` 内部结构，包括 `toPublicClarityConfig`
-- 除上述 clarity 访问器之外的普通 `app/composables/*`
-- `app/stores/*`、内部工具函数与生成的类型模板
+- `src/modules/clarity-config` 内部结构，包括 `toPublicClarityConfig`
+- 除上述 clarity 访问器之外的普通 `src/composables/*`
+- `src/stores/*`、内部工具函数与生成的类型模板
 - 单个组件的 props/样式，除非被有文档记载的渲染契约覆盖
 - remark 插件实例；Nuxt Layer 配置在内部加载它们
-- `shared/utils/*` 辅助函数，除非被某个包入口重新导出或通过有文档记载的功能使用
+- `src/shared/utils/*` 辅助函数，除非被某个包入口重新导出或通过有文档记载的功能使用
 
 包中包含这些源文件是为了 Nuxt Layer 编译；tarball 中包含某个文件并不意味着其中每个符号都是公共 API。

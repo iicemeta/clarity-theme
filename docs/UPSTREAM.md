@@ -27,6 +27,27 @@ Classification priority is:
 exclude > transform > manual > include > unknown
 ```
 
+### `pathMap`
+
+All manifest globs and the `upstream` block describe the **upstream**
+(blog-v3) tree. The optional `pathMap` object maps upstream directory prefixes
+to their **local** destinations when the engine reads or writes Theme files.
+Since the `src/` source-layout migration, the Theme layout differs from
+upstream:
+
+| Upstream prefix | Local prefix |
+| --- | --- |
+| `app/` | `src/` |
+| `modules/` | `src/modules/` |
+| `public/` | `src/public/` |
+| `remark-plugins/` | `src/remark-plugins/` |
+| `server/` | `src/server/` |
+| `shared/` | `src/shared/` |
+
+Mapping applies only at the local filesystem boundary; classification,
+baseline comparison, conflict detection, and rollback semantics remain
+upstream-path based. Manifests without `pathMap` keep identity mapping.
+
 ### `include`
 
 Paths considered directly synchronizable when the Theme copy still matches the recorded baseline:

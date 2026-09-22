@@ -21,7 +21,7 @@
 - Tarball 消费者验收、生产 SSR、真实浏览器渲染、dev 水合、契约、peer、纯度与上游同步测试。
 - 有序 CI 管线，加每周只读上游漂移报告。
 - 当前的架构/API/上游/补丁/状态文档。
-- **P0-1 已解决：** 服务端消费配置（`feed.*`、完整 `stats.*`、feature 路由开关、`site.author.email`）移入 Nitro 私有 runtimeConfig，经内部 `useClarityServerConfig()` 读取；客户端 appConfig 仅保留渲染必需子集（`config/public.ts`、`config/server.ts`、`server/utils/clarity.ts`）。
+- **P0-1 已解决：** 服务端消费配置（`feed.*`、完整 `stats.*`、feature 路由开关、`site.author.email`）移入 Nitro 私有 runtimeConfig，经内部 `useClarityServerConfig()` 读取；客户端 appConfig 仅保留渲染必需子集（`src/config/public.ts`、`src/config/server.ts`、`src/server/utils/clarity.ts`）。
 - **P0-2 已解决：** 关闭 `features.atom` / `opml` / `stats` 后，路由在 dev/SSR 运行时返回 404，同时静态产物缺省（服务端守卫 + `test:consumer` 的 `nuxt build` 运行时断言）。
 - **P0-3 已解决：** 反镜像导航改为从 `site.url` 派生规范主机，不再把完整 URL 赋给 `location.host`；`test:compatibility` 中的真实浏览器用例从镜像类主机（`127.0.0.1` → `localhost`）完成导航验证。
 - **P0-4 已解决：** no-op 的 `article.useRandomPermalink` 字段已在首个语义发布前从 schema、文档、迁移映射与测试中移除。
@@ -85,7 +85,7 @@
 - 在 Nuxt 允许的范围内，把 app-config 边界警告变成确定的构建/类型边界。
 - 为新拆分添加 payload 与类型断言。
 
-实现备注：`modules/clarity-config`、`config/public.ts`、`config/app.ts`、`server/**`、`shared/utils/clarity.ts` 与消费者/兼容性测试装置。
+实现备注：`src/modules/clarity-config`、`src/config/public.ts`、`src/config/app.ts`、`src/server/**`、`src/shared/utils/clarity.ts` 与消费者/兼容性测试装置。
 
 ### P0-2. 给功能关闭的路由一个运行时语义
 
@@ -115,7 +115,7 @@
 
 功能禁用必须意味着路由在静态输出中缺失**且**在 dev/SSR 中返回 404。作为 v0.1 缺陷修复在首次 npm 发布前实现；配置 API 不变。里程碑 1。
 
-实现备注：功能状态必须能被 P0-1 的仅服务端配置源访问；`server/**`；feature-off 消费者与 SSR 用例。
+实现备注：功能状态必须能被 P0-1 的仅服务端配置源访问；`src/server/**`；feature-off 消费者与 SSR 用例。
 
 ### P0-3. 验证并修正反镜像导航
 
@@ -304,7 +304,7 @@ Tarball 引用审计、Node 冒烟与 typecheck 覆盖存在性与行为子集�
 
 在考虑生成之前，为成对导出名、schema 默认值/严格性与代表性辅助输出添加确定性一致性检查。里程碑 2。
 
-实现备注：验证/契约装置与 `config/`、`img/`、`remark-plugins/` 下的成对文件。
+实现备注：验证/契约装置与 `src/config/`、`src/img/`、`src/remark-plugins/` 下的成对文件。
 
 ### P1-5. 缩减 `plain-shiki` 消费者补丁
 

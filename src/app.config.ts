@@ -2,7 +2,7 @@
  * Clarity Theme UI 默认配置。
  *
  * 站点数据（标题、作者、文章分类等）来自根目录 clarity.config.ts，
- * 由 modules/clarity-config 注入到 appConfig.clarity 中。
+ * 由 src/modules/clarity-config 注入到 appConfig.clarity 中。
  *
  * 消费项目可在自己的 app/app.config.ts 中按需覆盖任意键。
  */

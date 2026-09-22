@@ -19,36 +19,29 @@
   "exports": {
     ".": "./nuxt.config.ts",
     "./config": {
-      "types": "./config/index.d.mts",
-      "default": "./config/index.mjs"
+      "types": "./src/config/index.d.mts",
+      "default": "./src/config/index.mjs"
     },
     "./content": {
-      "types": "./config/content.d.mts",
-      "default": "./config/content.mjs"
+      "types": "./src/config/content.d.mts",
+      "default": "./src/config/content.mjs"
     },
     "./img": {
-      "types": "./img/index.d.mts",
-      "default": "./img/index.mjs"
+      "types": "./src/img/index.d.mts",
+      "default": "./src/img/index.mjs"
     },
     "./schema": {
-      "types": "./config/schema.d.mts",
-      "default": "./config/schema.mjs"
+      "types": "./src/config/schema.d.mts",
+      "default": "./src/config/schema.mjs"
     }
   },
   "main": "./nuxt.config.ts",
   "files": [
     "LICENSE",
     "README.md",
-    "app",
-    "config",
-    "img",
-    "modules",
     "nuxt.config.ts",
     "package.json",
-    "public",
-    "remark-plugins",
-    "server",
-    "shared"
+    "src"
   ],
   "engines": {
     "node": "^22.19 || ^24.11 || >=26"
@@ -57,8 +50,8 @@
     "dev": "pnpm --dir playground dev",
     "build": "pnpm --dir playground build",
     "generate": "pnpm --dir playground generate",
-    "lint": "eslint && stylelint \"app/**/*.{vue,scss}\" \"playground/app/**/*.vue\"",
-    "lint:fix": "eslint --fix && stylelint \"app/**/*.{vue,scss}\" \"playground/app/**/*.vue\" --fix",
+    "lint": "eslint && stylelint \"src/**/*.{vue,scss}\" \"playground/app/**/*.vue\"",
+    "lint:fix": "eslint --fix && stylelint \"src/**/*.{vue,scss}\" \"playground/app/**/*.vue\" --fix",
     "typecheck": "pnpm --dir playground typecheck",
     "verify": "node scripts/verify-theme.mjs",
     "test:sync": "node --test tests/sync-upstream.test.mjs",
@@ -134,6 +127,7 @@
     "@nuxt/hints": "^1.1.4",
     "@stylistic/stylelint-plugin": "^5.2.1",
     "@types/hast": "^3.0.5",
+    "@types/mdast": "^4.0.4",
     "@zinkawaii/stylelint-config": "^0.5.2",
     "cspell": "^10.2.2",
     "eslint": "^10.10.0",

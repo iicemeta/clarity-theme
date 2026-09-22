@@ -11,6 +11,17 @@ Use this skill to migrate a consumer project. It does not modify the Clarity The
 - [`references/config-mapping.md`](./references/config-mapping.md)
 - [`references/validation.md`](./references/validation.md)
 
+## Clarity repository layout
+
+Clarity Theme keeps its runtime source under `src/` (`src/components`,
+`src/config`, `src/modules`, `src/server`, `src/shared`, …) while
+`nuxt.config.ts` and `package.json` stay at the package root. The npm
+subpath exports (`clarity-theme/config`, `clarity-theme/content`,
+`clarity-theme/schema`, `clarity-theme/img`) are stable and point into
+`src/`. Consumer projects keep their own blog-v3-shaped `app/`, `content/`,
+and `public/` trees — do not mirror Clarity's internal `src/` layout into a
+consumer, and do not rewrite consumer `app/**` paths during migration.
+
 ## Operating rules
 
 1. Work serially in one Git working tree. Do not start concurrent dev, build, generate, or test processes.

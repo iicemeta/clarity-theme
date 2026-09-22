@@ -2,8 +2,8 @@
 
 **English** | [简体中文](./CONFIGURATION.zh-CN.md)
 
-> Source of truth: `config/schema.ts` / `config/schema.mjs`, `modules/clarity-config/index.ts`,
-> `config/app.ts`, and their tests. Current project state is summarized in
+> Source of truth: `src/config/schema.ts` / `src/config/schema.mjs`, `src/modules/clarity-config/index.ts`,
+> `src/config/app.ts`, and their tests. Current project state is summarized in
 > [PROJECT-STATUS](./PROJECT-STATUS.md); the API boundary is in [API](./API.md).
 
 本文是 Theme 对 Consumer 暴露的全部配置面。字段标记含义：

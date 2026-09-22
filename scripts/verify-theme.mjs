@@ -16,7 +16,7 @@ const themeDir = fileURLToPath(new URL('..', import.meta.url))
 
 const forbiddenFiles = [
 	'content',
-	'app/feeds.ts',
+	'src/feeds.ts',
 	'blog.config.ts',
 	'content.config.ts',
 	'redirects.json',

@@ -266,6 +266,54 @@ UI 分组、同路径组件覆盖、CSS 覆盖、服务端/路由自定义与 Sh
 | [更新日志](./CHANGELOG.md) | 面向使用者的发布历史 |
 | [抽取历史](./docs/history/2026-09-layer-extraction.zh-CN.md) | 历史阶段与一次性差分验证 |
 
+## 仓库结构
+
+仓库根目录是工程管理层；Theme 的全部运行时源码统一放在 `src/`：
+
+```
+clarity-theme/
+├─ src/                  # Theme 运行时源码（Layer srcDir）
+│  ├─ assets/ components/ composables/ layouts/ middleware/
+│  ├─ pages/ plugins/ stores/ types/ utils/
+│  ├─ app.config.ts app.vue error.vue shiki.config.ts
+│  ├─ config/            # config API 源码（npm ./config ./content ./schema）
+│  ├─ img/               # img API 源码（npm ./img）
+│  ├─ modules/           # source-layout 引导模块 + clarity-config 模块
+│  ├─ public/ server/ shared/ remark-plugins/
+├─ skills/               # Agent 工作流 Skill（不进入 npm 包）
+├─ docs/                 # 人工文档
+├─ playground/           # workspace 链接的开发用消费项目
+├─ scripts/  tests/      # 验证与工具脚本
+└─ nuxt.config.ts、package.json、sync-manifest.json、…
+```
+
+`nuxt.config.ts` 保留在包根目录。它最先加载的
+`src/modules/clarity-source-layout` 只为 Clarity 自身 layer 应用 `src/`
+目录元数据；不静态声明 `srcDir`/`serverDir`/`dir.*`，是因为 c12 会把它们
+合并进未显式覆盖这些键的 consumer root 配置。因此 npm 安装、Git commit
+安装与本地目录安装解析到同一份布局，同时不会覆盖 consumer 自己的
+应用目录。
+
+npm 包、Agent Skill 与文档三者职责分离：
+
+- **`clarity-theme`（npm 包）** — 运行时 Nuxt Layer，通过
+  `extends: ['clarity-theme']` 使用。`files` 只发布 `src/` 与根入口文件，
+  开发资产不会进入 tarball。
+- **`skills/migrate-blog-v3-to-clarity`** — 迁移既有 blog-v3 项目的
+  Agent 工作流 Skill。它与仓库一起版本化，但**刻意不**打进 npm 包。
+- **`docs/`** — 中英双语的人工文档。
+
+### 安装迁移 Skill
+
+```bash
+npx skills add iicemeta/clarity-theme --list   # 发现可用 Skill
+npx skills add iicemeta/clarity-theme --skill migrate-blog-v3-to-clarity
+```
+
+开发环境可用 `npx skills add ./skills --list` 发现本地副本。让 Agent 迁移
+blog-v3 站点时，请让它使用 `migrate-blog-v3-to-clarity` Skill；人工流程
+见[迁移指南](./docs/MIGRATION.zh-CN.md)。
+
 ## 开发
 
 ```bash
@@ -281,6 +329,7 @@ pnpm test:migration
 pnpm test:contract
 pnpm test:consumer
 pnpm test:compatibility
+pnpm pack --dry-run       # 不落盘检查 npm tarball
 ```
 
 CI 从包元数据推导 Node 与 pnpm 版本。它先在固定的 Node 矩阵上运行 lint/typecheck/verify/sync/migration/contract/peers，再在主 Node 版本上运行 playground 生成、真实消费者验收与渲染兼容性。另有一个每周工作流只检测并报告上游漂移。

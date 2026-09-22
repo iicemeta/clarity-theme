@@ -220,7 +220,7 @@ Override both light and dark scopes when changing colors:
 }
 ```
 
-SCSS variables and mixins in `app/assets/css/_variable.scss` are internal build details. Custom properties and visible selectors are safer customization points, but major visual changes should use a component override and explicit tests.
+SCSS variables and mixins in `src/assets/css/_variable.scss` are internal build details. Custom properties and visible selectors are safer customization points, but major visual changes should use a component override and explicit tests.
 
 ## 5. Custom pages, layouts, plugins, and modules
 
@@ -246,9 +246,9 @@ If you override `app/error.vue`, `app/app.vue`, or a page, you own future change
 Clarity provides:
 
 ```text
-server/api/stats.get.ts
-server/routes/atom.xml.get.ts
-server/routes/subscriptions.opml.get.ts
+src/server/api/stats.get.ts
+src/server/routes/atom.xml.get.ts
+src/server/routes/subscriptions.opml.get.ts
 ```
 
 Your project may add:

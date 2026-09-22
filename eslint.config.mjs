@@ -20,7 +20,7 @@ export default antfu({
 		'yaml/indent': ['error', 2],
 	},
 }, {
-	files: ['app/pages/**/*.vue', 'playground/app/**/*.vue'],
+	files: ['src/pages/**/*.vue', 'playground/app/**/*.vue'],
 	rules: {
 		'vue/valid-v-slot': 'off',
 	},

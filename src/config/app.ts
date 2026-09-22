@@ -1,4 +1,4 @@
-import type { NavItem } from '../app/types/nav'
+import type { NavItem } from '../types/nav'
 import type { ClarityPublicConfig } from './public'
 
 export interface NavGroup {

@@ -21,7 +21,10 @@ import { toServerClarityConfig } from '../../config/server'
 import handleMirror from './anti-mirror-client'
 
 const moduleDir = dirname(fileURLToPath(import.meta.url))
-const themeDir = resolve(moduleDir, '../..')
+/** Theme 运行时源码根（src/）：模块位于 src/modules/clarity-config */
+const themeSrcDir = resolve(moduleDir, '../..')
+/** Theme npm 包根（nuxt.config.ts / package.json 所在层） */
+const themePkgDir = resolve(moduleDir, '../../..')
 
 /** app/app.config.ts 的 clarity 键只允许 UI 覆盖（站点级字段属于 clarity.config.ts） */
 const uiConfigKeys = new Set(['component', 'footer', 'header', 'link', 'nav', 'pagination', 'themes'])
@@ -42,7 +45,7 @@ export default defineNuxtModule<ModuleOptions>({
 		const rootDir = nuxt.options.rootDir
 
 		const configPath = resolve(rootDir, options.configFile ?? findConfigFile(rootDir))
-		const feedsPath = findFeedsFile(rootDir, themeDir)
+		const feedsPath = findFeedsFile(rootDir, themeSrcDir)
 
 		// ---- 依赖注入层：Theme 内部不感知消费项目的文件布局 ----
 		Object.assign(nuxt.options.alias, {
@@ -51,14 +54,14 @@ export default defineNuxtModule<ModuleOptions>({
 		})
 
 		// @pinia/nuxt 不会自动扫描 Layer 的 stores 目录，需显式注册
-		addImportsDir(resolve(themeDir, 'app/stores'))
+		addImportsDir(resolve(themeSrcDir, 'stores'))
 
 		// ---- AppConfig 类型化：消费者 defineAppConfig({ clarity: ... }) 获得完整类型提示 ----
 		// 注意：类型文件生成于 buildDir/types/ 下，相对路径必须以其为基准计算，
 		// 否则导入解析失败会因 skipLibCheck 静默退化为 any（审计发现 #9）。
 		const appConfigTypeDir = resolve(nuxt.options.buildDir, 'types')
-		const appConfigTypePath = relative(appConfigTypeDir, resolve(themeDir, 'config/app.ts')).replaceAll('\\', '/')
-		const globalsTypePath = relative(appConfigTypeDir, resolve(themeDir, 'app/types/index.ts')).replaceAll('\\', '/')
+		const appConfigTypePath = relative(appConfigTypeDir, resolve(themeSrcDir, 'config/app.ts')).replaceAll('\\', '/')
+		const globalsTypePath = relative(appConfigTypeDir, resolve(themeSrcDir, 'types/index.ts')).replaceAll('\\', '/')
 		addTypeTemplate({
 			filename: 'types/clarity-app-config.d.ts',
 			getContents: () => [
@@ -86,7 +89,7 @@ export default defineNuxtModule<ModuleOptions>({
 		// 需置于 '~' 之前以保证 Vite 别名前缀优先匹配
 		if (!existsSync(resolve(nuxt.options.srcDir, 'shiki.config.ts'))) {
 			nuxt.options.alias = {
-				'~/shiki.config': resolve(themeDir, 'app/shiki.config.ts'),
+				'~/shiki.config': resolve(themeSrcDir, 'shiki.config.ts'),
 				...nuxt.options.alias,
 			}
 		}
@@ -176,7 +179,7 @@ export default defineNuxtModule<ModuleOptions>({
 
 		// ---- 构建信息（供 BlogTech 等 Widget 使用） ----
 		const consumerPkg = await loadJson(resolve(rootDir, 'package.json'), jiti)
-		const themePkg = await loadJson(resolve(themeDir, 'package.json'), jiti)
+		const themePkg = await loadJson(resolve(themePkgDir, 'package.json'), jiti)
 		nuxt.options.runtimeConfig.public.clarity = {
 			theme: 'Clarity',
 			themeVersion: String(themePkg?.version ?? ''),
@@ -308,13 +311,13 @@ function findConfigFile(rootDir: string) {
 	return 'clarity.config.ts'
 }
 
-function findFeedsFile(rootDir: string, themeDir: string) {
+function findFeedsFile(rootDir: string, themeSrcDir: string) {
 	for (const name of ['feeds.ts', 'feeds.mjs', 'feeds.js']) {
 		if (existsSync(resolve(rootDir, name))) {
 			return { found: true, resolved: resolve(rootDir, name) }
 		}
 	}
-	return { found: false, resolved: resolve(themeDir, 'config/feeds.empty.ts') }
+	return { found: false, resolved: resolve(themeSrcDir, 'config/feeds.empty.ts') }
 }
 
 async function loadJson(path: string, jiti: ReturnType<typeof createJiti>) {
