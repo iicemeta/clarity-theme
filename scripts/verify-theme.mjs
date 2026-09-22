@@ -49,6 +49,7 @@ const attributionAllowList = new Set([
 	'docs/theme-audit.md',
 	'docs/RELEASE-NOTES-0.1.0.md',
 	'docs/RELEASE-NOTES-0.1.1.md',
+	'docs/RELEASE-NOTES-0.1.2.md',
 	'package.json',
 	'sync-manifest.json',
 	'scripts/test-consumer.mjs',

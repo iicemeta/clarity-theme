@@ -4,6 +4,37 @@ All notable changes to Clarity Theme are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
 [Semantic Versioning](https://semver.org/).
 
+## 0.1.2 - 2026-09-22
+
+Source-layout release, published through the `v0.1.2` tag and the OIDC
+release workflow. The consumer-facing package exports and configuration
+contract are unchanged from `0.1.1`.
+
+### Changed
+
+- All runtime theme source moved to the standardized `src/` layout: the
+  former `app/`, `config/`, `img/`, `modules/`, `public/`,
+  `remark-plugins/`, `server/`, and `shared/` directories now live under
+  `src/`, and no runtime source directory remains at the repository root.
+- A layer-only `clarity-source-layout` bootstrap module applies the `src/`
+  layout metadata to the Clarity layer only, so npm, Git-commit, and
+  local-directory installs resolve the same layout without overriding a
+  consumer's own application directories.
+- The five public exports (`.`, `./config`, `./content`, `./schema`, and
+  `./img`) keep the same consumer API and now resolve into `src/`.
+- Upstream sync path mapping targets `src/`, so drift detection stays
+  aligned with the migrated layout.
+- The migration Skill moved to `skills/migrate-blog-v3-to-clarity` at the
+  repository root and its regression tests cover the new layout.
+
+### Upgrade notes
+
+- No action is required for consumers that use `extends: ['clarity-theme']`
+  and the documented package exports.
+- Consumers that referenced unpublished internal theme paths must move
+  those references to the `src/` equivalents documented in
+  [Customization](./docs/CUSTOMIZATION.md).
+
 ## 0.1.1 - 2026-09-22
 
 First gated npm release of the Theme extracted from

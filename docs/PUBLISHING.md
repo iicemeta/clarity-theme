@@ -52,11 +52,12 @@ git push origin v0.1.0
 
 ## 5. GitHub Release
 
-1. Draft a GitHub Release on the tag (`v0.1.1`) using the release-notes
-   template ([RELEASE-NOTES-0.1.1](./RELEASE-NOTES-0.1.1.md) is the filled
-   example for the gated first release;
+1. Draft a GitHub Release on the tag (`v0.1.2`) using the release-notes
+   template ([RELEASE-NOTES-0.1.2](./RELEASE-NOTES-0.1.2.md) is the filled
+   example for the source-layout release;
    [RELEASE-NOTES-0.1.0](./RELEASE-NOTES-0.1.0.md) documents the out-of-band
-   `0.1.0` artifact).
+   `0.1.0` artifact and
+   [RELEASE-NOTES-0.1.1](./RELEASE-NOTES-0.1.1.md) the gated first release).
 2. Publishing the Release triggers the `publish.yml` workflow. The workflow
    checks out the tag, verifies the tag/version contract, reruns the complete
    ordered validation suite, packs `artifacts/clarity-theme-<version>.tgz`,
@@ -92,16 +93,19 @@ Registry state verified during the 2026-09-22 release work:
   typecheck inside the published package** (`server/api/stats.get.ts`
   `orWhere` void-return and `app/pages/link.vue` `never[]` feed typing); both
   defects are fixed in this repository.
+- The gated `clarity-theme@0.1.1` was published through the OIDC workflow at
+  2026-09-22T09:45:26Z and is the registry `latest`.
 
-Required maintainer decisions before the next release:
+Maintainer decisions recorded for the `0.1.1` release (executed):
 
 1. Confirm who published `0.1.0` and whether that publication was intended.
-2. Decide the next version: npm forbids republishing `0.1.0`, so the
-   corrected, gated release must be **`0.1.1`** (bump `package.json`,
-   `CHANGELOG.md`, and the release notes, then tag `v0.1.1`).
-3. Optionally `npm deprecate clarity-theme@0.1.0` with a pointer to `0.1.1`.
+2. The corrected, gated release was **`0.1.1`** (npm forbids republishing
+   `0.1.0`); it is published.
+3. Optionally `npm deprecate clarity-theme@0.1.0` with a pointer to the
+   current release.
    **Do not unpublish** — published versions are treated as immutable.
-4. Trusted Publisher configuration remains required for workflow publishing.
+4. Trusted Publisher configuration is in place (the `0.1.1` publish ran
+   through the workflow); it remains required for every workflow publish.
 
 ## 7. npm provenance
 
@@ -110,7 +114,7 @@ Required maintainer decisions before the next release:
 - Verify after publishing:
 
 ```bash
-npm view clarity-theme@0.1.0 dist.integrity
+npm view clarity-theme@0.1.2 dist.integrity
 npm audit signatures --package-lock-only 2>/dev/null || true
 ```
 
@@ -140,7 +144,7 @@ Permissions are minimal: `contents: read`, `id-token: write`.
 After the workflow succeeds:
 
 ```bash
-npm view clarity-theme@0.1.0 version dist.tarball
+npm view clarity-theme@0.1.2 version dist.tarball
 pnpm test:registry-consumer
 ```
 
@@ -167,12 +171,12 @@ immutable.
 
 ## 11. Hotfix release
 
-1. Branch from the release tag (`git switch -c hotfix/0.1.1 v0.1.0`) or fix
+1. Branch from the release tag (`git switch -c hotfix/0.1.2 v0.1.1`) or fix
    on `master` if the release is the current head.
 2. Apply the minimal fix plus its test.
-3. Bump `package.json` to `0.1.1`, add the changelog entry.
+3. Bump `package.json` to `0.1.2`, add the changelog entry.
 4. Rerun the ordered verification suite on the exact hotfix commit.
-5. Tag `v0.1.1`, push, and publish through a GitHub Release as usual.
+5. Tag `v0.1.2`, push, and publish through a GitHub Release as usual.
 
 ## 12. Pre-releases
 

@@ -333,7 +333,7 @@ The weekly workflow only detects and reports drift. It never applies, commits, o
 
 ## Release Status
 
-Clarity Theme is a **v0.1.1 gated npm release**. The Layer/package boundary, validated configuration, Content factory, rendering pipeline, server outputs, playground, real-consumer acceptance, compatibility matrix, three-layer CI, upstream-sync baseline, release gate, and OIDC publish workflow are implemented. See the [release checklist](./docs/RELEASE-CHECKLIST.md) for the exact remaining manual publication steps.
+Clarity Theme is a **v0.1.2 gated npm release**. The Layer/package boundary, validated configuration, Content factory, rendering pipeline, server outputs, playground, real-consumer acceptance, compatibility matrix, three-layer CI, upstream-sync baseline, release gate, and OIDC publish workflow are implemented. See the [release checklist](./docs/RELEASE-CHECKLIST.md) for the exact remaining manual publication steps.
 
 The v0.1.0 correctness gates from [Roadmap](./docs/ROADMAP.md) are resolved: server/client configuration is split, feature-off routes return 404 at runtime, anti-mirror navigation is verified in a real browser, the no-op random-permalink field is removed, and multi-pattern stats are covered by a regression test. Remaining deferred items are recorded in the roadmap and release notes.
 

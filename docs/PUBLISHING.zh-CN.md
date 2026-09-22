@@ -38,7 +38,7 @@ git push origin v0.1.0
 
 ## 5. GitHub Release
 
-1. 在 tag（`v0.1.1`）上起草 GitHub Release，使用发布说明模板（[RELEASE-NOTES-0.1.1](./RELEASE-NOTES-0.1.1.md) 是门禁首发版本的完整示例；[RELEASE-NOTES-0.1.0](./RELEASE-NOTES-0.1.0.md) 记录绕过流程的 `0.1.0` 产物）。
+1. 在 tag（`v0.1.2`）上起草 GitHub Release，使用发布说明模板（[RELEASE-NOTES-0.1.2](./RELEASE-NOTES-0.1.2.md) 是 `src/` 布局发布版本的完整示例；[RELEASE-NOTES-0.1.0](./RELEASE-NOTES-0.1.0.md) 记录绕过流程的 `0.1.0` 产物，[RELEASE-NOTES-0.1.1](./RELEASE-NOTES-0.1.1.md) 记录门禁首发版本）。
 2. 发布 Release 会触发 `publish.yml` 工作流：检出 tag、校验 tag/version 契约、完整重跑有序验证套件、打包 `artifacts/clarity-theme-<version>.tgz`、审计并试运行该 tarball，最后发布。
 3. 不要在分支 push 时自动发布。GitHub Release 正是「人工确认发布版本」的环节。
 
@@ -63,13 +63,14 @@ git push origin v0.1.0
 - 该名称曾于 2025-10-16 发布 `0.0.10` 并同日 unpublish。
 - **`clarity-theme@0.1.0` 已于 2026-09-22T07:28:22Z 被绕过发布流程发布**，发布者 `creampack <creampack@iicemeta.com>`，gitHead `5a03778`（即 P0 修复前的代码树），未经过发布工作流，也没有 provenance 证明。
 - 对该已发布 `0.1.0` 运行 `pnpm test:registry-consumer` 会在**已发布包内部 typecheck 失败**（`server/api/stats.get.ts` 的 `orWhere` void 返回，以及 `app/pages/link.vue` 的 `never[]` feed 类型）；两个缺陷均已在仓库修复。
+- 门禁 `clarity-theme@0.1.1` 已于 2026-09-22T09:45:26Z 经 OIDC 工作流发布，是 registry 的 `latest`。
 
-下一次发布前，维护者必须决策：
+`0.1.1` 发布时记录的维护者决策（已执行）：
 
 1. 确认 `0.1.0` 的发布者与发布意图。
-2. 决定下一版本号：npm 禁止重新发布 `0.1.0`，因此修复后的门禁发布必须是 **`0.1.1`**（提升 `package.json`、`CHANGELOG.md` 与发布说明，然后打 `v0.1.1` tag）。
-3. 可选：`npm deprecate clarity-theme@0.1.0` 并指向 `0.1.1`。**不要 unpublish**——已发布版本视为不可变。
-4. 工作流发布仍需先配置 Trusted Publisher。
+2. 修复后的门禁发布为 **`0.1.1`**（npm 禁止重新发布 `0.1.0`）；该版本已发布。
+3. 可选：`npm deprecate clarity-theme@0.1.0` 并指向当前版本。**不要 unpublish**——已发布版本视为不可变。
+4. Trusted Publisher 已配置（`0.1.1` 经工作流发布）；每次工作流发布都依赖它。
 
 ## 7. npm provenance
 
@@ -77,7 +78,7 @@ git push origin v0.1.0
 - 发布后验证：
 
 ```bash
-npm view clarity-theme@0.1.0 dist.integrity
+npm view clarity-theme@0.1.2 dist.integrity
 npm audit signatures --package-lock-only 2>/dev/null || true
 ```
 
@@ -101,7 +102,7 @@ npm audit signatures --package-lock-only 2>/dev/null || true
 工作流成功后：
 
 ```bash
-npm view clarity-theme@0.1.0 version dist.tarball
+npm view clarity-theme@0.1.2 version dist.tarball
 pnpm test:registry-consumer
 ```
 
@@ -122,11 +123,11 @@ Workspace → Tarball（test:consumer）→ Registry（test:registry-consumer）
 
 ## 11. 热修复发布
 
-1. 从发布 tag 分支（`git switch -c hotfix/0.1.1 v0.1.0`），或发布即当前 head 时直接在 `master` 修复。
+1. 从发布 tag 分支（`git switch -c hotfix/0.1.2 v0.1.1`），或发布即当前 head 时直接在 `master` 修复。
 2. 应用最小修复及其测试。
-3. 将 `package.json` 提升到 `0.1.1`，补充 CHANGELOG 条目。
+3. 将 `package.json` 提升到 `0.1.2`，补充 CHANGELOG 条目。
 4. 在确切的热修复 commit 上重跑有序验证套件。
-5. 打 `v0.1.1` tag、推送，并照常通过 GitHub Release 发布。
+5. 打 `v0.1.2` tag、推送，并照常通过 GitHub Release 发布。
 
 ## 12. 预发布版本
 

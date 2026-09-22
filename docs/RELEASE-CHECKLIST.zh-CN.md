@@ -2,7 +2,7 @@
 
 [English](./RELEASE-CHECKLIST.md) | **简体中文**
 
-> 清单日期：2026-09-22，Asia/Taipei。v0.1.0 的 P0 正确性门禁已解决，发布管线已实现。门禁发布版本为 **`0.1.1`**（registry 上绕过流程的 `0.1.0` 无法重新发布）。当前工作树在打 tag 前通过了有序验证套件；实际发布仍需在确切 tag 上运行工作流，并完成第 9 节的 npm/GitHub 人工步骤。
+> 清单日期：2026-09-22，Asia/Taipei。v0.1.0 的 P0 正确性门禁已解决，门禁 `0.1.1` 已发布（2026-09-22T09:45:26Z），此后运行时源码迁移到标准化 `src/` 布局。当前门禁发布版本为 **`0.1.2`（tag `v0.1.2`）**。当前工作树在打 tag 前通过了预发布验证套件；实际发布仍需在确切 tag 上运行工作流，并完成第 9 节的 npm/GitHub 人工步骤。
 
 图例：
 
@@ -18,7 +18,7 @@
 - [x] `docs/CUSTOMIZATION.md` 记录 UI 配置、组件覆盖、Shiki、CSS、自定义应用文件、服务端路由、路由规则、公共资源与验证。
 - [x] `docs/COMPATIBILITY.md` 由兼容性契约生成，并记录当前自动化矩阵。
 - [x] `docs/PATCHES.md` 记录补丁为何保持使用方持有，并裁定每个已知补丁。
-- [x] `.agents/skills/migrate-blog-v3-to-clarity/SKILL.md` 有有效的标准 frontmatter 与必需的发现/盘点/分类/计划/应用/验证/报告/回滚工作流。
+- [x] `skills/migrate-blog-v3-to-clarity/SKILL.md` 有有效的标准 frontmatter 与必需的发现/盘点/分类/计划/应用/验证/报告/回滚工作流。
 - [x] Skill 参考包含文件映射、字段映射与验证成功标准。
 - [x] `docs/RELEASE-AUDIT.md` 记录收尾前审计、实际状态、缺口、阻塞项与可选工作。
 - [x] 本发布清单存在，并区分已完成工作与发布阻塞项。
@@ -50,8 +50,8 @@
 ## 4. 包契约
 
 - [x] 包名为 `clarity-theme`。
-- [x] 当前包版本为 `0.1.1`，即门禁 npm 发布版本。
-- [x] 发布版本/tag 决策：从 `v0.1.1` tag 发布 `0.1.1`（`0.1.0` 已被绕过流程的 registry 发布占用，无法重新发布）。
+- [x] 当前包版本为 `0.1.2`，即门禁 npm 发布版本。
+- [x] 发布版本/tag 决策：从 `v0.1.2` tag 发布 `0.1.2`（发布 `src/` 布局迁移；`0.1.0` 与 `0.1.1` 已在 registry 上，无法重新发布）。
 - [x] License 字段为 MIT 且包含 `LICENSE`。
 - [!] 发布前应由维护者/法律审查者确认现有 MIT 版权署名是否需要追加当前权利人行。
 - [x] 包元数据有 repository、homepage、bugs、engines 与包管理器数据。
@@ -59,12 +59,12 @@
 - [x] 五个导出存在：`.`、`./config`、`./content`、`./img` 与 `./schema`。
 - [x] 运行时与类型声明入口由真实消费者测试解析。
 - [x] `files` 包含 Layer/config/运行时负载，排除 docs、playground、tests、CI、Skill、同步 manifest、workspace 文件与 lockfile。
-- [x] 真实 `pnpm pack` 审计报告 151 个文件，包括全部 30 个必需文件（含中文 README、`config/server.ts`、`server/utils/clarity.ts`）。
+- [x] 真实 `pnpm pack` 审计报告 152 个文件，包括全部 30 个必需文件（含中文 README、`src/config/server.ts`、`src/server/utils/clarity.ts`）。
 - [x] Tarball 审计未发现上游私有标识、文章或私有配置。
 - [x] 主题纯度验证未发现禁止的作者/站点数据或跨项目导入。
 - [x] 消费者补丁保留在包负载之外。
 - [x] `publishConfig.access` 为 `public`。
-- [x] `CHANGELOG.md` 存在面向使用者的 `0.1.1` 与 `0.1.0` 条目。
+- [x] `CHANGELOG.md` 存在面向使用者的 `0.1.2`、`0.1.1` 与 `0.1.0` 条目。
 - [x] 运行时依赖完整声明（48 个，经 pack 审计验证）。
 - [x] `main`、`type`、`engines`、`peerDependencies` 与 `packageManager` 已冻结，并由 `pnpm release:check` 断言。
 
@@ -75,11 +75,11 @@
 - [x] P0-3：反镜像导航已修正（从 `site.url` 派生规范主机），并由 `test:compatibility` 的真实浏览器镜像主机用例验证。
 - [x] P0-4：no-op 的 `useRandomPermalink` 字段已从 schema、文档、迁移映射与测试中移除。
 - [x] P1-2：多模式统计选择验证为并集语义（`@nuxt/content` 3.16 的 `orWhere` 组），并由 `posts/% + notes/%` 消费者回归锁定。
-- [ ] P1-1：使远程 CSS/字体来源可配置。**已推迟**到里程碑 2；在 0.1.1 发布说明中记录为已知限制。
+- [ ] P1-1：使远程 CSS/字体来源可配置。**已推迟**到里程碑 2；在 0.1.2 发布说明中记录为已知限制。
 - [ ] P1-3：补全已知上游派生路径的同步 manifest 分类。**已推迟**到里程碑 2；记录为已知限制。
 - [ ] P1-4：添加 TypeScript/MJS 一致性门槛。**已推迟**到里程碑 2；记录为已知限制。
 - [x] P1-6：设计首个 npm 发布工作流。执行（实际发布）仍是人工发布动作。
-- [x] 在发布说明中解决或显式延后其余每个 P1/P2 项（P1-1/P1-3/P1-4/P1-5 与 P2 项记录在 `CHANGELOG.md` 与 `docs/RELEASE-NOTES-0.1.1.md`）。
+- [x] 在发布说明中解决或显式延后其余每个 P1/P2 项（P1-1/P1-3/P1-4/P1-5 与 P2 项记录在 `CHANGELOG.md` 与 `docs/RELEASE-NOTES-0.1.2.md`）。
 
 这些事项在[路线图](./ROADMAP.zh-CN.md)中跟踪。文档完成不能清除它们。
 
@@ -105,11 +105,26 @@
 - [x] 工作流权限受限。
 - [x] `publish.yml` 仅在 `release: published` 触发：检出 tag、校验 tag/version 一致、串行重跑有序套件、打包/审计同一个 tarball，并以 OIDC provenance 发布。
 - [x] 发布工作流权限最小化（`contents: read`、`id-token: write`），不保存 `NPM_TOKEN`。
-- [!] 更新后的工作流必须在本工作树 commit 后在 GitHub 上运行；此处只运行了本地等价套件。
+- [x] 发布工作流已在门禁 `0.1.1` 发布时于 GitHub 运行；`v0.1.2` 需通过其 GitHub Release 再次运行。
 
 ## 8. 验证证据
 
-所有命令于 2026-09-22 串行运行。
+### `v0.1.2` 打 tag 前重跑（src/ 布局代码树，2026-09-22）
+
+| 命令 | 最终结果 | 备注 |
+| --- | --- | --- |
+| `pnpm lint` | ✅ 通过 | 无错误 |
+| `pnpm typecheck` | ✅ 通过 | 预期的有意图 `NUXT_B3011` Badge 覆盖警告 |
+| `pnpm verify` | ✅ 通过 | 无私有数据或跨项目导入泄漏 |
+| `pnpm test:sync` | ✅ 通过 | 18/18 测试（含 `src/` pathMap 规则） |
+| `pnpm test:migration` | ✅ 通过 | 10/10 测试 |
+| `pnpm test:contract` | ✅ 通过 | 41 个契约行 |
+| `pnpm test:consumer` | ✅ 通过 | 打包、exports、独立安装、类型检查、三组配置分支 generate 与 features-off 运行时 404 服务检查 |
+| `pnpm release:check --allow-untagged` | ✅ 通过 | `0.1.2` 的 package/tag/CHANGELOG 契约、exports/files、pack 与 152 文件 tarball 边界；发布前必须在该 commit 上打 `v0.1.2` |
+
+`pnpm generate`、`pnpm test:compatibility` 与确切 tag 的 `release:check` 会在 `v0.1.2` 发布工作流中重跑；registry 消费者测试仅在发布后运行。
+
+### `v0.1.1` 发布记录（2026-09-22）
 
 | 命令 | 最终结果 | 备注 |
 | --- | --- | --- |
@@ -166,13 +181,13 @@
 
 - [x] 所有 ROADMAP P0 项已解决；P1/P2 推迟项已记录在发布说明中。
 - [!] **检测到绕过流程的发布**：`clarity-theme@0.1.0` 已于 2026-09-22T07:28:22Z 被发布到 npm，发布者 `creampack <creampack@iicemeta.com>`，gitHead `5a03778`（P0 修复前代码树，未经过发布工作流，无 provenance）。registry 消费者测试在该已发布包内部 typecheck 失败（见第 8 节）。
-- [x] 维护者决策：修正后的门禁发布为 **`0.1.1`（tag `v0.1.1`）**（npm 禁止重新发布 `0.1.0`）；可选执行 `npm deprecate clarity-theme@0.1.0`；**绝不自动 unpublish**。
+- [x] 维护者决策：当前门禁发布为 **`0.1.2`（tag `v0.1.2`）**（npm 禁止重新发布 `0.1.0`/`0.1.1`；`0.1.1` 已经工作流发布）；可选执行 `npm deprecate clarity-theme@0.1.0`；**绝不自动 unpublish**。
 - [!] Commit 已审查的工作树、提升到选定的发布版本、打 tag，并在该确切 tag 上重跑完整有序套件（发布工作流会自动执行）。
 - [x] 发布 tag、更新日志、provenance、产物校验和与回滚流程已在[发布指南](./PUBLISHING.zh-CN.md)定义。
 - [x] npm 包名已核实：`clarity-theme` 在 registry 上存在一个（绕过流程的）可用 `0.1.0`；维护者包含 `creampack <creampack@iicemeta.com>`。
 - [ ] 获得 MIT 版权声明的维护者/法律确认。
-- [ ] 配置 npm Trusted Publisher（见[发布指南 §6](./PUBLISHING.zh-CN.md#6-trusted-publisher一次性人工配置)）。
-- [ ] 通过发布修正后版本的 GitHub Release 触发发布工作流。
+- [x] 配置 npm Trusted Publisher（见[发布指南 §6](./PUBLISHING.zh-CN.md#6-trusted-publisher一次性人工配置)）——自门禁 `0.1.1` 发布起已就绪。
+- [ ] 通过发布 `v0.1.2` 的 GitHub Release 触发发布工作流。
 - [ ] 评审最终 tag、包 tarball 校验和、provenance、发布说明与回滚计划。
 - [ ] 发布后：运行 `pnpm test:registry-consumer` 并用 `npm view` 验证已发布版本。
 
@@ -180,4 +195,4 @@
 
 **收尾文档、迁移指引、Skill、夹具、CI 接线与本地验证：完成。**
 
-**首个门禁 npm 发布：`0.1.1`，等待 GitHub Release 触发。** 当前树已解决全部正确性阻塞项，发布管线已实现并文档化。registry 上绕过流程的 `0.1.0`（修复前代码树、未经门禁）保持发布状态且无法重新发布；门禁发布以 `0.1.1` 走文档化工作流。「工作流已创建」不等于「发布已完成」——在 registry 存在 `0.1.1` 之前，不要勾选第 9 节的发布项。
+**门禁发布 `0.1.2`：`src/` 布局迁移，等待 GitHub Release 触发。** 门禁 `0.1.1` 已发布，绕过流程的 `0.1.0`（修复前代码树、未经门禁）保持发布状态且无法重新发布；`0.1.2` 通过文档化工作流发布源码布局迁移后的代码树。「工作流已创建」不等于「发布已完成」——在 registry 存在 `0.1.2` 之前，不要勾选第 9 节的发布项。

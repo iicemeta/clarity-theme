@@ -24,8 +24,8 @@ Code, tests, CI, and the sync manifest override prose. A statement in this file 
 | Repository branch | `master` |
 | HEAD at Phase 20 start | `433d042ed3b626a048e84000ba2039102df61f28` (`docs: establish current reality-sync baseline`) |
 | Working tree | Clean and synchronized with `origin/master` before documentation changes |
-| Package | `clarity-theme` v0.1.1, MIT |
-| Distribution state | npm release pipeline ready (OIDC publish workflow, release gate, changelog); the gated release is **`0.1.1` from tag `v0.1.1`**. **A defective `clarity-theme@0.1.0` was published out-of-band at 2026-09-22T07:28:22Z** by `creampack <creampack@iicemeta.com>` from pre-P0 gitHead `5a03778`, without the gate or provenance; the registry consumer test fails typecheck inside it |
+| Package | `clarity-theme` v0.1.2, MIT |
+| Distribution state | npm release pipeline ready (OIDC publish workflow, release gate, changelog); the gated `0.1.1` is published (2026-09-22T09:45:26Z) and the current gated release is **`0.1.2` from tag `v0.1.2`** (the `src/` layout migration). **A defective `clarity-theme@0.1.0` was published out-of-band at 2026-09-22T07:28:22Z** by `creampack <creampack@iicemeta.com>` from pre-P0 gitHead `5a03778`, without the gate or provenance; the registry consumer test fails typecheck inside it |
 | Upstream baseline | `blog-v3` 3.7.2, `main` @ `f6ea97d745517feb52f0c100e89acb36f0adc12f` |
 | Upstream drift | None: a Phase 20 direct remote-head check returned the manifest baseline commit |
 | Local runtime used for verification | Node.js 24.15.0, pnpm 12.4.1, Nuxt 4.5.2, Vue 3.5.43 |
@@ -38,7 +38,7 @@ The differential consumer outside this Git repository is a historical/manual env
 | Field | Value |
 | --- | --- |
 | Name | `clarity-theme` |
-| Version | `0.1.1` |
+| Version | `0.1.2` |
 | License | MIT |
 | Homepage / repository | `https://github.com/iicemeta/clarity-theme` |
 | Node engine | `^22.19 \|\| ^24.11 \|\| >=26` |
@@ -195,7 +195,7 @@ Legend: ✅ Implemented, 🧪 Verified by current automated tests unless explici
 | `pnpm test:compatibility` | Contract, production build log scan, 24 SSR cases, 12 real-browser cases, 11 dev hydration routes, and the anti-mirror real-navigation dev case | ✅ Pass; 52 assertion groups |
 | `pnpm sync:check` | Remote upstream head versus manifest baseline | ✅ Up to date |
 | `pnpm release:check` | package.json/tag/CHANGELOG contract, exports/files integrity, pack success, and tarball boundary audit | ✅ Pass locally with `--allow-untagged`; exact-tag enforcement runs in `publish.yml` |
-| `pnpm test:registry-consumer` | Release-only: install the published version from the npm registry (no local tarball), exports smoke, typecheck, generate, and output assertions | ❌ Against the out-of-band `0.1.0` (expected): fails typecheck inside the published package; must pass against the gated `0.1.1` |
+| `pnpm test:registry-consumer` | Release-only: install the published version from the npm registry (no local tarball), exports smoke, typecheck, generate, and output assertions | ❌ Not yet run against `0.1.2`: run it after publication; the out-of-band `0.1.0` fails typecheck inside the published package, and the gated `0.1.2` must pass |
 | `pnpm test:release` | Verify + real consumer + compatibility | Script exists; current local run executed its component commands with the broader CI set above |
 
 Current consumer variant facts:
@@ -343,6 +343,6 @@ The old phase-based TODO lists are no longer the active planning track.
 
 ## 19. Current Milestone
 
-**v0.1.1 gated release — Milestone 1 and release enablement complete.**
+**v0.1.2 release — `src/` layout migration.**
 
-All four P0 correctness blockers are fixed with targeted tests, the multi-pattern stats semantics are verified and locked, and the npm publication pipeline (release gate, changelog, OIDC workflow, provenance, registry consumer test) is implemented. What remains before the gated `0.1.1` is on npm: configure the npm Trusted Publisher on the website, publish the `v0.1.1` GitHub Release, and run the post-publish registry verification. Deferred P1/P2 work stays ordered in [ROADMAP](./ROADMAP.md).
+The gated `0.1.1` release is published (2026-09-22T09:45:26Z through the OIDC workflow). Since then the runtime source moved to the standardized `src/` layout with the public exports unchanged; `0.1.2` publishes that tree. What remains before `0.1.2` is on npm: publish the `v0.1.2` GitHub Release and run the post-publish registry verification. Deferred P1/P2 work stays ordered in [ROADMAP](./ROADMAP.md).

@@ -24,8 +24,8 @@
 | 仓库分支 | `master` |
 | Phase 20 开始时的 HEAD | `433d042ed3b626a048e84000ba2039102df61f28`（`docs: establish current reality-sync baseline`） |
 | 工作树 | 文档变更前干净并与 `origin/master` 同步 |
-| 包 | `clarity-theme` v0.1.1，MIT |
-| 分发状态 | npm 发布管线已就绪（OIDC 发布工作流、发布门禁、更新日志）；门禁发布为 **`0.1.1`（tag `v0.1.1`）**。**一个有缺陷的 `clarity-theme@0.1.0` 已于 2026-09-22T07:28:22Z 被绕过流程发布**，发布者 `creampack <creampack@iicemeta.com>`，来自 P0 修复前的 gitHead `5a03778`，未经门禁、无 provenance；registry 消费者测试在其内部 typecheck 失败 |
+| 包 | `clarity-theme` v0.1.2，MIT |
+| 分发状态 | npm 发布管线已就绪（OIDC 发布工作流、发布门禁、更新日志）；门禁 `0.1.1` 已发布（2026-09-22T09:45:26Z），当前门禁发布为 **`0.1.2`（tag `v0.1.2`，`src/` 布局迁移）**。**一个有缺陷的 `clarity-theme@0.1.0` 已于 2026-09-22T07:28:22Z 被绕过流程发布**，发布者 `creampack <creampack@iicemeta.com>`，来自 P0 修复前的 gitHead `5a03778`，未经门禁、无 provenance；registry 消费者测试在其内部 typecheck 失败 |
 | 上游基线 | `blog-v3` 3.7.2，`main` @ `f6ea97d745517feb52f0c100e89acb36f0adc12f` |
 | 上游漂移 | 无：Phase 20 的一次直接远端头检查返回了 manifest 基线 commit |
 | 用于验证的本地运行时 | Node.js 24.15.0、pnpm 12.4.1、Nuxt 4.5.2、Vue 3.5.43 |
@@ -38,7 +38,7 @@
 | 字段 | 值 |
 | --- | --- |
 | 名称 | `clarity-theme` |
-| 版本 | `0.1.1` |
+| 版本 | `0.1.2` |
 | 许可证 | MIT |
 | 主页 / 仓库 | `https://github.com/iicemeta/clarity-theme` |
 | Node engine | `^22.19 \|\| ^24.11 \|\| >=26` |
@@ -195,7 +195,7 @@ Layer 还支持 `useClarity*` 运行时自动导入与同路径组件覆盖。�
 | `pnpm test:compatibility` | 契约、生产构建日志扫描、24 个 SSR 用例、12 个真实浏览器用例、11 条 dev 水合路由，以及反镜像真实导航 dev 用例 | ✅ 通过；52 个断言组 |
 | `pnpm sync:check` | 远端上游头对比 manifest 基线 | ✅ 最新 |
 | `pnpm release:check` | package.json/tag/CHANGELOG 契约、exports/files 完整性、pack 成功与 tarball 边界审计 | ✅ 本地以 `--allow-untagged` 通过；确切 tag 强制校验在 `publish.yml` 中执行 |
-| `pnpm test:registry-consumer` | 仅发布后：从 npm registry 安装已发布版本（无本地 tarball）、exports 冒烟、类型检查、generate 与产物断言 | ❌ 针对绕过流程的 `0.1.0`（预期）：在已发布包内部 typecheck 失败；必须对门禁后的 `0.1.1` 通过 |
+| `pnpm test:registry-consumer` | 仅发布后：从 npm registry 安装已发布版本（无本地 tarball）、exports 冒烟、类型检查、generate 与产物断言 | ❌ 尚未针对 `0.1.2` 运行：发布后执行；绕过流程的 `0.1.0` 在已发布包内部 typecheck 失败，门禁后的 `0.1.2` 必须通过 |
 | `pnpm test:release` | verify + 真实消费者 + 兼容性 | 脚本存在；当前本地运行以上文更广的 CI 集合执行了其组件命令 |
 
 当前消费者变体事实：
@@ -343,6 +343,6 @@ Clarity Theme 本身不携带补丁。包管理器补丁是 workspace/安装根�
 
 ## 19. 当前里程碑
 
-**v0.1.1 门禁发布——里程碑 1 与发布赋能完成。**
+**v0.1.2 发布——`src/` 布局迁移。**
 
-四个 P0 正确性阻塞项均已修复并有针对性测试，多模式统计语义已验证并锁定，npm 发布管线（发布门禁、更新日志、OIDC 工作流、provenance、registry 消费者测试）已实现。门禁 `0.1.1` 上 npm 之前剩余事项：在网站配置 npm Trusted Publisher、发布 `v0.1.1` GitHub Release，以及发布后的 registry 验证。推迟的 P1/P2 工作继续按[路线图](./ROADMAP.zh-CN.md)排序。
+门禁 `0.1.1` 已发布（2026-09-22T09:45:26Z，经 OIDC 工作流）。此后运行时源码迁移到标准化 `src/` 布局，公共导出保持不变；`0.1.2` 发布该代码树。`0.1.2` 上 npm 之前剩余事项：发布 `v0.1.2` GitHub Release，以及发布后的 registry 验证。推迟的 P1/P2 工作继续按[路线图](./ROADMAP.zh-CN.md)排序。
