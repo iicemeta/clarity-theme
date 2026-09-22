@@ -1,0 +1,14 @@
+{
+  "name": "blog-v3-fixture",
+  "type": "module",
+  "version": "3.7.2",
+  "private": true,
+  "scripts": {
+    "dev": "nuxt dev",
+    "generate": "nuxt generate"
+  },
+  "dependencies": {
+    "es-toolkit": "^1.52.0",
+    "nuxt": "^4.5.2"
+  }
+}

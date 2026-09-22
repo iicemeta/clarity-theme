@@ -23,6 +23,71 @@
 | `feeds.ts` | 友链数据（`FeedGroup[]`） | TypeScript |
 | `runtimeConfig` | 环境与密钥；密钥仅允许 server-only 区 | Nuxt |
 
+## 完整示例
+
+以下示例展示 v0.1 配置面的全部顶层分组。字段级约束见后续章节；迁移 blog-v3 时请优先对照 [MIGRATION](./MIGRATION.md) 的映射表。
+
+```ts
+import { defineClarityConfig } from 'clarity-theme/config'
+
+export default defineClarityConfig({
+	site: {
+		title: 'My Blog',
+		subtitle: 'Notes and experiments',
+		description: 'A Nuxt 4 blog about technology and life.',
+		url: 'https://example.com/',
+		language: 'zh-CN',
+		timezone: 'Asia/Taipei',
+		established: '2026-01-01',
+		favicon: '/favicon.svg',
+		author: {
+			name: 'My Name',
+			avatar: '/avatar.webp',
+			email: 'me@example.com',
+			homepage: 'https://example.com/',
+		},
+		copyright: {
+			abbr: 'CC BY 4.0',
+			name: 'Attribution 4.0 International',
+			url: 'https://creativecommons.org/licenses/by/4.0/',
+		},
+	},
+	article: {
+		defaultCategory: 'Uncategorized',
+		categories: {
+			Uncategorized: { icon: 'tabler:circle-dashed' },
+			Tech: { icon: 'tabler:code', color: '#7777ff' },
+			Life: { icon: 'tabler:leaf', color: '#ff7777' },
+		},
+		types: { tech: {}, story: {} },
+		order: { date: 'Created', updated: 'Updated' },
+		useRandomPermalink: false,
+		hidePostPrefix: true,
+		robotsNotIndex: ['/preview', '/previews/*'],
+	},
+	feed: { limit: 50, enableStyle: true },
+	stats: { includePaths: ['posts/%'] },
+	integrations: {
+		scripts: [
+			{ src: 'https://analytics.example.com/script.js', defer: true },
+		],
+		twikoo: {
+			envId: 'https://twikoo.example.com/',
+			preload: 'https://twikoo.example.com/',
+		},
+	},
+	features: {
+		atom: true,
+		opml: true,
+		stats: true,
+		antiMirror: { blacklist: ['mirror.example.com'] },
+	},
+	changelog: [
+		{ date: '2026-01-01', text: 'Moved to Clarity Theme.' },
+	],
+})
+```
+
 ## clarity.config.ts
 
 ### site

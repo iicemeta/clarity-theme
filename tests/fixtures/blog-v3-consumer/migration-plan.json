@@ -1,0 +1,82 @@
+{
+  "source": {
+    "project": "blog-v3",
+    "version": "3.7.2",
+    "nuxt": "4.5.2"
+  },
+  "expectedClarityConfig": {
+    "site": {
+      "title": "Fixture Blog",
+      "subtitle": "A migration fixture",
+      "description": "A minimal blog-v3 fixture used to validate migration rules.",
+      "url": "https://fixture.example.com/",
+      "author": {
+        "name": "Fixture Author",
+        "avatar": "/avatar.svg",
+        "email": "author@fixture.example.com",
+        "homepage": "https://author.example.com/"
+      },
+      "favicon": "/favicon.svg",
+      "language": "zh-CN",
+      "established": "2020-01-01",
+      "timezone": "Asia/Taipei"
+    },
+    "article": {
+      "defaultCategory": "General",
+      "categories": {
+        "General": { "icon": "tabler:circle-dashed" },
+        "Tech": { "icon": "tabler:code", "color": "#7777ff" }
+      },
+      "types": { "tech": {}, "story": {} },
+      "order": { "date": "Created", "updated": "Updated" },
+      "useRandomPermalink": true,
+      "hidePostPrefix": true,
+      "robotsNotIndex": ["/preview"]
+    },
+    "feed": { "limit": 20, "enableStyle": false },
+    "stats": { "includePaths": ["posts/%"] },
+    "integrations": {
+      "scripts": [
+        { "src": "https://analytics.fixture.example.com/script.js", "defer": true },
+        { "src": "https://cdn.fixture.example.com/twikoo.js", "defer": true }
+      ],
+      "twikoo": {
+        "envId": "https://twikoo.fixture.example.com/",
+        "preload": "https://twikoo.fixture.example.com/"
+      }
+    },
+    "features": {
+      "atom": true,
+      "opml": true,
+      "stats": true,
+      "antiMirror": false
+    },
+    "changelog": []
+  },
+  "expectedUi": {
+    "component": { "codeblock": { "triggerRows": 24, "collapsedRows": 12 } },
+    "header": { "emojiTail": ["fixture"] },
+    "nav": [{ "title": "", "items": [{ "icon": "tabler:files", "text": "Posts", "url": "/" }] }],
+    "pagination": { "perPage": 5, "sortOrder": "date" }
+  },
+  "assets": [
+    { "path": "package.json", "classification": "REVIEW", "action": "add-theme-and-retain-custom-dependencies" },
+    { "path": "pnpm-workspace.yaml", "classification": "REVIEW", "action": "preserve-required-patches" },
+    { "path": "content.config.ts", "classification": "REVIEW", "action": "replace-with-clarity-content-factory" },
+    { "path": "nuxt.config.ts", "classification": "REVIEW", "action": "layer-entry-plus-consumer-settings" },
+    { "path": "content/posts/example.md", "classification": "NEVER_TOUCH", "action": "keep" },
+    { "path": "public/avatar.svg", "classification": "NEVER_TOUCH", "action": "keep" },
+    { "path": "public/favicon.svg", "classification": "NEVER_TOUCH", "action": "keep" },
+    { "path": "redirects.json", "classification": "KEEP", "action": "preserve-and-map-route-rules" },
+    { "path": "patches/@nuxtjs__mdc.patch", "classification": "KEEP", "action": "consumer-patch" },
+    { "path": "patches/@nuxt__image.patch", "classification": "KEEP", "action": "consumer-patch" },
+    { "path": "patches/plain-shiki.patch", "classification": "KEEP", "action": "consumer-patch" },
+    { "path": "app/components/content/Badge.vue", "classification": "KEEP", "action": "consumer-component-override" },
+    { "path": "app/shiki.config.ts", "classification": "KEEP", "action": "consumer-shiki-override" },
+    { "path": "modules/site/index.ts", "classification": "NEVER_TOUCH", "action": "unknown-custom-module" },
+    { "path": "server/api/hello.get.ts", "classification": "NEVER_TOUCH", "action": "custom-server-route" },
+    { "path": "app/app.config.ts", "classification": "AUTO", "action": "convert-to-ui-only" },
+    { "path": "blog.config.ts", "classification": "AUTO", "action": "map-to-clarity-config" },
+    { "path": "app/feeds.ts", "classification": "AUTO", "action": "map-to-root-feeds" }
+  ]
+}

@@ -1,6 +1,6 @@
 # 三层验证流水线（顺序严格串联：lint → typecheck → playground generate → real consumer test）
 #
-#   Layer 1  lint / typecheck / verify / sync / peers 回归   —— Node 矩阵
+#   Layer 1  lint / typecheck / verify / sync / migration / peers 回归 —— Node 矩阵
 #   Layer 2  playground generate（workspace 链接链路）      —— 主 Node 版本
 #   Layer 3  real consumer + rendering regression            —— 主 Node 版本
 #
@@ -117,10 +117,10 @@ jobs:
         run: pnpm lint
 
   # ============================================================
-  # Layer 1 · typecheck + verify + sync / peers 回归（依赖 lint 全部通过）
+  # Layer 1 · typecheck + verify + sync / migration / peers 回归（依赖 lint 全部通过）
   # ============================================================
   typecheck:
-    name: 'Layer 1 · typecheck + verify (Node ${{ matrix.node }})'
+    name: 'Layer 1 · typecheck + verify + migration (Node ${{ matrix.node }})'
     needs: [resolve, lint] # resolve：读取版本输出；lint：保证 Layer 1 顺序
     runs-on: ubuntu-latest
     timeout-minutes: 30
@@ -149,6 +149,9 @@ jobs:
 
       - name: Sync tool regression（manifest / apply / rollback）
         run: pnpm test:sync
+
+      - name: Migration skill regression（fixture / safety rules / API mapping）
+        run: pnpm test:migration
 
       - name: Compatibility contract（Release Matrix 覆盖 + docs 同步）
         run: pnpm test:contract

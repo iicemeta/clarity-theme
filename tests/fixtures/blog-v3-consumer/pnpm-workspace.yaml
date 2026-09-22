@@ -1,0 +1,4 @@
+patchedDependencies:
+  '@nuxtjs/mdc': patches/@nuxtjs__mdc.patch
+  '@nuxt/image': patches/@nuxt__image.patch
+  plain-shiki: patches/plain-shiki.patch

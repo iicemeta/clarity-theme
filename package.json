@@ -59,6 +59,7 @@
     "typecheck": "pnpm --dir playground typecheck",
     "verify": "node scripts/verify-theme.mjs",
     "test:sync": "node --test tests/sync-upstream.test.mjs",
+    "test:migration": "node --test tests/migration-skill.test.mjs",
     "test:contract": "node scripts/test-compatibility.mjs --contract-only",
     "test:release": "pnpm verify && pnpm test:consumer && pnpm test:compatibility",
     "test:consumer": "node scripts/test-consumer.mjs",

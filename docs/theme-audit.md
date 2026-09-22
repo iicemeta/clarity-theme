@@ -58,7 +58,7 @@
 
 1. **Layer 化架构**：单入口 `extends: ['clarity-theme']`；`nuxt.config.ts` 内全部资源路径经 `toThemePath()` 绝对化（css / components / modules / icons / scss variables），兼容 npm 包 / git 包 / 本地目录安装；remark 插件用 `pathToFileURL` 加载 `.mjs`。
 2. **依赖注入层**：`modules/clarity-config` 通过 alias `#clarity/config`、`#clarity/feeds` 注入消费项目文件，Theme 内部不感知 consumer 文件布局；未提供 `feeds.ts` 时回退空数据并警告。
-3. **站点配置契约（已冻结）**：`clarity.config.ts` + `defineClarityConfig`（zod 校验、prefault 默认值）；`docs/configuration.md` 逐字段记录 Required/Default/Client-visible。
+3. **站点配置契约（已冻结）**：`clarity.config.ts` + `defineClarityConfig`（zod 校验、prefault 默认值）；当时的 `docs/configuration.md` 逐字段记录 Required/Default/Client-visible。
 4. **Content Schema 工厂**：`createClarityContentConfig`，`.ts` 类型真源 + `.mjs` 运行时双轨（规避 Node 原生 TS 剥离不允许 node_modules 内 TS 的限制）。
 5. **配置桥接**：SEO/site/robots/llms 注入、head 元数据、routeRules（atom/opml/stats 预渲染）、runtimeConfig 构建信息、appConfig 站点派生默认值、`~/shiki.config` fallback、pinia stores 目录显式注册。
 6. **提纯验证**（`scripts/verify-theme.mjs`）：上游作者域名/账号/统计 ID/头像/评论服务/备案号黑名单 + 站点内容文件 + `~~/blog.config` 等跨项目路径引用检查；实测通过。本次额外 `git grep` 复核：allowlist 之外零命中。
@@ -173,14 +173,14 @@
 | 任务 | 文件（新增 ✚ / 修改 ✎） |
 | --- | --- |
 | T1 | ✎ `img/index.d.mts`；✎ `scripts/test-consumer.mjs`（consumer feeds.ts 用例）；可选 ✎ `README.md` |
-| T2 | ✎ `config/schema.ts`、✎ `config/schema.mjs`、✎ `modules/clarity-config/index.ts`、✎ `nuxt.config.ts`（CDN link 改由模块注入）、✎ `config/public.ts`、✎ `docs/configuration.md` |
+| T2 | ✎ `config/schema.ts`、✎ `config/schema.mjs`、✎ `modules/clarity-config/index.ts`、✎ `nuxt.config.ts`（CDN link 改由模块注入）、✎ `config/public.ts`、当时的 `docs/configuration.md` |
 | T3 | ✚ `config/index.mjs`；✎ `package.json`（exports）；✎ `config/content.d.mts`/`schema.d.mts` 链路复核 |
 | T4 | ✎ `.gitattributes`；（工作树行尾重新规范化，不改内容语义） |
 | T5 | ✎ `playground/app/components/content/Badge.vue` 或 ✎ `playground/nuxt.config.ts`；✎ `scripts/test-consumer.mjs` 或 playground generate 断言脚本 |
 | T6 | （theme-based-blog-v3 目录）✚ `.git`、✎ `package.json`、✎ `pnpm-workspace.yaml`；✚/✎ 容器根 `pnpm-workspace.yaml`（纳入 workspace）；✎ `docs/PATCHES.md`、✎ `README.md` |
 | T7 | ✎ `scripts/test-consumer.mjs`；✎ `playground/content/**`（如需基准内容） |
 | T8 | ✎ `package.json`（pnpm.overrides）或 ✎ `pnpm-workspace.yaml`；✎ `.github/workflows/ci.yml` |
-| T9 | ✎ `modules/clarity-config/index.ts`；✎ `README.md`、✎ `docs/configuration.md` |
+| T9 | ✎ `modules/clarity-config/index.ts`；✎ `README.md`、当时的 `docs/configuration.md` |
 | T10 | ✚ `playground/content/compatibility/{search,widgets}.md` 等；✎ `playground/nuxt.config.ts`（prerender routes）；✎ 断言脚本 |
 
 ---
@@ -192,7 +192,7 @@
 | 冲突文件 | 涉及任务 | 建议 |
 | --- | --- | --- |
 | `modules/clarity-config/index.ts` | **T2 × T9** | 合并给同一 Agent，或 T2 先行、T9 后做 rebase |
-| `config/schema.ts` / `config/schema.mjs` / `config/public.ts` / `docs/configuration.md` | **T2 × T9**（blacklist 若也配置化则冲突扩大） | 同上 |
+| `config/schema.ts` / `config/schema.mjs` / `config/public.ts` / 当时的 `docs/configuration.md` | **T2 × T9**（blacklist 若也配置化则冲突扩大） | 同上 |
 | `package.json` | **T3 × T8**（exports vs pnpm.overrides） | 同一 Agent 顺序完成，或分 hunk 提交 |
 | `scripts/test-consumer.mjs` | **T1 × T5 × T7**（都要加断言） | 合并为单个"测试扩展"任务，或严格划分断言区块 |
 | `playground/nuxt.config.ts` | **T5 × T10**（components 配置 vs prerender routes） | 分开 hunk 或串行 |

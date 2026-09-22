@@ -23,12 +23,12 @@ Clarity Theme is a reusable **Nuxt 4 Layer blog theme** extracted from [L33Z22L1
 | Nuxt peer | `^4.5.2` |
 | Vue peer | `^3.5.42` |
 
-The package is not currently available from the npm registry. Install it as a Git dependency pinned to a commit until a first package release is published.
+The package is not currently available from the npm registry. Install it as a Git dependency pinned to a reviewed commit until the first package release is published. Clarity is part of your application runtime, so install it as a regular dependency rather than a development dependency.
 
 ## Installation
 
 ```bash
-pnpm add -D github:iicemeta/clarity-theme#<commit>
+pnpm add github:iicemeta/clarity-theme#<commit>
 ```
 
 ## Quick Start
@@ -93,6 +93,8 @@ pnpm dev
 pnpm generate
 ```
 
+For a complete walkthrough from an existing blog-v3 project, see [Migration](./docs/MIGRATION.md). Theme data and user content are deliberately separate: the package never carries your articles, friend links, redirects, deployment settings, or package patches.
+
 ## Basic Configuration
 
 | File | Responsibility |
@@ -102,6 +104,8 @@ pnpm generate
 | `content.config.ts` | Nuxt Content collection/schema |
 | `feeds.ts` | Optional friend data |
 | consumer `runtimeConfig` | Environment-specific values and the only valid place for secrets |
+
+Field-by-field defaults, visibility, and examples are documented in [Configuration](./docs/CONFIGURATION.md).
 
 Example optional groups:
 
@@ -186,9 +190,11 @@ Consumer components take precedence over Layer components. Nuxt currently emits 
 
 Provide `app/shiki.config.ts` in the consumer project. The Theme fallback is used only when this file does not exist.
 
+UI groups, same-path component overrides, CSS overrides, server/route customization, and Shiki ownership are described together in [Customization](./docs/CUSTOMIZATION.md).
+
 ## Compatibility and Verification
 
-Current verification covers:
+The verification suite is designed to cover:
 
 - Playground static generation
 - Independent `pnpm pack` consumer installation
@@ -199,9 +205,9 @@ Current verification covers:
 - Search, pagination, archive, TOC, SEO, robots, sitemap, LLMs, Atom, OPML, stats, permalink, 404, Twikoo branches, anti-mirror injection, UI override, and component override
 - Theme purity, peer dependencies, sync tooling, and upstream drift
 
-The generated release matrix lives in [docs/COMPATIBILITY.md](./docs/COMPATIBILITY.md). Current exact counts, known limitations, technical debt, and future work live in [docs/PROJECT-STATUS.md](./docs/PROJECT-STATUS.md).
+The generated release matrix lives in [Compatibility](./docs/COMPATIBILITY.md). Current exact counts, known limitations, technical debt, and release blockers live in [Project status](./docs/PROJECT-STATUS.md) and [Roadmap](./docs/ROADMAP.md). A release must rerun the ordered suite on the exact commit; earlier results are not a substitute.
 
-Site-specific dependency patches are intentionally owned by consumers; see [docs/PATCHES.md](./docs/PATCHES.md).
+Site-specific dependency patches are intentionally owned by consumers; see [Patches](./docs/PATCHES.md).
 
 ## Documentation
 
@@ -209,12 +215,16 @@ Site-specific dependency patches are intentionally owned by consumers; see [docs
 | --- | --- |
 | [Project status](./docs/PROJECT-STATUS.md) | Current snapshot, verified capabilities, limitations, debt, gaps, and milestone |
 | [Roadmap](./docs/ROADMAP.md) | Prioritized P0/P1/P2 debt register, deferred decisions, and milestone order |
+| [Migration](./docs/MIGRATION.md) | Preserve blog-v3 content, configuration, redirects, patches, custom code, and assets while adopting Clarity |
 | [Architecture](./docs/ARCHITECTURE.md) | Theme/consumer boundary and build/runtime data flows |
 | [API](./docs/API.md) | Public package/Layer API versus internal implementation |
-| [Configuration](./docs/configuration.md) | Field-level config contract and visibility |
+| [Configuration](./docs/CONFIGURATION.md) | Field-level Clarity configuration contract and examples |
+| [Customization](./docs/CUSTOMIZATION.md) | UI, component, Shiki, CSS, server, and route overrides |
 | [Compatibility](./docs/COMPATIBILITY.md) | Generated release compatibility matrix |
 | [Upstream sync](./docs/UPSTREAM.md) | Baseline, manifest, commands, conflicts, and workflow |
 | [Patches](./docs/PATCHES.md) | Consumer patch ownership and current conclusions |
+| [Release audit](./docs/RELEASE-AUDIT.md) | Pre-closing engineering audit and remaining release gates |
+| [Release checklist](./docs/RELEASE-CHECKLIST.md) | Exact final checks, remaining blockers, and verification evidence |
 | [Extraction history](./docs/history/2026-09-layer-extraction.md) | Historical phases and one-time differential validation |
 
 ## Development
@@ -228,18 +238,34 @@ pnpm typecheck
 pnpm verify               # Purity/static leak checks
 pnpm peers check
 pnpm test:sync
+pnpm test:migration
 pnpm test:contract
 pnpm test:consumer
 pnpm test:compatibility
 ```
 
-CI derives Node and pnpm versions from package metadata. It runs lint/typecheck/verify/sync/contract/peers on the fixed Node matrix, then playground generate, real consumer acceptance, and rendering compatibility on the primary Node version. A separate weekly workflow only detects and reports upstream drift.
+CI derives Node and pnpm versions from package metadata. It runs lint/typecheck/verify/sync/migration/contract/peers on the fixed Node matrix, then playground generate, real consumer acceptance, and rendering compatibility on the primary Node version. A separate weekly workflow only detects and reports upstream drift.
 
 See [Project status → CI](./docs/PROJECT-STATUS.md#10-ci) for the exact CI stages and permissions.
 
-## Current Status
+## Upstream Synchronization
 
-Clarity Theme is a **v0.1.0 pre-publish Layer candidate**. The extraction, package boundary, core rendering, server outputs, consumer acceptance, compatibility matrix, CI, and upstream-sync baseline are implemented and verified. Phase 20 triage established the current engineering roadmap; remaining release blockers and near-term work—especially the server/client configuration split, runtime feature guards, anti-mirror navigation verification, and the no-op permalink contract—are prioritized in [docs/ROADMAP.md](./docs/ROADMAP.md).
+Clarity is extracted from an upstream Nuxt blog and records the exact reviewed baseline in `sync-manifest.json`. The synchronization tooling separates directly includable paths, consumer-owned exclusions, transformed Theme contracts, and manual review paths; unknown upstream changes block apply. Use:
+
+```bash
+pnpm sync:check   # compare manifest baseline with remote
+pnpm sync:diff    # classify upstream changes
+pnpm sync:apply   # transactionally apply reviewed include-only changes
+pnpm sync:verify  # rerun Theme purity and baseline checks
+```
+
+The weekly workflow only detects and reports drift. It never applies, commits, or pushes changes. See [Upstream sync](./docs/UPSTREAM.md).
+
+## Release Status
+
+Clarity Theme is a **v0.1.0 pre-publish Layer candidate**. The Layer/package boundary, validated configuration, Content factory, rendering pipeline, server outputs, playground, real-consumer acceptance, compatibility matrix, three-layer CI, and upstream-sync baseline are implemented.
+
+The first npm release is intentionally still blocked by the P0 correctness items in [Roadmap](./docs/ROADMAP.md)—especially the server/client configuration split, feature-off route semantics, anti-mirror navigation verification, and the no-op random-permalink contract—and by an exact-commit release run. Migration documentation and repeatability are being completed in this release-closing phase.
 
 ## License
 

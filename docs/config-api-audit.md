@@ -1,7 +1,7 @@
 # Clarity Theme 公共 API 与配置边界审计报告
 
 > **Historical audit snapshot — no longer authoritative for current status.**
-> Current configuration facts live in [configuration](./configuration.md),
+> Current configuration facts live in [configuration](./CONFIGURATION.md),
 > [API](./API.md), and [PROJECT-STATUS](./PROJECT-STATUS.md). The verification
 > counts and workspace snapshot below reflect the date of this audit.
 

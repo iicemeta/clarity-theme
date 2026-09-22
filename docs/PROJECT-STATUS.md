@@ -136,7 +136,7 @@ The Layer also supports the `useClarity*` runtime auto-imports and same-path com
 | `runtimeConfig` | Consumer | As needed | Nuxt runtime | Only valid place for real secrets |
 | `clarityConfig.configFile` module option | Consumer | No | Module setup | Overrides automatic config-file discovery |
 
-Field-level required/default/client visibility rules are maintained in [configuration](./configuration.md).
+Field-level required/default/client visibility rules are maintained in [configuration](./CONFIGURATION.md).
 
 ## 8. Features
 
@@ -185,6 +185,7 @@ Legend: ✅ Implemented, 🧪 Verified by current automated tests unless explici
 | `pnpm typecheck` | Playground `nuxt typecheck`, including Layer type generation and consumer-style app config types | ✅ Pass, with expected `NUXT_B3011` Badge warning |
 | `pnpm verify` | Static purity: forbidden upstream author/site identifiers, site files, and cross-project imports | ✅ Pass |
 | `pnpm test:sync` | 13 temporary-Git tests for sync fast-forward, conflicts, deletes, new files, transform/manual exclusion, unknown blocking, verify failure, and rollback | ✅ 13/13 |
+| `pnpm test:migration` | Static Migration Skill contract plus fake blog-v3 fixture checks for discovery, schema mapping, UI boundary, Twikoo/feed/stats, redirects, patches, custom overrides, and protected assets | ✅ 10/10 |
 | `pnpm test:contract` | 39 contract rows and required feature/coverage references stay synchronized with generated `docs/COMPATIBILITY.md` | ✅ Pass |
 | `pnpm peers check` | Workspace peer dependency audit | ✅ No issues |
 | `pnpm generate` | Playground static generation through workspace Layer link | ✅ Pass; Nitro prerenders 51 routes; one expected link-checker warning |
@@ -217,7 +218,7 @@ Compatibility warnings are non-fatal and are listed under Known Limitations.
 Stages are strictly ordered:
 
 1. **Layer 1 lint** on the Node matrix.
-2. **Layer 1 typecheck + verify + sync regression + compatibility contract + peers** on the Node matrix.
+2. **Layer 1 typecheck + verify + sync regression + migration fixture + compatibility contract + peers** on the Node matrix.
 3. **Layer 2 playground generate** on primary Node 24.11.
 4. **Layer 3 real consumer test + compatibility regression** on primary Node 24.11.
 
