@@ -82,8 +82,10 @@ export default defineNuxtConfig({
 		'@nuxtjs/seo',
 		'@pinia/nuxt',
 		'@vueuse/nuxt',
-		// 注意：Layer 配置中的相对 module 路径会以消费项目为基准解析，必须使用绝对路径
+		// Layer 配置中的相对 module 路径会以消费项目为基准解析，必须使用绝对路径；
+		// 且 clarity-config 必须先于 nuxt-llms 运行：后者在 setup 时读取注入的 llms 站点配置
 		toThemePath('modules/clarity-config'),
+		'nuxt-llms',
 	],
 
 	nitro: {

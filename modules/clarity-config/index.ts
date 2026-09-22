@@ -211,7 +211,7 @@ export default defineNuxtModule<ModuleOptions>({
 				logger.warn('features.antiMirror 已启用，但未配置 blacklist，已跳过反镜像脚本注入。')
 			}
 			else {
-				injectAntiMirror(nuxt, blacklist, site.url)
+				await injectAntiMirror(nuxt, blacklist, site.url)
 			}
 		}
 	},
@@ -282,9 +282,12 @@ async function warnNonUiAppConfigOverrides(nuxt: Nuxt, jiti: ReturnType<typeof c
 	}
 }
 
-function injectAntiMirror(nuxt: Nuxt, blacklist: string[], target: string) {
-	const iife = minify('', `(${handleMirror.toString()})(${JSON.stringify(blacklist.map(btoa))},${JSON.stringify(btoa(target))})`)
-	const code = (iife as unknown as { code: string }).code
+async function injectAntiMirror(nuxt: Nuxt, blacklist: string[], target: string) {
+	const source = `(${handleMirror.toString()})(${JSON.stringify(blacklist.map(btoa))},${JSON.stringify(btoa(target))})`
+	const { code, errors } = await minify('clarity-anti-mirror.iife.js', source)
+	if (errors.length > 0) {
+		throw new Error(`[clarity-config] anti-mirror 脚本压缩失败：\n${errors.map(error => error.message ?? String(error)).join('\n')}`)
+	}
 	;(nuxt.options.app.head.script ??= []).push({ innerHTML: code })
 }
 

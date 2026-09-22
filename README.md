@@ -92,14 +92,20 @@ export default defineAppConfig({
 
 | API | 说明 |
 | --- | --- |
-| `defineClarityConfig()` | 定义并校验站点配置 |
-| `createClarityContentConfig()` | 生成 Nuxt Content 集合 |
+| `defineClarityConfig()` | 定义并校验站点配置（`clarity-theme/config`，运行时 + 类型双入口） |
+| `createClarityContentConfig()` | 生成 Nuxt Content 集合（`clarity-theme/content`，含 `ArticleSchema` 类型） |
 | `useClaritySiteFeedEntry()` | 由站点配置生成本站订阅条目（友链页 / OPML） |
 | `useClarityConfig()` | 获取完整配置（站点 + UI） |
 | `useClaritySite()` / `useClarityArticle()` | 获取站点 / 文章配置 |
 | `clarity-theme/img` | 头像 / 图标 / 图片 URL helper（feeds.ts 与组件共用） |
-| `type ClarityConfig` 等 | 公共类型（`clarity-theme/config`） |
+| `clarity-theme/schema` | 全部 `clarity*` zod schema（TS / MJS 双实现，Node 原生可加载） |
+| `type ClarityConfig` 等 | 公共类型（`clarity-theme/config`：`ClarityUiConfig` / `FeedGroup` / `NavGroup` 等） |
 | `#clarity/feeds` | 消费项目友链数据注入点 |
+
+完整字段契约（Required / Optional / Default / 客户端可见性）见 [docs/configuration.md](./docs/configuration.md)；
+配置边界审计结论见 [docs/config-api-audit.md](./docs/config-api-audit.md)。
+发布兼容性矩阵（Public API / 核心功能 / 配置分支）见 [docs/COMPATIBILITY.md](./docs/COMPATIBILITY.md)，
+由 `scripts/compatibility-cases.mjs` 生成并在 CI 中校验同步。
 
 ## 配置职责边界
 
@@ -122,13 +128,14 @@ pnpm typecheck      # vue-tsc 全量类型检查
 pnpm verify         # 作者信息 / 站点文件泄漏检查
 pnpm peers check    # 开发 workspace peer 依赖审计
 pnpm test:sync      # 上游同步工具回归测试
+pnpm test:contract  # Release Compatibility Matrix 契约与文档同步校验
 pnpm test:consumer  # npm tarball 真实消费项目验证
 pnpm test:compatibility  # SSR / 浏览器渲染 / hydration 回归
 ```
 
 CI（GitHub Actions）：
 
-- `ci.yml`：push / PR 时跑 lint + typecheck + verify + sync / peers 回归（Node 22 / 24 矩阵），
+- `ci.yml`：push / PR 时跑 lint + typecheck + verify + sync / contract / peers 回归（Node 22 / 24 矩阵），
   Node 24 上额外执行 playground generate、real consumer test 与渲染兼容性回归
 - `sync.yml`：每周一检查上游更新，有新提交时自动创建同步 Issue（附分类明细）
 
@@ -174,12 +181,14 @@ pnpm sync:verify   # 提纯验证 + 基线状态检查
 - 新增 `clarity.config.ts` API（`config/` + `modules/clarity-config`）
 - `app/app.config.ts` 收敛为 `clarity` 命名空间的纯 UI 默认值
 - CSS / 图标 / Remark 插件 / 组件路径全部 Layer 本地化
-- `anti-mirror` 改为 `features.antiMirror` 可选功能
+- `anti-mirror` 改为 `features.antiMirror` 可选功能（默认关闭；Theme 不携带默认黑名单，
+  镜像站域名必须由消费者通过 `features.antiMirror.blacklist` 提供，`true` + 空黑名单会跳过注入并 WARN）
 - Twikoo 评论、统计脚本等改为 `integrations` 配置注入
 - 上游 `pnpm-workspace.yaml` catalog 依赖改为普通语义化版本
 - 新增 `clarity-theme/img` 包导出（feeds.ts 头像 helper）
-- 上游 `patches/` 部分处理：`@nuxtjs/mdc` 的「行内代码 props.code」已被 ProseCode
-  原生适配**取代**（有 patch / 无 patch 均兼容）；其余待逐个判定（见待办）
+- 上游 `patches/` 已逐个判定（见 [docs/PATCHES.md](./docs/PATCHES.md)）：`@nuxtjs/mdc` 的
+  「行内代码 props.code」已被 ProseCode 原生适配**取代**（有 patch / 无 patch 均兼容），
+  detab 部分精简为单 hunk；`@nuxtjs/image` / `ipx` / `plain-shiki` 判定为 consumer patch
 - Layer 构建兼容修复：
   - `modules` 相对路径改为 Theme 绝对路径（Layer 中相对路径以消费项目为基准）
   - `@pinia/nuxt` 不扫描 Layer 的 `app/stores`，由 `clarity-config` 显式注册
@@ -189,12 +198,16 @@ pnpm sync:verify   # 提纯验证 + 基线状态检查
 ## 验证状态
 
 ```text
-[✓] Playground nuxt generate（37 条路由，含 atom.xml / stats / opml / compatibility）
-[✓] Real Consumer Test（pnpm pack → 独立目录安装 tarball → nuxt generate，21 条路由 + 6 项断言）
+[✓] Playground nuxt generate（39 条路由，含 atom.xml / stats / opml / compatibility）
+[✓] Real Consumer Test（pnpm pack → 独立目录安装 tarball → 3 组配置分支 generate；
+     exports/类型声明契约审计 + 纯 Node runtime 冒烟 + nuxt typecheck + 产物断言）
 [✓] 差异测试站（原版 blog-v3 全量数据 + Theme，242 条路由 + 10 项对比，见下文）
 [✓] vue-tsc typecheck（playground 全量，0 错误）
 [✓] eslint / stylelint
 [✓] 作者信息泄漏、站点文件、跨项目路径检查（pnpm verify）
+[✓] 渲染兼容性回归（生产 SSR 24 组 + 浏览器 12 组 + dev hydration 11 组，50 项断言组全部通过）
+[✓] Release Compatibility Matrix（契约 39 项：Public API 5 + 核心功能 21 + 配置分支 13）
+[✓] peer 依赖审计（pnpm peers check）
 [✓] 上游同步检查（sync:check，基线 f6ea97d = upstream/main）
 ```
 

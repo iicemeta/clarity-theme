@@ -1,11 +1,12 @@
 #!/usr/bin/env node
+import { Buffer } from 'node:buffer'
 /**
  * Real Consumer Test（devdoc2.0 §16 / Phase D → 发布前核心验收）
  *
  * 完整链路：
  *
  *   clarity-theme → pnpm pack → tarball 审计 → 独立 Consumer 安装
- *   → exports 冒烟 → nuxt typecheck → nuxt generate → 生成产物断言
+ *   → exports 冒烟 → nuxt typecheck → nuxt generate × 3 组配置分支 → 生成产物断言
  *
  * 与 playground（workspace 链接）互补，专门暴露 npm 包层面的问题：
  * files 字段越界、依赖声明缺失、exports 路径错误、
@@ -37,14 +38,35 @@ const site = {
 }
 const friendFeed = 'https://friend.example.com/atom.xml'
 const customPermalink = '/custom/permalink'
+const twikooEnv = 'https://twikoo.consumer.example'
+const mirrorDomain = 'mirror.example.com'
 const postCount = 7
+
+/** 配置分支矩阵：同一份安装产物上依次改写 clarity.config 后重新 generate */
+const consumerVariants = [
+	{
+		id: 'default',
+		label: '默认配置 + custom app.config / shiki / Badge 组件覆盖',
+		assert: consumerDir => assertGenerateOutput(consumerDir, 'default'),
+	},
+	{
+		id: 'branches',
+		label: 'enableStyle=false + hidePostPrefix=false + Twikoo + antiMirror blacklist',
+		assert: consumerDir => assertGenerateOutput(consumerDir, 'branches'),
+	},
+	{
+		id: 'features-off',
+		label: 'atom / opml / stats 关闭 + useRandomPermalink=true',
+		assert: consumerDir => assertGenerateOutput(consumerDir, 'features-off'),
+	},
+]
 
 function main() {
 	console.log(`▶ Real Consumer Test（发布验收）\n  工作目录：${workDir}\n`)
 
 	if (reuseDir) {
-		step(9, 9, `generate assertion（复用 ${reuseDir}）`)
-		assertGenerateOutput(resolve(reuseDir))
+		step(8, 10, `generate assertion（复用 ${reuseDir}，仅默认断言）`)
+		assertGenerateOutput(resolve(reuseDir), 'default')
 		console.log('\n✔ generate assertion 通过')
 		return
 	}
@@ -53,7 +75,7 @@ function main() {
 	// ============================================================
 	// [1] pnpm pack
 	// ============================================================
-		step(1, 9, 'pnpm pack')
+		step(1, 10, 'pnpm pack')
 		rmSync(workDir, { recursive: true, force: true })
 		mkdirSync(workDir, { recursive: true })
 		run('pnpm', themeDir, ['pack', '--pack-destination', workDir])
@@ -64,7 +86,7 @@ function main() {
 		// ============================================================
 		// [2] tarball file audit（内容边界 / 上游数据泄漏）
 		// ============================================================
-		step(2, 9, 'tarball file audit')
+		step(2, 10, 'tarball file audit')
 		const packageDir = join(workDir, 'package')
 		run('tar', workDir, ['-xzf', tarballPath, '-C', workDir])
 		const files = listFiles(packageDir)
@@ -75,7 +97,7 @@ function main() {
 		// ============================================================
 		// [3] exports 契约审计（入口存在性 + 类型声明引用链）
 		// ============================================================
-		step(3, 9, 'exports / type declarations 契约审计')
+		step(3, 10, 'exports / type declarations 契约审计')
 		auditExports(packageDir)
 		console.log('  ✓ exports 全部入口（default + types）存在于 tarball')
 		console.log('  ✓ .d.mts / .ts / .mjs / .vue 相对引用无悬空文件')
@@ -83,7 +105,7 @@ function main() {
 		// ============================================================
 		// [4] 生成独立 Consumer 项目
 		// ============================================================
-		step(4, 9, '生成独立 Consumer 项目')
+		step(4, 10, '生成独立 Consumer 项目')
 		const consumerDir = join(workDir, 'consumer')
 		mkdirSync(consumerDir, { recursive: true })
 		writeConsumerProject(consumerDir, tarballPath)
@@ -92,34 +114,34 @@ function main() {
 		// ============================================================
 		// [5] pnpm install（独立目录，非 workspace）
 		// ============================================================
-		step(5, 9, 'pnpm install')
+		step(5, 10, 'pnpm install')
 		run('pnpm', consumerDir, ['install', '--no-frozen-lockfile'])
 
 		// ============================================================
 		// [6] exports runtime smoke test（纯 Node ESM import）
 		// ============================================================
-		step(6, 9, 'exports runtime smoke test')
+		step(6, 10, 'exports runtime smoke test')
 		run('node', consumerDir, ['exports-smoke.mjs'])
 
 		// ============================================================
 		// [7] TypeScript compile test（nuxt typecheck）
 		// ============================================================
-		step(7, 9, 'TypeScript compile test（nuxt typecheck）')
+		step(7, 10, 'TypeScript compile test（nuxt typecheck）')
 		run('pnpm', consumerDir, ['exec', 'nuxt', 'typecheck'])
 
 		// ============================================================
-		// [8] nuxt generate
+		// [8-10] nuxt generate × 配置分支矩阵 + 产物断言
 		// ============================================================
-		step(8, 9, 'nuxt generate')
-		run('pnpm', consumerDir, ['exec', 'nuxt', 'generate'])
+		for (const [index, variant] of consumerVariants.entries()) {
+			step(8 + index, 10, `nuxt generate · ${variant.id}`)
+			console.log(`  ▶ ${variant.label}`)
+			writeConsumerVariant(consumerDir, variant.id)
+			resetConsumerCaches(consumerDir)
+			run('pnpm', consumerDir, ['exec', 'nuxt', 'generate'])
+			variant.assert(consumerDir)
+		}
 
-		// ============================================================
-		// [9] generate assertion（生成产物内容断言）
-		// ============================================================
-		step(9, 9, 'generate assertion')
-		assertGenerateOutput(consumerDir)
-
-		console.log('\n✔ Real Consumer Test 通过：tarball 边界、exports、类型、独立安装、generate 产物全部符合发布标准')
+		console.log(`\n✔ Real Consumer Test 通过：tarball 边界、exports、类型、独立安装、${consumerVariants.length} 组配置分支的 generate 产物全部符合发布标准`)
 	}
 	catch (error) {
 		console.error('\n✖ Real Consumer Test 失败')
@@ -378,25 +400,8 @@ function writeConsumerProject(dir, tarballPath) {
 			'  vue-demi: true',
 		].join('\n'),
 
-		// ---- nuxt extends：唯一入口即完整 Layer ----
-		'nuxt.config.ts': `export default defineNuxtConfig({
-	extends: ['clarity-theme'],
-
-	nitro: {
-		prerender: {
-			routes: [
-				'/first',
-				'/mdc',
-				'/math',
-				'/mermaid',
-				'/image',
-				'/custom/permalink',
-				'/secret',
-				'/link',
-			],
-		},
-	},
-})`,
+		// ---- nuxt extends：唯一入口即完整 Layer（具体路由由 writeConsumerVariant 按分支重写）----
+		'nuxt.config.ts': nuxtConfigSource('default'),
 
 		// nuxt typecheck 需要根 tsconfig 指向 .nuxt 生成的 project references
 		'tsconfig.json': JSON.stringify({
@@ -409,32 +414,8 @@ function writeConsumerProject(dir, tarballPath) {
 			],
 		}, null, '\t'),
 
-		// ---- clarity.config.ts：站点契约 ----
-		'clarity.config.ts': `import { defineClarityConfig } from 'clarity-theme/config'
-
-export default defineClarityConfig({
-	site: {
-		title: '${site.title}',
-		description: '${site.description}',
-		url: '${site.url}',
-		established: '${site.established}',
-		favicon: '/favicon.svg',
-		author: { name: '${site.author}' },
-	},
-	article: {
-		categories: {
-			技术: { icon: 'tabler:code' },
-		},
-		robotsNotIndex: ['/secret'],
-	},
-	feed: {
-		limit: 20,
-		enableStyle: true,
-	},
-	stats: {
-		includePaths: ['posts/%'],
-	},
-})`,
+		// ---- clarity.config.ts：站点契约（具体分支由 writeConsumerVariant 重写）----
+		'clarity.config.ts': clarityConfigSource('default'),
 
 		// ---- content.config.ts：Theme Content Schema 工厂 ----
 		'content.config.ts': `import { createClarityContentConfig } from 'clarity-theme/content'
@@ -480,7 +461,18 @@ export default defineConfig({
 		light: () => import('shiki/themes/github-light.mjs'),
 		dark: () => import('shiki/themes/github-dark-default.mjs'),
 	},
-})`,
+		})`,
+
+		// ---- consumer custom component override：同名 Content 组件覆盖 Layer 默认实现 ----
+		'app/components/content/Badge.vue': `<script setup lang="ts">
+defineProps<{ text?: string, link?: string }>()
+</script>
+
+<template>
+<span class="badge consumer-badge" data-consumer-override="consumer-badge">
+	<slot>{{ text }}</slot>
+</span>
+</template>`,
 
 		// ---- TypeScript 类型验收：四个 exports 全部走真实 d.mts 链 ----
 		'app/exports.check.ts': `import type { ArticleSchema } from 'clarity-theme/content'
@@ -553,6 +545,7 @@ const rawConfig = {
 const config = defineClarityConfig(rawConfig)
 check('config defineClarityConfig 运行时可用', typeof defineClarityConfig === 'function')
 check('config 默认值填充', config.article.defaultCategory === '未分类' && config.features.atom === true)
+check('config useRandomPermalink=true 分支', defineClarityConfig({ ...rawConfig, article: { useRandomPermalink: true } }).article.useRandomPermalink === true)
 
 // 3. clarity-theme/schema
 const schema = await import('clarity-theme/schema')
@@ -709,12 +702,135 @@ description: Consumer 友链页。
 }
 
 // ---------------------------------------------------------------------------
+// 配置分支矩阵
+// ---------------------------------------------------------------------------
+
+/**
+ * clarity.config.ts 的分支化源码。
+ *
+ * - default：全部功能开启，Twikoo / antiMirror 关闭（默认值路径）
+ * - branches：服务端输出与路由分支（enableStyle / hidePostPrefix / Twikoo / antiMirror）
+ * - features-off：可选功能关闭 + useRandomPermalink（schema 接受性）
+ */
+function clarityConfigSource(variant) {
+	const branches = variant === 'branches'
+	const featuresOff = variant === 'features-off'
+
+	const article = [
+		'\tarticle: {',
+		'\t\tcategories: {',
+		'\t\t\t技术: { icon: \'tabler:code\' },',
+		'\t\t},',
+		'\t\trobotsNotIndex: [\'/secret\'],',
+		branches && '\t\thidePostPrefix: false,',
+		featuresOff && '\t\tuseRandomPermalink: true,',
+		'\t},',
+	].filter(Boolean)
+
+	const integrations = [
+		'\tintegrations: {',
+		branches && `\t\ttwikoo: { envId: '${twikooEnv}' },`,
+		!branches && '\t\tscripts: [],',
+		'\t},',
+	].filter(Boolean)
+
+	const features = [
+		'\tfeatures: {',
+		featuresOff ? '\t\tatom: false,' : '\t\tatom: true,',
+		featuresOff ? '\t\topml: false,' : '\t\topml: true,',
+		featuresOff ? '\t\tstats: false,' : '\t\tstats: true,',
+		branches
+			? `\t\tantiMirror: { blacklist: ['${mirrorDomain}'] },`
+			: '\t\tantiMirror: false,',
+		'\t},',
+	]
+
+	return `import { defineClarityConfig } from 'clarity-theme/config'
+
+export default defineClarityConfig({
+	site: {
+		title: '${site.title}',
+		description: '${site.description}',
+		url: '${site.url}',
+		established: '${site.established}',
+		favicon: '/favicon.svg',
+		author: { name: '${site.author}' },
+	},
+${article.join('\n')}
+	feed: {
+		limit: 20,
+		enableStyle: ${branches ? 'false' : 'true'},
+	},
+	stats: {
+		includePaths: ['posts/%'],
+	},
+${integrations.join('\n')}
+${features.join('\n')}
+})
+`
+}
+
+function nuxtConfigSource(variant) {
+	// hidePostPrefix=false 时页面路由保留 /posts 前缀
+	const posts = variant === 'branches' ? '/posts' : ''
+	const routes = [
+		`${posts}/first`,
+		`${posts}/mdc`,
+		`${posts}/math`,
+		`${posts}/mermaid`,
+		`${posts}/image`,
+		'/custom/permalink',
+		`${posts}/secret`,
+		'/link',
+	].map(route => `\t\t\t\t'${route}',`)
+
+	return `export default defineNuxtConfig({
+	extends: ['clarity-theme'],
+
+	nitro: {
+		prerender: {
+			routes: [
+${routes.join('\n')}
+			],
+		},
+	},
+})
+`
+}
+
+/** 切换配置分支：只重写受配置影响的文件，安装产物与内容基准保持不变 */
+function writeConsumerVariant(dir, variant) {
+	writeFiles(dir, {
+		'clarity.config.ts': clarityConfigSource(variant),
+		'nuxt.config.ts': nuxtConfigSource(variant),
+	})
+}
+
+/**
+ * clarity.config 会影响 Content 集合（permalink / /posts 前缀改写 path），
+ * 切换分支时必须清掉 generate 缓存，避免上一个分支的数据库路径串扰。
+ */
+function resetConsumerCaches(dir) {
+	for (const path of ['.output', '.data']) {
+		rmSync(join(dir, path), { recursive: true, force: true })
+	}
+}
+
+// ---------------------------------------------------------------------------
 // generate 产物断言
 // ---------------------------------------------------------------------------
 
-function assertGenerateOutput(consumerDir) {
+function assertGenerateOutput(consumerDir, variant = 'default') {
 	const output = join(consumerDir, '.output', 'public')
 	assert('generate 产出 .output/public', existsSync(output))
+	if (variant === 'branches') {
+		assertBranchesOutput(output)
+		return
+	}
+	if (variant === 'features-off') {
+		assertFeaturesOffOutput(output)
+		return
+	}
 
 	const index = read(output, 'index.html')
 	assert('clarity.config 站点标题注入', index.includes(site.title))
@@ -723,6 +839,7 @@ function assertGenerateOutput(consumerDir) {
 	assert('app.config override（emojiTail 🧪）', index.includes('🧪'))
 	assert('Theme generator meta', index.includes(`Clarity Theme ${themePkg.version}`))
 	assert('SEO WebSite JSON-LD', index.includes('"@type":"WebSite"'))
+	assert('antiMirror=false 不注入脚本', !index.includes(mirrorDomain) && !index.includes(base64(mirrorDomain)))
 
 	// Markdown
 	const first = readGeneratedPage(output, '/first')
@@ -740,6 +857,7 @@ function assertGenerateOutput(consumerDir) {
 	assert('MDC CardList', mdc.includes('card-list') && mdc.includes('MDC 卡片项'))
 	assert('MDC Folding', mdc.includes('<details') && mdc.includes('MDC 折叠标题') && mdc.includes('MDC 折叠内容'))
 	assert('MDC Badge', mdc.includes('MDC'))
+	assert('custom component override（Badge）', mdc.includes('data-consumer-override="consumer-badge"'))
 
 	// Math
 	const math = readGeneratedPage(output, '/math')
@@ -760,6 +878,16 @@ function assertGenerateOutput(consumerDir) {
 	// permalink
 	assert('permalink 自定义路由生成', generatedPageExists(output, customPermalink))
 	assert('permalink 原文件路由未生成', !generatedPageExists(output, '/permalink'))
+
+	// Twikoo disabled
+	assert('Twikoo disabled 文案', first.includes('本文暂未开启评论'))
+	assert('Twikoo disabled 不渲染容器', !first.includes('id="twikoo"') && !first.includes('评论加载中'))
+	assert('Twikoo disabled 无 preconnect', !index.includes('rel="preconnect"') || !index.includes(twikooEnv))
+
+	// llms
+	const llms = read(output, 'llms.txt')
+	assert('llms 站点标题', llms.includes(`# ${site.title}`))
+	assert('llms 站点描述', llms.includes(`> ${site.description}`))
 
 	// Atom
 	const atom = read(output, 'atom.xml')
@@ -805,33 +933,85 @@ function assertGenerateOutput(consumerDir) {
 	assert('Shiki 自定义 light 主题', bundle.includes('GitHub Light'))
 	assert('Shiki 自定义 dark 主题', bundle.includes('GitHub Dark Default'))
 	assert('Shiki Theme 默认主题被覆盖', !bundle.includes('Catppuccin Latte') && !bundle.includes('One Dark Pro'))
+}
 
-	function read(base, path) {
-		return readFileSync(join(base, path), 'utf8')
-	}
+/** branches 变体：enableStyle=false + hidePostPrefix=false + Twikoo + antiMirror blacklist */
+function assertBranchesOutput(output) {
+	const index = read(output, 'index.html')
+	assert('Twikoo preconnect 注入', index.includes(`<link rel="preconnect" href="${twikooEnv}">`))
+	assert(
+		'antiMirror blacklist 脚本注入',
+		index.includes(base64(mirrorDomain)) && index.includes(base64(site.url)),
+	)
 
-	/**
-	 * Nitro 的 autoSubfolderIndex 在 GitHub Actions / Cloudflare / Netlify 会关闭，
-	 * 此时 `/first` 生成 `first.html`；本地默认则生成 `first/index.html`。
-	 * Consumer 断言必须同时接受两种官方输出形态。
-	 */
-	function generatedPageExists(base, route) {
-		const normalizedRoute = route.replace(/^\//, '')
-		return existsSync(join(base, normalizedRoute, 'index.html'))
-			|| existsSync(join(base, `${normalizedRoute}.html`))
-	}
+	const first = readGeneratedPage(output, '/posts/first')
+	assert('hidePostPrefix=false 保留 /posts 路由', first.includes('Consumer Markdown 基准'))
+	assert('hidePostPrefix=false 无前缀路由未生成', !generatedPageExists(output, '/first'))
+	assert('Twikoo enabled 渲染容器', first.includes('id="twikoo"') && first.includes('评论加载中'))
 
-	function readGeneratedPage(base, route) {
-		const normalizedRoute = route.replace(/^\//, '')
-		const candidates = [
-			join(base, normalizedRoute, 'index.html'),
-			join(base, `${normalizedRoute}.html`),
-		]
-		const file = candidates.find(path => existsSync(path))
-		if (!file)
-			throw new Error(`未找到页面产物：${candidates.join(' 或 ')}`)
-		return readFileSync(file, 'utf8')
-	}
+	const mdc = readGeneratedPage(output, '/posts/mdc')
+	assert('branches 变体组件覆盖仍生效', mdc.includes('data-consumer-override="consumer-badge"'))
+
+	assert('permalink 覆盖 hidePostPrefix', generatedPageExists(output, customPermalink))
+	assert('permalink 原文件路由未生成（含前缀）', !generatedPageExists(output, '/posts/permalink'))
+
+	const atom = read(output, 'atom.xml')
+	assert('enableStyle=false 仍生成 atom', atom.includes(`<id>${site.url}</id>`))
+	assert('enableStyle=false 无 XSLT 样式', !atom.includes('xml-stylesheet') && !atom.includes('atom.xsl'))
+	assert('atom 使用 /posts 路由', atom.includes(`${site.url}posts/first`))
+
+	const sitemap = read(output, 'sitemap.xml')
+	assert('sitemap 使用 /posts 路由', sitemap.includes(`<loc>${site.url}posts/first</loc>`))
+
+	const robots = read(output, 'robots.txt')
+	assert('branches 变体 robotsNotIndex 生效', robots.includes('Disallow: /secret'))
+}
+
+/** features-off 变体：atom / opml / stats 关闭 + useRandomPermalink=true（构建接受性） */
+function assertFeaturesOffOutput(output) {
+	assert('atom=false 不生成 atom.xml', !existsSync(join(output, 'atom.xml')))
+	assert('opml=false 不生成 subscriptions.opml', !existsSync(join(output, 'subscriptions.opml')))
+	assert('stats=false 不生成 api/stats', !existsSync(join(output, 'api/stats')))
+
+	const index = read(output, 'index.html')
+	assert('atom=false 无 alternate 声明', !index.includes('application/atom+xml'))
+
+	const first = readGeneratedPage(output, '/first')
+	assert('useRandomPermalink=true 不影响构建路由', first.includes('Consumer Markdown 基准'))
+	assert('features-off 变体 Twikoo 仍关闭', first.includes('本文暂未开启评论'))
+	assert('permalink 路由仍生成', generatedPageExists(output, customPermalink))
+}
+
+function read(base, path) {
+	return readFileSync(join(base, path), 'utf8')
+}
+
+/**
+ * Nitro 的 autoSubfolderIndex 在 GitHub Actions / Cloudflare / Netlify 会关闭，
+ * 此时 `/first` 生成 `first.html`；本地默认则生成 `first/index.html`。
+ * Consumer 断言必须同时接受两种官方输出形态。
+ */
+function generatedPageExists(base, route) {
+	const normalizedRoute = route.replace(/^\//, '')
+	return existsSync(join(base, normalizedRoute, 'index.html'))
+		|| existsSync(join(base, `${normalizedRoute}.html`))
+}
+
+function readGeneratedPage(base, route) {
+	const normalizedRoute = route.replace(/^\//, '')
+	const candidates = [
+		join(base, normalizedRoute, 'index.html'),
+		join(base, `${normalizedRoute}.html`),
+	]
+	const file = candidates.find(path => existsSync(path))
+	if (!file)
+		throw new Error(`未找到页面产物：${candidates.join(' 或 ')}`)
+	return readFileSync(file, 'utf8')
+}
+
+/** anti-mirror 脚本参数使用 btoa（latin1）编码；测试数据均为 ASCII，可直接对比 */
+function base64(text) {
+	return Buffer.from(text, 'latin1').toString('base64')
 }
 
 // ---------------------------------------------------------------------------

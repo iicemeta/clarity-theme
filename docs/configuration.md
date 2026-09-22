@@ -5,8 +5,9 @@
 - **Required**：Consumer 必须提供，缺省时 `defineClarityConfig()` 校验失败
 - **Optional**：可省略
 - **Default**：省略时 Theme 的默认值
-- **Client-visible**：该值会进入客户端 bundle，**禁止存放任何密钥 / token**
-- **Server-only**：仅在服务端（Nitro）使用
+- 可见性列标记：**✅ Client-visible**（该值会进入客户端 bundle，**禁止存放任何密钥 / token**）；
+  **⚠️ 遗留**（仅服务端消费，但当前仍随 appConfig 进 bundle，为已登记的架构债务）；
+  **⚙️ 构建期**（不进 appConfig，由模块在构建期消费，可能出现在最终页面 HTML）
 
 配置入口只有两个：
 
@@ -19,7 +20,7 @@
 
 ### site
 
-| 字段 | 类型 | 约束 | Client-visible |
+| 字段 | 类型 | 约束 | 可见性 |
 | --- | --- | --- | --- |
 | `title` | string | **Required**，非空 | ✅ |
 | `subtitle` | string | Optional | ✅ |
@@ -37,15 +38,15 @@
 
 ### article
 
-| 字段 | 类型 | 约束 / Default | Client-visible |
+| 字段 | 类型 | 约束 / Default | 可见性 |
 | --- | --- | --- | --- |
 | `defaultCategory` | string | Default `'未分类'` | ✅ |
 | `categories` | `Record<string, { icon?, color? }>` | Default `{}` | ✅ |
 | `types` | `Record<string, object>` | Default `{ tech: {} }`；**至少一项**（为空时 Content Schema 兜底回退 `tech`，但应显式配置） | ✅ |
 | `order` | `Record<string, string>`（排序字段 → 显示名） | Default `{ date: '创建日期', updated: '更新日期' }` | ✅ |
-| `useRandomPermalink` | boolean | Default `false` | ✅ |
-| `hidePostPrefix` | boolean | Default `true` | ✅ |
-| `robotsNotIndex` | string[] | Default `[]` | ✅ |
+| `useRandomPermalink` | boolean | Default `false`，仅构建脚手架使用 | ⚠️ 遗留（见 [config-api-audit §3](./config-api-audit.md)） |
+| `hidePostPrefix` | boolean | Default `true`，仅模块构建期使用 | ⚠️ 遗留（同上） |
+| `robotsNotIndex` | string[] | Default `[]`，仅模块构建期使用 | ⚠️ 遗留（同上） |
 
 `types` 的**第一个键是默认文章版式**；`ui.pagination.sortOrder` 必须是 `order` 的键名。
 
@@ -53,33 +54,35 @@
 
 | 字段 | 类型 | 约束 / Default | 可见性 |
 | --- | --- | --- | --- |
-| `limit` | number | 正整数，Default `50` | Server-only（RSS 生成） |
-| `enableStyle` | boolean | Default `true`（XSLT 样式页） | Server-only |
+| `limit` | number | 正整数，Default `50` | ⚠️ 仅服务端消费（RSS 生成），但当前仍随 appConfig 进入客户端 bundle（[config-api-audit §3](./config-api-audit.md) 登记的遗留项） |
+| `enableStyle` | boolean | Default `true`（XSLT 样式页） | ⚠️ 同上 |
 
 ### stats
 
 | 字段 | 类型 | 约束 / Default | 可见性 |
 | --- | --- | --- | --- |
-| `includePaths` | string[] | Default `[]`（统计全部内容）；SQL LIKE 语法（`%` / `_`），匹配 `content/` 下不含扩展名的路径 | ✅（归档页年龄计算等） |
+| `includePaths` | string[] | Default `[]`（统计全部内容）；SQL LIKE 语法（`%` / `_`），匹配 `content/` 下不含扩展名的路径 | ⚠️ 遗留（仅 stats API 服务端消费，仍随 appConfig 进 bundle） |
 
 ### integrations
 
-⚠️ **本节全部 Client-visible，禁止存放真正秘密。** 密钥应放 `nuxt.config.ts` 的 `runtimeConfig`（server-only）。
+⚠️ **本节禁止存放真正秘密。** `twikoo.*` 为 Client-visible（进入 appConfig / 客户端 bundle）；
+`scripts` 不进 appConfig，由模块在构建期注入 `<head>`（脚本属性会出现在最终页面 HTML 中）。
+密钥应放 `nuxt.config.ts` 的 `runtimeConfig`（server-only）。
 
-| 字段 | 类型 | 约束 / Default | Client-visible |
+| 字段 | 类型 | 约束 / Default | 可见性 |
 | --- | --- | --- | --- |
-| `twikoo.envId` | string | Optional；配置后渲染评论区 | ✅ |
-| `twikoo.preload` | string | Optional，默认使用 `envId` | ✅ |
-| `scripts` | `Record<string, string\|number\|boolean>[]` | Default `[]`，注入 `<head>` 的第三方脚本参数 | ✅ |
+| `twikoo.envId` | string | Optional；配置后渲染评论区 | ✅（appConfig） |
+| `twikoo.preload` | string | Optional，默认使用 `envId` | ✅（appConfig） |
+| `scripts` | `Record<string, string\|number\|boolean>[]` | Default `[]`，注入 `<head>` 的第三方脚本参数 | ⚙️ 构建期注入 `<head>`（已从 appConfig 剔除；出现在页面 HTML） |
 
 ### features
 
 | 字段 | 类型 | 约束 / Default | 可见性 |
 | --- | --- | --- | --- |
-| `atom` | boolean | Default `true`，`/atom.xml` | Server-only |
-| `opml` | boolean | Default `true`，`/subscriptions.opml` | Server-only |
-| `stats` | boolean | Default `true`，统计 API 与归档页 | 均有 |
-| `antiMirror` | `boolean \| { blacklist: string[] }` | Default `false`；`true` = 空黑名单模式 | ✅（客户端反镜像脚本） |
+| `atom` | boolean | Default `true`，`/atom.xml` | ✅（`features` 对象整体随 appConfig 进 bundle；开关本身由模块构建期消费） |
+| `opml` | boolean | Default `true`，`/subscriptions.opml` | ✅（同上） |
+| `stats` | boolean | Default `true`，统计 API（服务端）与归档页（客户端） | ✅（同上） |
+| `antiMirror` | `boolean \| { blacklist: string[] }` | Default `false`。**Theme 不携带任何默认黑名单**：镜像站域名必须由消费者在 `blacklist` 中提供；`true`（等价于空黑名单）会**跳过脚本注入并输出 WARN**，需改用 `{ blacklist: [...] }` 显式提供域名 | ✅（客户端反镜像脚本；黑名单与站点 URL 以 base64 内联进页面） |
 
 ### changelog
 
@@ -118,6 +121,15 @@
 | --- | --- | --- |
 | `#clarity/config` | Consumer → Theme | 解析并校验后的完整配置 |
 | `#clarity/feeds` | Consumer → Theme | 友链数据 |
+
+## 模块选项（nuxt.config.ts）
+
+| 选项 | 类型 | Default | 说明 |
+| --- | --- | --- | --- |
+| `clarityConfig.configFile` | string | 自动发现（相对 rootDir 依次查找 `clarity.config.ts` → `clarity.config.mjs` → `clarity.config.js`） | 消费项目中 clarity 配置文件路径 |
+
+友链数据按相同顺序自动发现 `feeds.ts` → `feeds.mjs` → `feeds.js`；
+未找到时回退 Theme 内置空数据并输出 WARN（友链页与 OPML 输出空列表）。
 
 ## 版式约定
 

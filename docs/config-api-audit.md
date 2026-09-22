@@ -258,4 +258,5 @@ defu 首参优先 → **Consumer app.config > Theme app.config > 模块注入（
 | 生产构建 | `pnpm --dir playground build` | ✅ exit=0 |
 | bundle 泄漏 | 扫描 `.output/public/_nuxt` | ✅ scripts 已剔除；遗留项见 §3 |
 | 主题提纯 | `pnpm verify` | ✅ 无上游泄漏 |
-| lint | `eslint config modules/clarity-config` | ✅ 通过（scripts/ 下 24 个既有错误与本轮无关） |
+| lint | `pnpm lint`（eslint + stylelint 全量） | ✅ 通过 |
+| RC 复验 | `pnpm lint / typecheck / verify / test:sync / test:consumer / test:compatibility / generate / peers check / pack` | ✅ 全部通过（2026-09-22，Node 24；consumer 33 路由 + 48 项断言，compatibility 33 项断言组） |

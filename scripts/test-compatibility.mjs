@@ -4,6 +4,7 @@
  *
  * 将 playground/content/compatibility 的兼容性基准页从「人工查看」升级为自动回归：
  *
+ *   0. Compatibility Contract → 契约完整性 + docs/COMPATIBILITY.md 同步校验
  *   1. 生产构建日志扫描     → Nuxt / Vue runtime error、Content parser error、missing component
  *   2. 生产 SSR 路由断言    → 状态码（含 404 / permalink / 隐藏 /posts 前缀）+ 关键 HTML 结构 + payload
  *   3. 浏览器（生产构建）   → Shiki / Mermaid / abcjs 等客户端渲染结果 + runtime error
@@ -18,9 +19,11 @@
  *   node scripts/test-compatibility.mjs --no-build      # 复用 playground/.output
  *   node scripts/test-compatibility.mjs --no-browser    # 跳过浏览器阶段（降级为 SSR + 日志）
  *   node scripts/test-compatibility.mjs --no-dev        # 跳过 dev hydration 阶段
+ *   node scripts/test-compatibility.mjs --contract-only # 只校验契约与文档同步（无构建）
+ *   node scripts/test-compatibility.mjs --update-docs   # 由契约重新生成 docs/COMPATIBILITY.md
  */
 import { spawn } from 'node:child_process'
-import { createWriteStream, existsSync, mkdtempSync, readFileSync, rmSync } from 'node:fs'
+import { createWriteStream, existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import process from 'node:process'
@@ -28,16 +31,20 @@ import { fileURLToPath } from 'node:url'
 
 import {
 	browserCases,
+	compatibilityContract,
 	consoleAllowRules,
 	consoleFailureRules,
+	contractGroups,
 	hydrationRoutes,
 	logAllowRules,
 	logFailureRules,
+	requiredContractFeatures,
 	ssrCases,
 } from './compatibility-cases.mjs'
 
 const themeDir = fileURLToPath(new URL('..', import.meta.url))
 const playgroundDir = join(themeDir, 'playground')
+const compatibilityDocPath = join(themeDir, 'docs', 'COMPATIBILITY.md')
 const nuxtBin = join(playgroundDir, 'node_modules', 'nuxt', 'bin', 'nuxt.mjs')
 const serverEntry = join(playgroundDir, '.output', 'server', 'index.mjs')
 
@@ -61,16 +68,29 @@ async function main() {
 	let devServer = null
 
 	try {
+		// ---- 0. Compatibility Contract（不依赖构建，先 fail fast）----
+		if (flags.updateDocs) {
+			writeFileSync(compatibilityDocPath, renderCompatibilityDoc())
+			console.log('[1/7] 已根据契约重新生成 docs/COMPATIBILITY.md')
+		}
+		verifyCompatibilityContract()
+
+		if (flags.contractOnly) {
+			console.log('[2/7] --contract-only / --update-docs：跳过构建与渲染阶段')
+			skipped.push('构建 / SSR / 浏览器阶段被 --contract-only 跳过')
+			return
+		}
+
 		if (!existsSync(nuxtBin))
 			throw new Error(`未找到 ${nuxtBin}，请先在仓库根目录执行 pnpm install`)
 
 		// ---- 1. 生产构建 ----
 		timers.build = start()
 		if (flags.noBuild && existsSync(serverEntry)) {
-			console.log('[1/6] 复用现有生产构建（--no-build）')
+			console.log('[2/7] 复用现有生产构建（--no-build）')
 		}
 		else {
-			console.log('[1/6] 生产构建 playground（nuxt build）')
+			console.log('[2/7] 生产构建 playground（nuxt build）')
 			await runLogged(
 				[process.execPath, nuxtBin, 'build'],
 				{ cwd: playgroundDir },
@@ -81,33 +101,33 @@ async function main() {
 		}
 
 		// ---- 2. 构建日志扫描 ----
-		console.log('[2/6] 构建日志扫描（runtime / parser / missing component）')
+		console.log('[3/7] 构建日志扫描（runtime / parser / missing component）')
 		scanLogFile(join(reportDir, 'build.log'), 'build')
 
 		// ---- 3. 生产 SSR + 浏览器 ----
 		prodServer = await startServer({
 			log: 'server.log',
-			title: '[3/6] 启动生产 SSR 服务',
+			title: '[4/7] 启动生产 SSR 服务',
 		})
 		const baseUrl = prodServer.baseUrl
 
-		console.log(`[4/6] SSR 路由断言（${baseUrl}）`)
+		console.log(`[5/7] SSR 路由断言（${baseUrl}）`)
 		await assertSsrCases(baseUrl)
 
 		if (!flags.noBrowser) {
 			browser = await launchBrowser()
 			if (browser) {
-				console.log(`[5/6] 浏览器客户端渲染断言（${browser.name}）`)
+				console.log(`[6/7] 浏览器客户端渲染断言（${browser.name}）`)
 				await assertBrowserCases(browser, baseUrl, browserCases)
 			}
 			else {
 				const message = '未找到 Chrome / Edge，跳过浏览器与 hydration 阶段'
-				console.log(`[5/6] ${message}`)
+				console.log(`[6/7] ${message}`)
 				skipped.push(message)
 			}
 		}
 		else {
-			console.log('[5/6] 跳过浏览器阶段（--no-browser）')
+			console.log('[6/7] 跳过浏览器阶段（--no-browser）')
 			skipped.push('浏览器阶段被 --no-browser 跳过')
 		}
 
@@ -119,7 +139,7 @@ async function main() {
 		if (browser && !flags.noDev) {
 			devServer = await startServer({
 				log: 'dev.log',
-				title: '[6/6] 启动 dev 服务（Vue 开发版告警）',
+				title: '[7/7] 启动 dev 服务（Vue 开发版告警）',
 				dev: true,
 				timeout: 240000,
 			})
@@ -128,7 +148,7 @@ async function main() {
 				...route,
 				group: 'Hydration',
 				evals: [
-					[`${route.id} app mounted`, 'document.readyState === \'complete\' && !!document.querySelector(\'#blog-root article.article\')'],
+					[`${route.id} app mounted`, `document.readyState === 'complete' && !!document.querySelector('#blog-root ${route.selector ?? 'article.article'}')`],
 				],
 			})))
 			await stopServer(devServer)
@@ -136,7 +156,7 @@ async function main() {
 			scanLogFile(join(reportDir, 'dev.log'), 'dev')
 		}
 		else if (!flags.noBrowser) {
-			console.log('[6/6] 跳过 dev hydration 阶段')
+			console.log('[7/7] 跳过 dev hydration 阶段')
 			skipped.push('dev hydration 阶段被 --no-dev 跳过或无浏览器')
 		}
 	}
@@ -167,9 +187,11 @@ function parseFlags(argv) {
 		return item ? item.slice(prefix.length) : undefined
 	}
 	return {
+		contractOnly: argv.includes('--contract-only') || argv.includes('--update-docs'),
 		noBuild: argv.includes('--no-build'),
 		noBrowser: argv.includes('--no-browser'),
 		noDev: argv.includes('--no-dev'),
+		updateDocs: argv.includes('--update-docs'),
 		filter: (value('filter') ?? value('f') ?? '').toLowerCase(),
 		keep: argv.includes('--keep'),
 	}
@@ -365,9 +387,18 @@ async function assertSsrCases(baseUrl) {
 			}
 		}
 		else {
+			const normalized = normalizeVueSsrHtml(html)
 			for (const item of testCase.includes ?? []) {
-				if (!html.includes(item))
+				if (!normalized.includes(item))
 					fail(testCase, 'generated HTML', `缺少关键结构：${item}`)
+			}
+			for (const [pattern, name] of testCase.patterns ?? []) {
+				if (!pattern.test(normalized))
+					fail(testCase, 'generated HTML', `结构不匹配：${name} (${pattern})`)
+			}
+			for (const item of testCase.excludes ?? []) {
+				if (normalized.includes(item))
+					fail(testCase, 'generated HTML', `出现不应存在的内容：${item}`)
 			}
 		}
 
@@ -447,6 +478,124 @@ function fail(testCase, dimension, message) {
 function note(caseId, text) {
 	const key = `${caseId}::${text.split('\n')[0].slice(0, 180)}`
 	warnings.set(key, (warnings.get(key) ?? 0) + 1)
+}
+
+/* ------------------------------------------------------------------ */
+/* Compatibility Contract                                             */
+/* ------------------------------------------------------------------ */
+
+function contractFail(message) {
+	failures.push({ case: 'contract', dimension: 'compatibility contract', message })
+}
+
+/** compat:<id> 可引用的全部用例（hydration 用例带 -hydration 后缀区分阶段） */
+function compatibilityCaseIds() {
+	return new Set([
+		...ssrCases.map(item => item.id),
+		...browserCases.map(item => item.id),
+		...hydrationRoutes.map(item => `${item.id}-hydration`),
+	])
+}
+
+function verifyCompatibilityContract() {
+	console.log('[1/7] Compatibility Contract 校验（必需 Feature / coverage 引用 / 文档同步）')
+	const ids = compatibilityCaseIds()
+	const groupIds = new Set(contractGroups.map(group => group.id))
+	const allowedStatus = new Set(['automated', 'partial'])
+	const seen = new Set()
+
+	for (const entry of compatibilityContract) {
+		const label = entry.feature ?? '(unnamed)'
+		if (!groupIds.has(entry.group))
+			contractFail(`${label} 使用未知分组：${entry.group}`)
+		if (!allowedStatus.has(entry.status))
+			contractFail(`${label} 使用未知状态：${entry.status}`)
+		if (!Array.isArray(entry.coverage) || entry.coverage.length === 0)
+			contractFail(`${label} 未声明任何自动化覆盖（coverage 为空）`)
+		for (const reference of entry.coverage ?? []) {
+			if (reference.startsWith('compat:') && !ids.has(reference.slice('compat:'.length)))
+				contractFail(`${label} 引用不存在的 compat 用例：${reference}`)
+		}
+		const key = `${entry.group}::${label}`
+		if (seen.has(key))
+			contractFail(`契约中存在重复 Feature：${label}`)
+		seen.add(key)
+	}
+
+	let requiredCount = 0
+	for (const [groupId, features] of Object.entries(requiredContractFeatures)) {
+		for (const feature of features) {
+			requiredCount += 1
+			if (!seen.has(`${groupId}::${feature}`))
+				contractFail(`契约缺少必需 Feature：${groupId} / ${feature}`)
+		}
+	}
+
+	const contractOnlyFailures = () => failures.filter(item => item.case === 'contract')
+	if (contractOnlyFailures().length === 0) {
+		const expected = renderCompatibilityDoc()
+		const actual = existsSync(compatibilityDocPath)
+			? readFileSync(compatibilityDocPath, 'utf8')
+			: ''
+		if (actual !== expected) {
+			contractFail('docs/COMPATIBILITY.md 与 compatibilityContract 不同步：node scripts/test-compatibility.mjs --update-docs')
+		}
+	}
+
+	if (contractOnlyFailures().length === 0) {
+		passedCount += 1
+		console.log(`      ✓ 契约 ${compatibilityContract.length} 项（必需 Feature ${requiredCount} 项）全部可追溯`)
+	}
+	else {
+		for (const item of contractOnlyFailures())
+			console.error(`      ✗ ${item.message}`)
+	}
+}
+
+function renderCompatibilityDoc() {
+	const cell = text => String(text).replaceAll('|', '\\|').replaceAll('\n', '<br>')
+	const lines = [
+		'# Clarity Theme Release Compatibility Matrix',
+		'',
+		'> 本文档由 `scripts/compatibility-cases.mjs` 中的 `compatibilityContract` 生成，请勿手改表格。',
+		'> 重新生成：`node scripts/test-compatibility.mjs --update-docs`；`pnpm test:contract` 会在 CI 中校验同步。',
+		'',
+		'契约只断言「功能是否存在、配置是否生效、路由是否正确、输出是否正确」，不追求覆盖 UI 细节。',
+		'',
+		'## 运行命令',
+		'',
+		'| 命令 | 覆盖范围 | CI |',
+		'| --- | --- | --- |',
+		'| `pnpm test:contract` | 契约完整性 + 文档同步（无构建，秒级） | Layer 1 · typecheck job |',
+		'| `pnpm test:compatibility` | playground 生产构建 SSR + 真实浏览器 + dev hydration | Layer 3 · consumer job |',
+		'| `pnpm test:consumer` | pnpm pack → 独立 consumer 安装 → exports / typecheck → 3 组 generate 配置分支 | Layer 3 · consumer job |',
+		'',
+		'调试单条用例：`node scripts/test-compatibility.mjs --filter=mdc`（匹配 case id 或分组）。',
+		'',
+		'## 状态说明',
+		'',
+		'- ✅ Automated：对应测试在 CI 中必须通过；`compat:*` 为渲染回归用例，`consumer:*` 为独立消费者验收用例。',
+		'- ⚙️ Partial：只锁定了契约子集（例如构建脚手架行为），边界写在 Expected behavior 中。',
+		'',
+	]
+
+	for (const group of contractGroups) {
+		const entries = compatibilityContract.filter(entry => entry.group === group.id)
+		if (entries.length === 0)
+			continue
+		lines.push(`## ${group.title}`, '')
+		lines.push('| Feature | Input | Expected behavior | Test command | Status |')
+		lines.push('| --- | --- | --- | --- | --- |')
+		for (const entry of entries) {
+			const status = entry.status === 'automated' ? '✅ Automated' : '⚙️ Partial'
+			const coverage = (entry.coverage ?? []).map(reference => `\`${reference}\``).join('<br>')
+			const cells = [entry.feature, entry.input, entry.expected, `\`${entry.command}\``, `${status}<br>${coverage}`]
+			lines.push(`| ${cells.map(cell).join(' | ')} |`)
+		}
+		lines.push('')
+	}
+
+	return `${lines.join('\n').trimEnd()}\n`
 }
 
 /* ------------------------------------------------------------------ */

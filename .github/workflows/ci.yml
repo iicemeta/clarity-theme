@@ -150,6 +150,9 @@ jobs:
       - name: Sync tool regression（manifest / apply / rollback）
         run: pnpm test:sync
 
+      - name: Compatibility contract（Release Matrix 覆盖 + docs 同步）
+        run: pnpm test:contract
+
       - name: Peer dependency audit
         run: pnpm peers check
 
@@ -198,8 +201,8 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Real consumer test（pnpm pack → tarball/exports 审计 → 独立安装 → exports/type 测试 → nuxt generate → 产物断言）
+      - name: Real consumer test（pack → 独立安装 → exports/type → 3 组配置分支 generate + 产物断言）
         run: pnpm test:consumer
 
-      - name: Content rendering regression（SSR + 客户端渲染 + hydration）
+      - name: Compatibility regression（契约 → SSR + 客户端渲染 + hydration）
         run: pnpm test:compatibility
