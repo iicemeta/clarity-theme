@@ -17,14 +17,11 @@ warning 类型的提示内容。
 
 ## Tip
 
-悬停提示：:tip{icon="tabler:info-circle" text="提示内容"}
+悬停提示 :tip{icon="tabler:info-circle" text="提示内容"}
 
 ## Copy
 
-::copy{prompt="安装命令"}
-```sh
-pnpm add -D clarity-theme
-```
+::copy{prompt="安装命令" code="pnpm add -D clarity-theme"}
 ::
 
 ## CardList

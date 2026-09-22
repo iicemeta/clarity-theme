@@ -1,4 +1,5 @@
 import type { Nuxt } from '@nuxt/schema'
+import type { ClarityConfig } from '../../config/schema'
 import { existsSync } from 'node:fs'
 import { dirname, relative, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -20,14 +21,8 @@ import handleMirror from './anti-mirror-client'
 const moduleDir = dirname(fileURLToPath(import.meta.url))
 const themeDir = resolve(moduleDir, '../..')
 
-/** 默认镜像站域名黑名单（可被站点配置扩展） */
-const defaultMirrorBlacklist = [
-	'dgjlx.com',
-	'dgvhqt.com',
-	'hcmsla.com',
-	'wmlop.com',
-	'yswjxs.com',
-]
+/** app/app.config.ts 的 clarity 键只允许 UI 覆盖（站点级字段属于 clarity.config.ts） */
+const uiConfigKeys = new Set(['component', 'footer', 'header', 'link', 'nav', 'pagination', 'themes'])
 
 export interface ModuleOptions {
 	/** 消费项目中 clarity 配置文件路径（相对 rootDir） */
@@ -57,15 +52,27 @@ export default defineNuxtModule<ModuleOptions>({
 		addImportsDir(resolve(themeDir, 'app/stores'))
 
 		// ---- AppConfig 类型化：消费者 defineAppConfig({ clarity: ... }) 获得完整类型提示 ----
-		const appConfigTypePath = relative(nuxt.options.buildDir, resolve(themeDir, 'config/app.ts')).replaceAll('\\', '/')
+		// 注意：类型文件生成于 buildDir/types/ 下，相对路径必须以其为基准计算，
+		// 否则导入解析失败会因 skipLibCheck 静默退化为 any（审计发现 #9）。
+		const appConfigTypeDir = resolve(nuxt.options.buildDir, 'types')
+		const appConfigTypePath = relative(appConfigTypeDir, resolve(themeDir, 'config/app.ts')).replaceAll('\\', '/')
+		const globalsTypePath = relative(appConfigTypeDir, resolve(themeDir, 'app/types/index.ts')).replaceAll('\\', '/')
 		addTypeTemplate({
 			filename: 'types/clarity-app-config.d.ts',
 			getContents: () => [
-				`import type { ClarityAppConfig } from '${appConfigTypePath}'`,
+				// app/types/index.ts 的 Window.twikoo 等环境声明在 node_modules Layer 中
+				// 不会被 tsconfig include 命中（被 node_modules exclude 过滤），需显式导入
+				`import '${globalsTypePath}'`,
+				`import type { ClarityAppConfig, ClarityUiConfigInput } from '${appConfigTypePath}'`,
 				'',
 				'declare module \'@nuxt/schema\' {',
+				'  // 读取侧：unknown 使 MergedAppConfig 回落到 Theme 注入的完整 Resolved 类型',
 				'  interface CustomAppConfig {',
-				'    clarity: ClarityAppConfig',
+				'    clarity?: unknown',
+				'  }',
+				'  // 输入侧：完整配置（Theme 内部）或 UI 部分覆盖（消费项目 app/app.config.ts）',
+				'  interface AppConfigInput {',
+				'    clarity?: ClarityAppConfig | ClarityUiConfigInput',
 				'  }',
 				'}',
 				'',
@@ -92,11 +99,14 @@ export default defineNuxtModule<ModuleOptions>({
 			logger.warn('未找到 feeds.ts，友链页面与 OPML 订阅将输出空数据。')
 		}
 
-		// ---- 读取并校验站点配置 ----
+		// ---- 读取并校验站点配置（错误在构建开始前暴露） ----
 		const jiti = createJiti(import.meta.url, { moduleCache: false, interopDefault: true })
-		const configModule = await jiti.import(configPath) as unknown
-		const config = clarityConfigSchema.parse((configModule as { default?: unknown })?.default ?? configModule)
+		const configModule = await importConfigFile(jiti, configPath)
+		const config = parseClarityConfig((configModule as { default?: unknown })?.default ?? configModule, configPath)
 		const { site, article, integrations, features } = config
+
+		// ---- 边界审计：app/app.config.ts 中不应出现站点级字段（其优先级更高，会覆盖站点配置注入） ----
+		await warnNonUiAppConfigOverrides(nuxt, jiti, logger)
 
 		// ---- Site Config → App Config 桥梁 ----
 		// 注意 Nuxt appConfig 合并优先级：消费项目 app.config > Theme app.config > 模块注入，
@@ -194,12 +204,83 @@ export default defineNuxtModule<ModuleOptions>({
 		})
 
 		// ---- 可选功能：anti-mirror ----
+		// 黑名单完全由站点配置提供；Theme 不携带任何上游默认域名（审计发现 #5）。
 		if (features.antiMirror !== false) {
 			const blacklist = typeof features.antiMirror === 'boolean' ? [] : features.antiMirror.blacklist
-			injectAntiMirror(nuxt, [...defaultMirrorBlacklist, ...blacklist], site.url)
+			if (blacklist.length === 0) {
+				logger.warn('features.antiMirror 已启用，但未配置 blacklist，已跳过反镜像脚本注入。')
+			}
+			else {
+				injectAntiMirror(nuxt, blacklist, site.url)
+			}
 		}
 	},
 })
+
+async function importConfigFile(jiti: ReturnType<typeof createJiti>, configPath: string) {
+	try {
+		return await jiti.import(configPath) as unknown
+	}
+	catch (error) {
+		throw new Error(
+			`[clarity-config] 加载 ${configPath} 失败：${error instanceof Error ? error.message : String(error)}`,
+			{ cause: error },
+		)
+	}
+}
+
+function parseClarityConfig(raw: unknown, configPath: string): ClarityConfig {
+	const result = clarityConfigSchema.safeParse(raw)
+	if (!result.success) {
+		const issues = result.error.issues
+			.map(issue => `  - ${issue.path.join('.') || '(根对象)'}: ${issue.message}`)
+			.join('\n')
+		throw new Error(`[clarity-config] ${configPath} 校验失败：\n${issues}`)
+	}
+	return result.data
+}
+
+/** 消费项目 app/app.config.ts 若覆盖站点级字段，会在 defu 合并中压过 clarity.config.ts 注入，需要提示迁移 */
+async function warnNonUiAppConfigOverrides(nuxt: Nuxt, jiti: ReturnType<typeof createJiti>, logger: ReturnType<typeof useLogger>) {
+	const candidates = [
+		resolve(nuxt.options.srcDir, 'app.config.ts'),
+		resolve(nuxt.options.rootDir, 'app.config.ts'),
+	]
+	for (const appConfigPath of candidates) {
+		if (!existsSync(appConfigPath)) {
+			continue
+		}
+		// app.config.ts 依赖 defineAppConfig 全局函数，jiti 裸加载时需要临时注入（运行时它只是恒等函数）
+		const globalScope = globalThis as { defineAppConfig?: (config: unknown) => unknown }
+		const previousDefine = globalScope.defineAppConfig
+		globalScope.defineAppConfig ??= (config: unknown) => config
+		try {
+			const mod = await jiti.import(appConfigPath) as unknown
+			const clarity = ((mod as { default?: unknown })?.default ?? mod) as { clarity?: Record<string, unknown> } | undefined
+			if (!clarity?.clarity || typeof clarity.clarity !== 'object') {
+				continue
+			}
+			const offenders = Object.keys(clarity.clarity).filter(key => !uiConfigKeys.has(key))
+			if (offenders.length) {
+				logger.warn(
+					`app/app.config.ts 的 clarity 中出现站点级字段 [${offenders.join(', ')}]，`
+					+ '它们会覆盖 clarity.config.ts 的注入结果；请将站点配置迁移到 clarity.config.ts。',
+				)
+			}
+		}
+		catch {
+			// 尽力而为的边界提示：app.config 加载失败时交给 Nuxt 自身报错
+		}
+		finally {
+			if (previousDefine === undefined) {
+				delete globalScope.defineAppConfig
+			}
+			else {
+				globalScope.defineAppConfig = previousDefine
+			}
+		}
+	}
+}
 
 function injectAntiMirror(nuxt: Nuxt, blacklist: string[], target: string) {
 	const iife = minify('', `(${handleMirror.toString()})(${JSON.stringify(blacklist.map(btoa))},${JSON.stringify(btoa(target))})`)

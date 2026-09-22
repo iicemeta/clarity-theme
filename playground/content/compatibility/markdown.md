@@ -53,4 +53,4 @@ description: Clarity Theme 标准 Markdown 渲染基准（A 类）。
 
 ## 键盘与徽章
 
-按 :key{code="K"} 键打开搜索，Nuxt 徽章：:badge[Nuxt]{link="https://nuxt.com"}。
+按 :key{code="K"} 键打开搜索，Nuxt 徽章 :badge[Nuxt]{link="https://nuxt.com"}。

@@ -1,4 +1,4 @@
-import type { ContentCollectionItem } from '@nuxt/content'
+import type { ClarityContentRow } from '../../shared/types/content'
 import { queryCollection } from '@nuxt/content/server'
 import XmlBuilder from 'fast-xml-builder'
 import { toZonedTemporal } from '../../shared/utils/time'
@@ -33,7 +33,7 @@ export default defineEventHandler(async (event) => {
 		return new URL(path ?? '', site.url).toString()
 	}
 
-	function renderContent(post: ContentCollectionItem) {
+	function renderContent(post: ClarityContentRow) {
 		return [
 			post.image && `<img src="${post.image}" alt="${post.title}" />`,
 			post.description && `<p>${post.description}</p>`,
@@ -41,11 +41,11 @@ export default defineEventHandler(async (event) => {
 		].filter(Boolean).join(' ')
 	}
 
-	const posts = await queryCollection(event, 'content')
+	const posts = await queryCollection(event, 'content' as never)
 		.where('stem', 'LIKE', 'posts/%')
 		.order('updated', 'DESC')
 		.limit(feed.limit)
-		.all()
+		.all() as ClarityContentRow[]
 
 	const entries = posts.map(post => ({
 		id: getUrl(post.path),

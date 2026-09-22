@@ -1,7 +1,7 @@
 import antfu from '@antfu/eslint-config'
 
 export default antfu({
-	ignores: ['*.yaml', 'playground/**'],
+	ignores: ['*.yaml', 'playground/**', '.test-consumer/**'],
 	stylistic: {
 		indent: 'tab',
 	},

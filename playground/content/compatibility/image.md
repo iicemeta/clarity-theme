@@ -11,5 +11,5 @@ description: Markdown 图片与 Pic 组件渲染基准。
 
 ## Pic 组件
 
-::pic{src="https://placehold.co/600x300" caption="Pic 组件图注" zoom="true"}
+::pic{src="https://placehold.co/600x300" caption="Pic 组件图注"}
 ::

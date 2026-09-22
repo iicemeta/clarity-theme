@@ -16,6 +16,7 @@ export default defineNuxtConfig({
 				'/compatibility/mermaid',
 				'/compatibility/music',
 				'/compatibility/image',
+				'/compatibility/routing/permalink-route',
 			],
 		},
 	},

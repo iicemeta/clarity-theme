@@ -1,3 +1,4 @@
+import type { ClarityContentRow } from '../../shared/types/content'
 import { queryCollection } from '@nuxt/content/server'
 import { toZonedTemporal } from '../../shared/utils/time'
 
@@ -24,14 +25,14 @@ export default defineEventHandler(async (event) => {
 
 	const existedPaths = new Set<string>()
 
-	const query = queryCollection(event, 'content')
+	const query = queryCollection(event, 'content' as never)
 	if (statsConfig.includePaths.length) {
 		query.orWhere(group => statsConfig.includePaths.reduce(
 			(group, path) => group.where('stem', 'LIKE', path),
 			group,
 		))
 	}
-	const posts = await query.all()
+	const posts = await query.all() as ClarityContentRow[]
 
 	const findOrCreateCategory = (
 		name: string,

@@ -84,7 +84,6 @@ export default defineNuxtConfig({
 		'@vueuse/nuxt',
 		// 注意：Layer 配置中的相对 module 路径会以消费项目为基准解析，必须使用绝对路径
 		toThemePath('modules/clarity-config'),
-		'unplugin-yaml/nuxt',
 	],
 
 	nitro: {

@@ -45,12 +45,14 @@ const forbiddenImportPatterns = [
 const attributionAllowList = new Set([
 	'LICENSE',
 	'README.md',
+	'docs/theme-audit.md',
 	'package.json',
 	'sync-manifest.json',
+	'scripts/test-consumer.mjs',
 	'scripts/verify-theme.mjs',
 ])
 
-const ignoredDirs = new Set(['node_modules', '.git', '.nuxt', '.output', '.data', 'dist'])
+const ignoredDirs = new Set(['node_modules', '.git', '.nuxt', '.output', '.data', 'dist', '.test-consumer'])
 const sourceExtensions = new Set(['.ts', '.mts', '.js', '.mjs', '.vue', '.scss', '.css', '.json', '.md', '.svg'])
 const errors = []
 

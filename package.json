@@ -15,7 +15,10 @@
   },
   "exports": {
     ".": "./nuxt.config.ts",
-    "./config": "./config/index.ts",
+    "./config": {
+      "types": "./config/index.d.mts",
+      "default": "./config/index.mjs"
+    },
     "./content": {
       "types": "./config/content.d.mts",
       "default": "./config/content.mjs"
@@ -55,7 +58,10 @@
     "lint:fix": "eslint --fix && stylelint \"app/**/*.{vue,scss}\" \"playground/app/**/*.vue\" --fix",
     "typecheck": "pnpm --dir playground typecheck",
     "verify": "node scripts/verify-theme.mjs",
+    "test:sync": "node --test tests/sync-upstream.test.mjs",
+    "test:release": "pnpm verify && pnpm test:consumer",
     "test:consumer": "node scripts/test-consumer.mjs",
+    "test:compatibility": "node scripts/test-compatibility.mjs",
     "sync:check": "node scripts/sync-upstream.mjs check",
     "sync:diff": "node scripts/sync-upstream.mjs diff",
     "sync:apply": "node scripts/sync-upstream.mjs apply",
@@ -111,7 +117,6 @@
     "temporal-polyfill": "^1.0.4",
     "ufo": "^1.6.0",
     "unist-util-visit": "^5.1.0",
-    "unplugin-yaml": "^4.2.1",
     "vfile": "^6.0.3",
     "vue-tippy": "^6.7.1",
     "zod": "^4.5.4"

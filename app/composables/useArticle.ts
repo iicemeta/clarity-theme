@@ -1,5 +1,5 @@
-import type { ContentCollectionItem } from '@nuxt/content'
 import type { MetaSlotsTree } from '../../remark-plugins/rehype-meta-slots'
+import type { ClarityContentRow } from '../../shared/types/content'
 import type { ArticleOrderType, ArticleProps } from '../types/article'
 import { orderBy } from 'es-toolkit/array'
 
@@ -7,7 +7,7 @@ import { orderBy } from 'es-toolkit/array'
 export function useArticle(path?: MaybeRefOrGetter<string | undefined>) {
 	const route = useRoute()
 	const dataKey = computed(() => `content:${toValue(path) ?? route.path}`)
-	const post = computed(() => useNuxtData<ContentCollectionItem | null | undefined>(dataKey.value).data.value)
+	const post = computed(() => useNuxtData<ClarityContentRow | null | undefined>(dataKey.value).data.value)
 
 	return {
 		dataKey,

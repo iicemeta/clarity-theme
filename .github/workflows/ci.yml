@@ -1,38 +1,133 @@
+# 三层验证流水线（顺序严格串联：lint → typecheck → playground generate → real consumer test）
+#
+#   Layer 1  lint / typecheck / verify / sync / peers 回归   —— Node 矩阵
+#   Layer 2  playground generate（workspace 链接链路）      —— 主 Node 版本
+#   Layer 3  real consumer + rendering regression            —— 主 Node 版本
+#
+# 版本单一事实来源 = package.json，禁止在 workflow 中写死会与之冲突的版本：
+#   - Node：由 resolve job 从 engines.node（^22.19 || ^24.11 || >=26）解析出矩阵
+#   - pnpm：pnpm/action-setup 不传 version，自动读取 packageManager 字段
+
 name: CI
 
 on:
   push:
     branches: [main, master]
   pull_request:
+    branches: [main, master]
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
 
 jobs:
-  verify:
-    name: Lint / Typecheck / Verify (Node ${{ matrix.node }})
+  # ============================================================
+  # 版本解析：从 package.json 推导 Node 矩阵（避免手写漂移）
+  # ============================================================
+  resolve:
+    name: Resolve versions from package.json
     runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      node-matrix: ${{ steps.node.outputs.matrix }}
+      node-primary: ${{ steps.node.outputs.primary }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Resolve Node versions from engines.node
+        id: node
+        run: |
+          set -euo pipefail
+
+          engines_node="$(jq -r '.engines.node // empty' package.json)"
+          if [ -z "$engines_node" ]; then
+            echo '::error::package.json 缺少 engines.node，无法推导 CI Node 版本'
+            exit 1
+          fi
+
+          # engines.node 形如 "^22.19 || ^24.11 || >=26"：
+          # 每个可固定分支（^X.Y / ~X.Y / X.Y.Z）取 major.minor 作为矩阵代表版本；
+          # 开放范围（>=26）没有稳定代表版本，跳过——将来出现 ^26.x 后自动进入矩阵。
+          versions=()
+          skipped=()
+          while IFS= read -r part; do
+            range="$(printf '%s' "$part" | tr -d '[:space:]')"
+            [ -n "$range" ] || continue
+            if [[ "$range" =~ ^[\^~]?([0-9]+)\.([0-9]+)(\.[0-9]+)?$ ]]; then
+              versions+=("${BASH_REMATCH[1]}.${BASH_REMATCH[2]}")
+            else
+              skipped+=("$range")
+            fi
+          done <<< "${engines_node//||/$'\n'}"
+
+          if [ "${#versions[@]}" -eq 0 ]; then
+            echo "::error::engines.node（$engines_node）中找不到可固定的版本范围（^X.Y / ~X.Y / X.Y.Z）"
+            exit 1
+          fi
+
+          matrix="$(jq -nc '$ARGS.positional' --args "${versions[@]}")"
+          primary="${versions[${#versions[@]}-1]}"
+
+          {
+            echo "matrix=${matrix}"
+            echo "primary=${primary}"
+          } >> "$GITHUB_OUTPUT"
+
+          {
+            echo '### CI 版本（单一来源：`package.json`）'
+            echo ''
+            echo "- \`engines.node\` → Node 矩阵 \`${matrix}\`（Layer 2/3 使用主版本 \`${primary}\`）"
+            echo "- \`packageManager\` → $(jq -r '.packageManager' package.json)（pnpm/action-setup 自动读取）"
+            if [ "${#skipped[@]}" -gt 0 ]; then
+              echo "- 未纳入矩阵的开放范围：\`${skipped[*]}\`（无稳定代表版本，不固定测试）"
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  # ============================================================
+  # Layer 1 · lint
+  # ============================================================
+  lint:
+    name: 'Layer 1 · lint (Node ${{ matrix.node }})'
+    needs: resolve
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
     strategy:
       fail-fast: false
       matrix:
-        node: [22, 24]
+        node: ${{ fromJSON(needs.resolve.outputs.node-matrix) }}
     steps:
       - uses: actions/checkout@v4
 
+      # pnpm 版本来自 package.json 的 packageManager 字段（不写死）
       - uses: pnpm/action-setup@v4
 
       - uses: actions/setup-node@v4
         with:
-          node-version: ${{ matrix.node }}
+          node-version: ${{ matrix.node }} # 来自 engines.node
           cache: pnpm
 
-      - run: pnpm install --no-frozen-lockfile
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
 
-      - run: pnpm lint
-      - run: pnpm verify
-      - run: pnpm typecheck
+      - name: Lint
+        run: pnpm lint
 
-  build:
-    name: Playground Generate + Real Consumer (Node 24)
+  # ============================================================
+  # Layer 1 · typecheck + verify + sync / peers 回归（依赖 lint 全部通过）
+  # ============================================================
+  typecheck:
+    name: 'Layer 1 · typecheck + verify (Node ${{ matrix.node }})'
+    needs: [resolve, lint] # resolve：读取版本输出；lint：保证 Layer 1 顺序
     runs-on: ubuntu-latest
-    needs: verify
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        node: ${{ fromJSON(needs.resolve.outputs.node-matrix) }}
     steps:
       - uses: actions/checkout@v4
 
@@ -40,13 +135,71 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 24
+          node-version: ${{ matrix.node }} # 来自 engines.node
           cache: pnpm
 
-      - run: pnpm install --no-frozen-lockfile
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
 
-      - name: Playground generate
+      - name: Typecheck
+        run: pnpm typecheck
+
+      - name: Verify（提纯静态审计：作者信息泄漏 / 站点文件 / 跨项目路径引用）
+        run: pnpm verify
+
+      - name: Sync tool regression（manifest / apply / rollback）
+        run: pnpm test:sync
+
+      - name: Peer dependency audit
+        run: pnpm peers check
+
+  # ============================================================
+  # Layer 2 · playground generate（依赖 Layer 1 全部通过）
+  # ============================================================
+  playground:
+    name: Layer 2 · playground generate
+    needs: [resolve, typecheck] # resolve：读取版本输出；typecheck：保证层级顺序
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ needs.resolve.outputs.node-primary }} # 来自 engines.node 的主版本
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Playground generate（workspace 链接链路）
         run: pnpm generate
 
-      - name: Real consumer test（pack → 安装 tarball → generate → 断言）
+  # ============================================================
+  # Layer 3 · real consumer + rendering regression（依赖 Layer 2 通过）
+  # ============================================================
+  consumer:
+    name: Layer 3 · real consumer + rendering regression
+    needs: [resolve, playground] # resolve：读取版本输出；playground：保证层级顺序
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ needs.resolve.outputs.node-primary }} # 来自 engines.node 的主版本
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Real consumer test（pnpm pack → tarball/exports 审计 → 独立安装 → exports/type 测试 → nuxt generate → 产物断言）
         run: pnpm test:consumer
+
+      - name: Content rendering regression（SSR + 客户端渲染 + hydration）
+        run: pnpm test:compatibility

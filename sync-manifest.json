@@ -30,7 +30,6 @@
     "app/feeds.ts",
     "blog.config.ts",
     "content/**",
-    "content.config.ts",
     "redirects.json",
     "edgeone.json",
     "scripts/**",

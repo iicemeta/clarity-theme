@@ -1,3 +1,14 @@
+# 定时上游漂移检测（只读，绝不自动同步 / 修改仓库）
+#
+# - 每周一 03:00 UTC 运行（如需每日检查，把 cron 改为 '0 3 * * *' 即可）
+# - 执行 pnpm sync:check --fail-on-update
+# - 上游有变化：CI 红灯并明确提示 “Upstream changed; run sync:diff.”
+# - 仅开 Issue 附 sync:diff 明细提醒人工处理，不做任何 sync:apply / commit / push
+#
+# 版本单一事实来源 = package.json：
+# - Node：从 engines.node（^22.19 || ^24.11 || >=26）解析主版本
+# - pnpm：pnpm/action-setup 不传 version，自动读取 packageManager 字段
+
 name: Upstream Sync Check
 
 on:
@@ -5,33 +16,121 @@ on:
     - cron: '0 3 * * 1' # 每周一 03:00 UTC
   workflow_dispatch:
 
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: upstream-sync-check
+  cancel-in-progress: false
+
 jobs:
   check:
+    name: sync:check（上游漂移检测，只读）
     runs-on: ubuntu-latest
-    permissions:
-      issues: write
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
 
+      - name: Resolve Node version from engines.node
+        id: node
+        run: |
+          set -euo pipefail
+
+          engines_node="$(jq -r '.engines.node // empty' package.json)"
+          if [ -z "$engines_node" ]; then
+            echo '::error::package.json 缺少 engines.node，无法推导 CI Node 版本'
+            exit 1
+          fi
+
+          # 取 engines.node 中最后一个可固定分支（^X.Y / ~X.Y / X.Y.Z）作为主版本；
+          # 开放范围（>=26）无稳定代表版本，跳过。
+          primary=''
+          while IFS= read -r part; do
+            range="$(printf '%s' "$part" | tr -d '[:space:]')"
+            [ -n "$range" ] || continue
+            if [[ "$range" =~ ^[\^~]?([0-9]+)\.([0-9]+)(\.[0-9]+)?$ ]]; then
+              primary="${BASH_REMATCH[1]}.${BASH_REMATCH[2]}"
+            fi
+          done <<< "${engines_node//||/$'\n'}"
+
+          if [ -z "$primary" ]; then
+            echo "::error::engines.node（$engines_node）中找不到可固定的版本范围（^X.Y / ~X.Y / X.Y.Z）"
+            exit 1
+          fi
+
+          echo "primary=${primary}" >> "$GITHUB_OUTPUT"
+
+      # pnpm 版本来自 package.json 的 packageManager 字段（不写死）
       - uses: pnpm/action-setup@v4
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 24
+          node-version: ${{ steps.node.outputs.primary }} # 来自 engines.node
 
-      - name: 检查上游更新并生成分类明细
+      # sync-upstream.mjs 仅依赖 Node 内置模块 + git，无需 pnpm install
+      - name: pnpm sync:check --fail-on-update
         id: sync
-        continue-on-error: true
         run: |
-          node scripts/sync-upstream.mjs check --fail-on-update
+          set +e
+          pnpm sync:check --fail-on-update
+          code=$?
+          set -e
+          echo "exit-code=$code" >> "$GITHUB_OUTPUT"
+          # 0 = 上游已是最新；1 = 上游有更新（交由后续步骤给出明确提示）
+          # 其它非零 = 脚本自身失败（网络 / 配置），直接红灯
+          if [ "$code" -ne 0 ] && [ "$code" -ne 1 ]; then
+            exit "$code"
+          fi
 
-      - name: 上游有更新时创建 Issue
-        if: steps.sync.outcome == 'failure'
+      - name: 上游有更新 → 开 Issue（附 sync:diff 明细；不修改仓库）
+        if: steps.sync.outputs.exit-code == '1'
+        continue-on-error: true # Issue 创建失败不掩盖主提示（label 不存在等场景）
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          node scripts/sync-upstream.mjs diff > sync-diff.txt || true
+          existing="$(gh issue list --label sync --state open --json number --jq '.[0].number // empty' 2>/dev/null || true)"
+          if [ -n "$existing" ]; then
+            echo "已存在 open 状态的 sync Issue #$existing，跳过重复创建。"
+            exit 0
+          fi
+
+          pnpm sync:diff > sync-diff.txt || true
+          {
+            echo '⚠ **Upstream changed; run sync:diff.**'
+            echo ''
+            echo '定时检查发现上游 `blog-v3` 有新提交。CI 只报告、不自动修改仓库；请人工处理：'
+            echo ''
+            echo '```bash'
+            echo 'pnpm sync:diff   # 查看分类变更明细（include / transform / manual / exclude）'
+            echo 'pnpm sync:apply  # 确认后再应用（要求干净工作树，冲突会跳过并报告）'
+            echo '```'
+            echo ''
+            echo '<details><summary>sync:diff 输出</summary>'
+            echo ''
+            echo '```'
+            cat sync-diff.txt
+            echo '```'
+            echo '</details>'
+          } > issue-body.md
           gh issue create \
-            --title "chore(sync): upstream blog-v3 有新提交" \
-            --body-file sync-diff.txt \
-            --label "sync"
+            --title 'chore(sync): Upstream changed; run sync:diff.' \
+            --body-file issue-body.md \
+            --label sync
+
+      - name: 上游有更新 → 明确失败提示（Upstream changed; run sync:diff.）
+        if: steps.sync.outputs.exit-code == '1'
+        run: |
+          {
+            echo '## ⚠ Upstream changed; run sync:diff.'
+            echo ''
+            echo '上游 `blog-v3` 有新提交。CI **不自动同步、不修改仓库**；请人工处理：'
+            echo ''
+            echo '```bash'
+            echo 'pnpm sync:diff   # 查看分类变更明细'
+            echo 'pnpm sync:apply  # 确认后再应用'
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+          echo '::error title=Upstream changed::Upstream changed; run sync:diff.（上游有更新，CI 不自动修改仓库）'
+          echo 'Upstream changed; run sync:diff.'
+          exit 1

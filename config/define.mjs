@@ -1,13 +1,11 @@
-import type { ClarityConfig, ClarityConfigInput } from './schema'
-import { clarityConfigSchema } from './schema'
+import { clarityConfigSchema } from './schema.mjs'
 
 /**
- * 定义 Clarity Theme 站点配置
- *
- * 在消费项目根目录的 clarity.config.ts 中使用，
- * 此处会立即完成默认值填充与校验，避免错误配置进入构建流程。
+ * defineClarityConfig 运行时实现（JS）。
+ * 类型真源在同目录 define.ts；用于 Node 原生 TS 剥离受限场景
+ * （node_modules 内不允许 TS 文件）与纯 ESM 运行时链。
  */
-export function defineClarityConfig(config: ClarityConfigInput): ClarityConfig {
+export function defineClarityConfig(config) {
 	const result = clarityConfigSchema.safeParse(config)
 	if (!result.success) {
 		const issues = result.error.issues

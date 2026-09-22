@@ -120,13 +120,16 @@ pnpm generate       # Playground 静态生成验证
 pnpm lint
 pnpm typecheck      # vue-tsc 全量类型检查
 pnpm verify         # 作者信息 / 站点文件泄漏检查
+pnpm peers check    # 开发 workspace peer 依赖审计
+pnpm test:sync      # 上游同步工具回归测试
 pnpm test:consumer  # npm tarball 真实消费项目验证
+pnpm test:compatibility  # SSR / 浏览器渲染 / hydration 回归
 ```
 
 CI（GitHub Actions）：
 
-- `ci.yml`：push / PR 时跑 lint + typecheck + verify（Node 22 / 24 矩阵），
-  Node 24 上额外执行 playground generate 与 real consumer test
+- `ci.yml`：push / PR 时跑 lint + typecheck + verify + sync / peers 回归（Node 22 / 24 矩阵），
+  Node 24 上额外执行 playground generate、real consumer test 与渲染兼容性回归
 - `sync.yml`：每周一检查上游更新，有新提交时自动创建同步 Issue（附分类明细）
 
 ## 上游同步
@@ -275,7 +278,7 @@ Real Consumer Test（`pnpm test:consumer`）暴露并修复了三个 workspace �
 - [x] 差异测试站 theme-based-blog-v3（原版全量数据 × Theme，Phase A / D 终验）
 - [x] Phase 4：patch audit 完成（结论见 [docs/PATCHES.md](./docs/PATCHES.md)；
       需保留的 4 个 patch 由消费项目持有，`@nuxtjs/mdc` 已精简为 detab 单 hunk）
-- [x] Phase 5：CI 三层验证（ci.yml：lint + typecheck + verify 矩阵 → generate + test:consumer）
+- [x] Phase 5：CI 三层验证（ci.yml：lint + typecheck + verify + sync / peers 回归矩阵 → generate + consumer + compatibility）
 - [x] Phase 6：sync 四分类 manifest + `check` / `diff` / `apply` / `verify` 四模式 + 每周同步 Issue
 
 ## 许可证

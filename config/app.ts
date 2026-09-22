@@ -71,3 +71,18 @@ export interface ClarityUiConfig {
 }
 
 export type ClarityAppConfig = ClarityPublicConfig & ClarityUiConfig
+
+/**
+ * app/app.config.ts 中 `clarity` 键的覆盖输入类型：
+ * UI 配置深度可选（数组整体替换，与 defu 行为一致）。
+ *
+ * 站点级字段（site / article / feed / stats / integrations / features / changelog）
+ * 不属于 app.config.ts，请写入 clarity.config.ts。
+ */
+export type ClarityUiConfigInput<T = ClarityUiConfig> = {
+	[K in keyof T]?: T[K] extends readonly unknown[]
+		? T[K]
+		: T[K] extends object
+			? ClarityUiConfigInput<T[K]>
+			: T[K]
+}

@@ -46,9 +46,27 @@ export default defineClarityConfig({
 
 ```ts {2,4} meta-info-demo
 const first = 1
-const highlighted = 2
+const highlighted = 2 // [!code highlight]
 const third = 3
-const alsoHighlighted = 4
+const alsoHighlighted = 4 // [!code highlight]
+```
+
+## 元信息驱动渲染
+
+```ts [meta-demo.ts] {2} icon=tabler:star indent=2 wrap
+const metaLine = 1
+const highlightedByMeta = 2
+```
+
+## Tab 保留
+
+```ts
+function tabIndent() {
+	const nested = {
+		deep: 'value',
+	}
+	return [1,	2,	3]
+}
 ```
 
 ## Diff 标记

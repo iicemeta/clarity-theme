@@ -1,6 +1,10 @@
+import type { Arch } from '../shared/utils/icon'
+
 /**
  * 友链数据类型：数据由消费项目提供，结构由 Theme 定义。
  */
+export type { Arch }
+
 export interface FeedEntry {
 	/** 博客作者，使用作者明确的自称 */
 	author: string
