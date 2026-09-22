@@ -20,14 +20,14 @@ Code, tests, CI, and the sync manifest override prose. A statement in this file 
 | Item | Current fact |
 | --- | --- |
 | Repository branch | `master` |
-| HEAD at audit | `e601eb5bdd6afb26471615878322dc394e260dc7` (`test: establish release compatibility matrix, fix llms and anti-mirror`) |
+| HEAD at Phase 20 start | `433d042ed3b626a048e84000ba2039102df61f28` (`docs: establish current reality-sync baseline`) |
 | Working tree | Clean and synchronized with `origin/master` before documentation changes |
 | Package | `clarity-theme` v0.1.0, MIT |
 | Distribution state | Git-package workflow; no current npm artifact. An npm registry lookup on 2026-09-22 returned unpublished/unavailable for this package name |
 | Upstream baseline | `blog-v3` 3.7.2, `main` @ `f6ea97d745517feb52f0c100e89acb36f0adc12f` |
-| Upstream drift | None: `pnpm sync:check` reports the manifest baseline equals upstream `main` |
+| Upstream drift | None: a Phase 20 direct remote-head check returned the manifest baseline commit |
 | Local runtime used for verification | Node.js 24.15.0, pnpm 12.4.1, Nuxt 4.5.2, Vue 3.5.43 |
-| Current local verification | Lint, typecheck, purity verify, sync regression, contract, peers, playground generate, real consumer test, and rendering compatibility all pass |
+| Current local verification | The full ordered suite passed at code commit `e601eb5`; Phase 20 reran only purity verification and the compatibility contract, and did not rerun build/consumer/browser suites |
 
 The differential consumer outside this Git repository is a historical/manual environment, not part of CI. Its persisted output predates the current Theme HEAD and must not be treated as a current release gate.
 
@@ -268,33 +268,30 @@ The full generated feature matrix is [COMPATIBILITY](./COMPATIBILITY.md).
 
 ## 14. Known Limitations
 
-1. **Server-oriented configuration remains client-visible.** Feed/stats and several build-only article fields still flow through appConfig because server routes and shared readers use `useClarityConfig()`.
+1. **Server-oriented configuration remains client-visible.** Feed/stats and several build-only article fields still flow through appConfig because server routes and shared readers use `useClarityConfig()`. This is a boundary defect, not evidence of secret storage in `clarity.config.ts`.
 2. **Feature-off is mostly prerender/head removal.** Server routes are not proven to return 404 at runtime when Atom/OPML/stats are disabled.
-3. **Regional CDN defaults are fixed.** KaTeX, Inter, and Google font links point to China-oriented mirror domains without a consumer override.
-4. **Automated tests run unpatched.** Tab preservation and fractional image-density behavior differ in the patched real blog environment; the differential environment is outside CI.
-5. **Differential consumer is not current or automated.** It is outside Git, points at an older local tarball, and its persisted output predates current HEAD.
-6. **Remote service behavior is not fully tested.** Twikoo initialization, anti-mirror navigation, ABC audio, search keyboard behavior, and image service failures are not asserted.
-7. **Several UI interactions lack tests.** Archive controls, code collapse/copy interactions, widget combinations, preview entry, responsive drawers/masks, and custom error UI are not systematically covered.
-8. **`useRandomPermalink` does not generate permalinks.** The Theme accepts the flag but expects build scaffolding owned elsewhere.
-9. **Same-path component override emits `NUXT_B3011`.** Functionality is verified, but the warning remains.
-10. **Compatibility has non-fatal warning classes.** Vue slot/readonly warnings, empty/undersized og:image, deprecated `twitter:card`, and external-resource warnings occur in dev/browser logs.
-11. **Shiki depends on remote esm.sh imports.** Restricted/offline builds may be affected.
-12. **Node 26+ is allowed but not CI-tested.** The engine's open range has no stable matrix representative.
+3. **Anti-mirror navigation is unverified and likely malformed.** Script injection is verified, but the inherited client assigns the full `site.url` to `location.host`; a focused browser test and correction are required before release.
+4. **Multiple stats path patterns compose as an intersection.** The handler chains `where()` conditions inside its query group, while the documented array is naturally read as a union. Only a single-pattern fixture is tested.
+5. **Regional CDN defaults are fixed.** KaTeX, Inter, and Google font links point to China-oriented mirror domains without a consumer override.
+6. **Automated Theme tests run unpatched.** This is the correct default environment, but tab preservation, fractional image density, and exact plain-Shiki scope therefore differ from the patched real blog environment.
+7. **Differential consumer is not current or automated.** It is outside Git, points at an older local tarball, and its persisted output predates current HEAD.
+8. **Remote service behavior is not fully tested.** Twikoo initialization, anti-mirror navigation, ABC audio, search keyboard behavior, and image service failures are not asserted.
+9. **Several UI interactions lack tests.** Archive controls, code collapse/copy interactions, widget combinations, preview entry, responsive drawers/masks, and custom error UI are not systematically covered. This does not by itself mean those features are unimplemented.
+10. **`useRandomPermalink` does not generate permalinks.** The Theme accepts the flag but expects build scaffolding owned elsewhere.
+11. **Same-path component override emits `NUXT_B3011`.** Functionality is verified, but the warning remains.
+12. **Compatibility has non-fatal warning classes.** Vue slot/readonly warnings, empty/undersized og:image, deprecated `twitter:card`, and external-resource warnings occur in dev/browser logs.
+13. **Shiki depends on remote esm.sh imports.** Restricted/offline builds may be affected.
+14. **Node 26+ is allowed but not CI-tested.** The engine's open range has no stable matrix representative.
 
 ## 15. Technical Debt
 
-- Move server route configuration to a server-safe config source and narrow public appConfig.
-- Relax `useClarityArticle()` from the full article schema type so build-only fields can be removed.
-- Add runtime route guards for disabled features.
-- Make CDN/font origins configurable.
-- Address plain-shiki selector behavior in Theme and reduce consumer patch burden.
-- Re-engineer the differential consumer under version control and CI, with a reproducible package reference.
-- Complete sync-manifest classification for upstream-derived and Theme-owned paths.
-- Generalize purity checking beyond the current explicit upstream identifiers.
-- Keep TS type sources and `.mjs` runtime implementations synchronized; schema drift remains a manual risk.
-- Reduce component duplicate-name and SEO/meta warnings.
-- Expand interaction/accessibility/responsive tests.
-- Consider splitting the large consumer/compatibility scripts into more maintainable reporting modules without weakening coverage.
+The debt register is now maintained in [ROADMAP](./ROADMAP.md). Current headline items are:
+
+- **P0:** server/client configuration split, feature route guards, anti-mirror navigation verification/correction, and removal or explicit relocation of the no-op `useRandomPermalink` contract.
+- **P1:** configurable asset origins, multi-pattern stats correctness, sync-manifest classification, TS/MJS parity checking, `plain-shiki` patch reduction, and release workflow design.
+- **P2:** incremental interaction/accessibility/responsive/service-failure coverage, warning reduction, offline Shiki support, author-email visibility, purity generalization, and harness maintainability.
+
+The former repeated bullet list duplicated these items across limitations and future work; use the roadmap IDs rather than creating parallel trackers.
 
 ## 16. Documentation Gaps
 
@@ -310,20 +307,18 @@ Still open:
 - Historical audit files remain in their original paths because `verify-theme.mjs` has a path-specific allowlist; they are now marked non-authoritative rather than moved when movement would break verification.
 - The exact upstream Git URL is intentionally referenced through `sync-manifest.json` in non-README docs to avoid reintroducing upstream identity strings outside the current purity allowlist.
 - Field-level configuration documentation does not enumerate every internal component prop because those props are not stable public API.
+- Runtime validation errors still point some readers to the historical config audit rather than the current field-level configuration document; correct this when the config boundary work touches those files.
 
 ## 17. Future Work
 
-📌 Priority candidates, not implemented in this task:
+Future implementation is ordered by [ROADMAP](./ROADMAP.md):
 
-1. Server-safe configuration flow and feature route guards
-2. CDN/font configuration
-3. Differential consumer versioning and CI reproduction
-4. Sync manifest classification completeness
-5. Additional UI interaction, accessibility, responsive, service-failure, and preview tests
-6. plain-shiki Theme-side selector fix and upstream patch/PR follow-up
-7. Author-email visibility option
-8. Node 26 coverage once a fixed engine branch exists
-9. Decide and execute a first npm release workflow
+1. **Milestone 1 — Core boundary and correctness hardening:** configuration boundary, route semantics, anti-mirror navigation, permalink contract, and stats path composition.
+2. **Milestone 2 — Compatibility and quality refinement:** asset origins, sync classification, dual-track parity, and `plain-shiki` strategy.
+3. **Milestone 3 — Release-candidate hardening:** release workflow, exact-commit verification, and final contract/documentation freeze.
+4. **Milestone 4 — Release and maintenance:** first npm release and incremental post-release coverage.
+
+The old phase-based TODO lists are no longer the active planning track.
 
 ## 18. Non-goals / Not Planned
 
@@ -335,4 +330,6 @@ Still open:
 
 ## 19. Current Milestone
 
-Clarity Theme is a validated v0.1.0 pre-publish Layer candidate. The extraction/configuration/package/consumer/CI/upstream-sync work is implemented and automatically verified; remaining work is explicit limitation and debt reduction rather than unknown migration work. No release or code change is performed by this documentation milestone.
+**Phase 20 — Technical Debt Triage complete.**
+
+The current state has been re-audited against code, manifests, tests, CI, and the upstream baseline. Existing limitations were classified into P0/P1/P2/Deferred/Won't Fix entries, false positives and duplicate trackers were identified, and future work is now ordered in [ROADMAP](./ROADMAP.md). No runtime code was changed in this phase.

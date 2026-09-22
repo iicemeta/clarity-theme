@@ -208,6 +208,7 @@ Site-specific dependency patches are intentionally owned by consumers; see [docs
 | Document | Purpose |
 | --- | --- |
 | [Project status](./docs/PROJECT-STATUS.md) | Current snapshot, verified capabilities, limitations, debt, gaps, and milestone |
+| [Roadmap](./docs/ROADMAP.md) | Prioritized P0/P1/P2 debt register, deferred decisions, and milestone order |
 | [Architecture](./docs/ARCHITECTURE.md) | Theme/consumer boundary and build/runtime data flows |
 | [API](./docs/API.md) | Public package/Layer API versus internal implementation |
 | [Configuration](./docs/configuration.md) | Field-level config contract and visibility |
@@ -238,7 +239,7 @@ See [Project status → CI](./docs/PROJECT-STATUS.md#10-ci) for the exact CI sta
 
 ## Current Status
 
-Clarity Theme is a **v0.1.0 pre-publish, release-candidate-quality Layer**. At the current snapshot, all repository-defined verification paths pass; upstream is unchanged; the package boundary is verified from a real tarball. Remaining limitations—especially server-config visibility, fixed CDN origins, unpatched test behavior, incomplete interaction coverage, and the manual differential site—are explicitly recorded rather than treated as completed work.
+Clarity Theme is a **v0.1.0 pre-publish Layer candidate**. The extraction, package boundary, core rendering, server outputs, consumer acceptance, compatibility matrix, CI, and upstream-sync baseline are implemented and verified. Phase 20 triage established the current engineering roadmap; remaining release blockers and near-term work—especially the server/client configuration split, runtime feature guards, anti-mirror navigation verification, and the no-op permalink contract—are prioritized in [docs/ROADMAP.md](./docs/ROADMAP.md).
 
 ## License
 
