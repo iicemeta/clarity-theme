@@ -50,7 +50,7 @@ The differential consumer outside this Git repository is a historical/manual env
 | Published package payload | `app/`, `config/`, `img/`, `modules/`, `public/`, `remark-plugins/`, `server/`, `shared/`, root Layer/config metadata, license, and README |
 | Excluded from package payload | `docs/`, `playground/`, `scripts/`, `tests/`, `.github/`, workspace and lock files, sync manifest |
 
-The current `pnpm pack` audit reports 148 files, including 28 release-required files. The package exposes five export entries and has no patch directory.
+The current `pnpm pack` audit reports 149 files, including 28 release-required files plus the Chinese README (`README.zh-CN.md`). The package exposes five export entries and has no patch directory.
 
 ## 3. Upstream Baseline
 

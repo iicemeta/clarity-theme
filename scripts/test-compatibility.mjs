@@ -78,6 +78,8 @@ async function main() {
 		if (flags.contractOnly) {
 			console.log('[2/7] --contract-only / --update-docs：跳过构建与渲染阶段')
 			skipped.push('构建 / SSR / 浏览器阶段被 --contract-only 跳过')
+			// 提前 return 前必须设置退出码，否则契约失败时 CI 仍会绿
+			process.exitCode = failures.length > 0 ? 1 : 0
 			return
 		}
 
@@ -557,8 +559,11 @@ function renderCompatibilityDoc() {
 	const lines = [
 		'# Clarity Theme Release Compatibility Matrix',
 		'',
+		'**English** | [简体中文](./COMPATIBILITY.zh-CN.md)',
+		'',
 		'> 本文档由 `scripts/compatibility-cases.mjs` 中的 `compatibilityContract` 生成，请勿手改表格。',
 		'> 重新生成：`node scripts/test-compatibility.mjs --update-docs`；`pnpm test:contract` 会在 CI 中校验同步。',
+		'> 中文版为人工同步的翻译快照，重新生成本文档后需手动同步 `COMPATIBILITY.zh-CN.md`。',
 		'',
 		'契约只断言「功能是否存在、配置是否生效、路由是否正确、输出是否正确」，不追求覆盖 UI 细节。',
 		'',

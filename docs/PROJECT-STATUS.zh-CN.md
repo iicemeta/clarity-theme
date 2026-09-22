@@ -50,7 +50,7 @@
 | 发布包负载 | `app/`、`config/`、`img/`、`modules/`、`public/`、`remark-plugins/`、`server/`、`shared/`、根 Layer/config 元数据、许可证与 README |
 | 不打入包负载 | `docs/`、`playground/`、`scripts/`、`tests/`、`.github/`、workspace 与 lock 文件、同步 manifest |
 
-当前 `pnpm pack` 审计报告 148 个文件，包括 28 个发布必需文件。该包暴露五个导出入口，且没有补丁目录。
+当前 `pnpm pack` 审计报告 149 个文件，包括 28 个发布必需文件与中文 README（`README.zh-CN.md`）。该包暴露五个导出入口，且没有补丁目录。
 
 ## 3. 上游基线
 

@@ -161,9 +161,11 @@ function main() {
 // ---------------------------------------------------------------------------
 
 /** 允许进入 npm 包的顶层路径（files 字段语义化后的实际边界） */
+// 注意：npm 会自动打包 README* 变体，README.zh-CN.md（中文版说明）因此随包发布。
 const allowedRootFiles = new Set([
 	'LICENSE',
 	'README.md',
+	'README.zh-CN.md',
 	'package.json',
 	'nuxt.config.ts',
 ])
@@ -231,7 +233,8 @@ const forbiddenContentRules = [
 ]
 
 const auditableExtensions = new Set(['.ts', '.mts', '.cts', '.mjs', '.cjs', '.js', '.json', '.md', '.vue', '.scss', '.css', '.svg', '.xsl', '.xml', '.html', '.txt'])
-const attributionAllowList = new Set(['LICENSE', 'README.md', 'package.json'])
+// README.zh-CN.md 与 README.md 携带相同的上游项目署名链接。
+const attributionAllowList = new Set(['LICENSE', 'README.md', 'README.zh-CN.md', 'package.json'])
 
 function auditTarball(files, packageDir) {
 	let boundaryErrors = 0
