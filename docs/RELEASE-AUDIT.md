@@ -1,5 +1,7 @@
 # Release Audit
 
+**English** | [简体中文](./RELEASE-AUDIT.zh-CN.md)
+
 > Audit date: 2026-09-22, Asia/Taipei. This is a read-only engineering audit for the release-closing phase. It records the repository state before the documentation, migration-skill, and release-checklist work; it does not redesign the Theme Layer or change runtime code.
 
 ## 1. Audited Baseline

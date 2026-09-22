@@ -1,5 +1,7 @@
 # Project Status
 
+**English** | [简体中文](./PROJECT-STATUS.zh-CN.md)
+
 > Snapshot date: 2026-09-22, Asia/Taipei. This document describes the current repository. Historical phase narratives and old one-off audit results are kept in [history](./history/2026-09-layer-extraction.md) or marked as historical audit records.
 
 ## Documentation Source of Truth

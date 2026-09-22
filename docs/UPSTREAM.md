@@ -1,5 +1,7 @@
 # Upstream Synchronization
 
+**English** | [简体中文](./UPSTREAM.zh-CN.md)
+
 Current source of truth: `sync-manifest.json`, `scripts/sync-upstream.mjs`, `tests/sync-upstream.test.mjs`, and `.github/workflows/sync.yml`.
 
 ## Upstream and Baseline

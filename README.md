@@ -1,5 +1,7 @@
 # Clarity Theme
 
+**English** | [简体中文](./README.zh-CN.md)
+
 Clarity Theme is a reusable **Nuxt 4 Layer blog theme** extracted from [L33Z22L11/blog-v3](https://github.com/L33Z22L11/blog-v3). It provides the generic blog UI, page structure, Markdown/MDC rendering, SEO integration, and feed/server outputs; your project provides all site data and content.
 
 ## Features
@@ -210,6 +212,8 @@ The generated release matrix lives in [Compatibility](./docs/COMPATIBILITY.md). 
 Site-specific dependency patches are intentionally owned by consumers; see [Patches](./docs/PATCHES.md).
 
 ## Documentation
+
+All documents are also available in 简体中文 as sibling `*.zh-CN.md` files.
 
 | Document | Purpose |
 | --- | --- |

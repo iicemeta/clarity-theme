@@ -1,11 +1,10 @@
 # Clarity Theme 公共 API 与配置边界审计报告
 
-**English** | [简体中文](./config-api-audit.zh-CN.md)
+[English](./config-api-audit.md) | **简体中文**
 
-> **Historical audit snapshot — no longer authoritative for current status.**
-> Current configuration facts live in [configuration](./CONFIGURATION.md),
-> [API](./API.md), and [PROJECT-STATUS](./PROJECT-STATUS.md). The verification
-> counts and workspace snapshot below reflect the date of this audit.
+> **历史审计快照——不再对当前状态具有权威性。**
+> 当前配置事实见[配置说明](./CONFIGURATION.zh-CN.md)、[API](./API.zh-CN.md) 与 [PROJECT-STATUS](./PROJECT-STATUS.zh-CN.md)。
+> 下文的验证计数与工作区快照反映本审计当日的情况。
 
 > 审计日期：2026-09-21
 > 审计范围：`config/**`、`modules/clarity-config/**`、`playground/clarity.config.ts`、`playground/app/app.config.ts`

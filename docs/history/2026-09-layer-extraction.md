@@ -1,5 +1,7 @@
 # History: Layer Extraction and Early Validation
 
+**English** | [简体中文](./2026-09-layer-extraction.zh-CN.md)
+
 > Historical record — no longer authoritative for current status. Current facts live in [PROJECT-STATUS](../PROJECT-STATUS.md).
 
 ## Context

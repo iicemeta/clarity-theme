@@ -1,10 +1,10 @@
 # Clarity Theme 配置契约（v0.1）
 
-**English** | [简体中文](./CONFIGURATION.zh-CN.md)
+[English](./CONFIGURATION.md) | **简体中文**
 
-> Source of truth: `config/schema.ts` / `config/schema.mjs`, `modules/clarity-config/index.ts`,
-> `config/app.ts`, and their tests. Current project state is summarized in
-> [PROJECT-STATUS](./PROJECT-STATUS.md); the API boundary is in [API](./API.md).
+> 事实来源：`config/schema.ts` / `config/schema.mjs`、`modules/clarity-config/index.ts`、
+> `config/app.ts` 及其测试。当前项目状态汇总见
+> [PROJECT-STATUS](./PROJECT-STATUS.zh-CN.md)；API 边界见 [API](./API.zh-CN.md)。
 
 本文是 Theme 对 Consumer 暴露的全部配置面。字段标记含义：
 
@@ -27,7 +27,7 @@
 
 ## 完整示例
 
-以下示例展示 v0.1 配置面的全部顶层分组。字段级约束见后续章节；迁移 blog-v3 时请优先对照 [MIGRATION](./MIGRATION.md) 的映射表。
+以下示例展示 v0.1 配置面的全部顶层分组。字段级约束见后续章节；迁移 blog-v3 时请优先对照 [MIGRATION](./MIGRATION.zh-CN.md) 的映射表。
 
 ```ts
 import { defineClarityConfig } from 'clarity-theme/config'
@@ -118,7 +118,7 @@ export default defineClarityConfig({
 | `categories` | `Record<string, { icon?, color? }>` | Default `{}` | ✅ |
 | `types` | `Record<string, object>` | Default `{ tech: {} }`；允许显式空对象，但 Content Schema 会兜底回退 `tech`，因此应显式配置 | ✅ |
 | `order` | `Record<string, string>`（排序字段 → 显示名） | Default `{ date: '创建日期', updated: '更新日期' }` | ✅ |
-| `useRandomPermalink` | boolean | Default `false`，仅构建脚手架使用 | ⚠️ 遗留（见 [config-api-audit §3](./config-api-audit.md)） |
+| `useRandomPermalink` | boolean | Default `false`，仅构建脚手架使用 | ⚠️ 遗留（见 [config-api-audit §3](./config-api-audit.zh-CN.md)） |
 | `hidePostPrefix` | boolean | Default `true`，仅模块构建期使用 | ⚠️ 遗留（同上） |
 | `robotsNotIndex` | string[] | Default `[]`，仅模块构建期使用 | ⚠️ 遗留（同上） |
 
@@ -128,7 +128,7 @@ export default defineClarityConfig({
 
 | 字段 | 类型 | 约束 / Default | 可见性 |
 | --- | --- | --- | --- |
-| `limit` | number | 正整数，Default `50` | ⚠️ 仅服务端消费（RSS 生成），但当前仍随 appConfig 进入客户端 bundle（[config-api-audit §3](./config-api-audit.md) 登记的遗留项） |
+| `limit` | number | 正整数，Default `50` | ⚠️ 仅服务端消费（RSS 生成），但当前仍随 appConfig 进入客户端 bundle（[config-api-audit §3](./config-api-audit.zh-CN.md) 登记的遗留项） |
 | `enableStyle` | boolean | Default `true`（XSLT 样式页） | ⚠️ 同上 |
 
 ### stats

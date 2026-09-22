@@ -1,5 +1,7 @@
 # Migrating blog-v3 to Clarity Theme
 
+**English** | [简体中文](./MIGRATION.zh-CN.md)
+
 This guide migrates an existing Nuxt 4 `blog-v3` project to the Clarity Theme Layer while preserving articles, frontmatter, public assets, redirects, patches, custom components, custom modules, and server capabilities. It is written for the tested extraction baseline; see [Compatibility](./COMPATIBILITY.md) for the current release matrix.
 
 ## 1. Scope

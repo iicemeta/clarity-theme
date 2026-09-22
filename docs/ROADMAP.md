@@ -1,5 +1,7 @@
 # Roadmap
 
+**English** | [简体中文](./ROADMAP.zh-CN.md)
+
 > Phase 20 result, recorded on 2026-09-22. This document turns the former scattered TODOs into a prioritized engineering roadmap. It is subordinate to source code, package manifests, tests, CI, and `sync-manifest.json`; implementation may choose better files or techniques as long as the intended boundary and behavior remain the same.
 
 ## Current Milestone

@@ -1,6 +1,8 @@
-# Clarity Theme Release Compatibility Matrix
+# Clarity Theme 发布兼容性矩阵
 
-**English** | [简体中文](./COMPATIBILITY.zh-CN.md)
+[English](./COMPATIBILITY.md) | **简体中文**
+
+> 注意：英文原版表格由脚本生成并校验同步；本中文版为人工同步的翻译快照，脚本重新生成时只会更新英文原版。
 
 > 本文档由 `scripts/compatibility-cases.mjs` 中的 `compatibilityContract` 生成，请勿手改表格。
 > 重新生成：`node scripts/test-compatibility.mjs --update-docs`；`pnpm test:contract` 会在 CI 中校验同步。
@@ -24,7 +26,7 @@
 
 ## 第一组 · Public API
 
-| Feature | Input | Expected behavior | Test command | Status |
+| 功能 | 输入 | 预期行为 | 测试命令 | 状态 |
 | --- | --- | --- | --- | --- |
 | clarity-theme（Layer 根入口） | consumer nuxt.config.ts 中 extends: ['clarity-theme'] | Layer 配置、组件、模块与 server 路由全部进入 consumer 构建，nuxt generate 成功 | `pnpm test:consumer` | ✅ Automated<br>`consumer:generate-default`<br>`consumer:generate-branches` |
 | clarity-theme/config | import defineClarityConfig；import type FeedGroup / ClarityUiConfig 等 | Node ESM 可解析可调用（默认值填充）；类型经 nuxt typecheck 真实编译 | `pnpm test:consumer` | ✅ Automated<br>`consumer:exports-smoke`<br>`consumer:typecheck` |
@@ -34,7 +36,7 @@
 
 ## 第二组 · 核心功能
 
-| Feature | Input | Expected behavior | Test command | Status |
+| 功能 | 输入 | 预期行为 | 测试命令 | 状态 |
 | --- | --- | --- | --- | --- |
 | Markdown | playground / consumer 的 Markdown 基准页 | 标题 / 列表 / 表格 / 脚注 / 任务列表 / 删除线等渲染为语义 HTML，无原始语法泄漏 | `pnpm test:compatibility && pnpm test:consumer` | ✅ Automated<br>`compat:A-markdown`<br>`compat:A-markdown-client`<br>`compat:A-markdown-hydration`<br>`consumer:generate-default` |
 | MDC | ::alert / :tip / ::card-list / :::folding / :badge | MDC 组件渲染为 Theme 组件 HTML，消费者同名组件可覆盖 | `pnpm test:compatibility && pnpm test:consumer` | ✅ Automated<br>`compat:C-mdc`<br>`compat:C-mdc-client`<br>`compat:C-mdc-hydration`<br>`consumer:generate-default` |
@@ -60,7 +62,7 @@
 
 ## 第三组 · 配置分支
 
-| Feature | Input | Expected behavior | Test command | Status |
+| 功能 | 输入 | 预期行为 | 测试命令 | 状态 |
 | --- | --- | --- | --- | --- |
 | enableStyle=false | consumer 分支配置 feed.enableStyle=false | atom.xml 仍生成，但不含 XSLT 样式声明 | `pnpm test:consumer` | ✅ Automated<br>`consumer:generate-branches` |
 | useRandomPermalink=true | consumer 分支配置 article.useRandomPermalink=true | schema 接受并保留该开关；构建不受影响（随机 permalink 生成属于构建脚手架，Theme 运行时只透传该配置） | `pnpm test:consumer` | ⚙️ Partial<br>`consumer:exports-smoke`<br>`consumer:generate-features-off` |

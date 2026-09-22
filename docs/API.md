@@ -1,5 +1,7 @@
 # Public API
 
+**English** | [简体中文](./API.zh-CN.md)
+
 This document separates stable package/Layer contracts from internal implementation. Source code and consumer tests override prose when they disagree.
 
 ## API Stability Model

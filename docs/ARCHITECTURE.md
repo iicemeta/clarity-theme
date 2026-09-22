@@ -1,5 +1,7 @@
 # Architecture
 
+**English** | [简体中文](./ARCHITECTURE.zh-CN.md)
+
 This document describes the current implementation. It is subordinate to source code and tests.
 
 ## 1. Theme / Consumer Boundary

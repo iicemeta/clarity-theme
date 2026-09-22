@@ -1,9 +1,9 @@
-# Upstream patch 审计
+# 上游 patch 审计
 
-**English** | [简体中文](./patch-audit.zh-CN.md)
+[English](./patch-audit.md) | **简体中文**
 
-> **Historical audit snapshot — no longer authoritative.**
-> The current nuanced patch boundary is summarized in [PATCHES](./PATCHES.md).
+> **历史审计快照——不再具有权威性。**
+> 当前细化后的补丁边界总结见[补丁说明](./PATCHES.zh-CN.md)。
 
 审计日期：2026-09-21
 

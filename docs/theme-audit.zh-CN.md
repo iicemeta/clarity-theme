@@ -1,11 +1,10 @@
 # Clarity Theme 只读工程审计
 
-**English** | [简体中文](./theme-audit.zh-CN.md)
+[English](./theme-audit.md) | **简体中文**
 
-> **Historical audit snapshot — no longer authoritative for current status.**
-> Many issues listed here were fixed or covered by later tests. Current facts live in
-> [PROJECT-STATUS](./PROJECT-STATUS.md). This file remains at its original path because
-> `scripts/verify-theme.mjs` has a path-specific attribution allowlist.
+> **历史审计快照——不再对当前状态具有权威性。**
+> 此处列出的许多问题已被后续测试修复或覆盖。当前事实见 [PROJECT-STATUS](./PROJECT-STATUS.zh-CN.md)。
+> 本文件保留在原路径，是因为 `scripts/verify-theme.mjs` 有按路径归属的白名单。
 
 > 审计日期：2026-09-21（Asia/Taipei）
 > 审计仓库：`D:\NewPartition\DEV\ClarityTheme\clarity-theme`

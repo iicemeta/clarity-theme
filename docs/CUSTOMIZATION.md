@@ -1,5 +1,7 @@
 # Customizing Clarity Theme
 
+**English** | [简体中文](./CUSTOMIZATION.zh-CN.md)
+
 Clarity separates site data from presentation:
 
 - `clarity.config.ts` owns site identity, Content semantics, feed limits, stats scope, integrations, feature flags, and changelog data.

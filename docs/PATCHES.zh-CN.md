@@ -1,10 +1,9 @@
-# Patch Strategy
+# 补丁策略
 
-**English** | [简体中文](./PATCHES.zh-CN.md)
+[English](./PATCHES.md) | **简体中文**
 
-> Current source of truth: consumer `pnpm-workspace.yaml`, the actual patch files,
-> and the historical detailed audit. This page summarizes the current boundary;
-> it deliberately does not introduce a new patch design.
+> 当前事实来源：消费方 `pnpm-workspace.yaml`、实际 patch 文件，以及历史详细审计。
+> 本页总结当前边界；刻意不引入新的 patch 设计。
 
 上游 `blog-v3` 通过 `pnpm patchedDependencies` 启用 4 个 patch。
 Theme 包本身**不携带任何 patch**：pnpm patch 是安装工作区状态，不能随 npm package 自动传递；
@@ -45,4 +44,4 @@ Theme 包本身**不携带任何 patch**：pnpm patch 是安装工作区状态�
 3. 即使分发 patch 文件，消费者仍必须复制并在自己的 package-manager 配置和 lockfile 中注册。
 4. patch 需求与站点内容、图片管线和部署环境相关，不适合变成所有使用者的默认行为。
 
-详细历史判定见 [patch-audit](./patch-audit.md)（Historical / no longer authoritative）。
+详细历史判定见 [patch-audit](./patch-audit.zh-CN.md)（历史文档 / 不再权威）。

@@ -1,5 +1,7 @@
 # Release Checklist
 
+**English** | [简体中文](./RELEASE-CHECKLIST.zh-CN.md)
+
 > Checklist date: 2026-09-22, Asia/Taipei. Validation ran serially against the current working tree after the documentation, Skill, fixture, and CI updates. It has not yet been committed or tagged; a first public npm release needs another exact-commit run after the remaining P0 work.
 
 Legend:
