@@ -41,7 +41,7 @@ const forbiddenImportPatterns = [
 	[/['"]~~?\/redirects\.json['"]/, 'redirects 引用'],
 ]
 
-/** 允许出现上游标识的文件（署名、同步元数据与检测规则本体） */
+/** 允许出现上游标识的文件（署名、同步元数据与检测规则本体）；其 *.zh-CN.md 译本同样允许携带署名 */
 const attributionAllowList = new Set([
 	'LICENSE',
 	'README.md',
@@ -89,7 +89,10 @@ function walk(dir) {
 		const relPath = relative(themeDir, fullPath).replaceAll('\\', '/')
 		const content = readFileSync(fullPath, 'utf8')
 
-		if (!attributionAllowList.has(relPath)) {
+		// 将 <name>.zh-CN.md 译本归一化为对应英文原文路径：
+		// 译文与原文携带相同的合法署名，不应因语言版本不同而失败。
+		const attributionPath = relPath.replace(/\.zh-CN\.md$/, '.md')
+		if (!attributionAllowList.has(attributionPath)) {
 			for (const [pattern, label] of forbiddenPatterns) {
 				if (pattern.test(content)) {
 					errors.push(`${relPath} 含${label} ${pattern}`)
