@@ -18,6 +18,7 @@
 | --- | --- |
 | [配置](./guides/configuration.zh-CN.md) | `clarity.config.ts` 字段级契约与 UI app config |
 | [内容](./guides/content.zh-CN.md) | 文章集合、frontmatter schema、固定链接与渲染功能 |
+| [Markdown / MDC 参考](./mdc/README.zh-CN.md) | 文章能力审计、语法指南与逐组件 references |
 | [自定义](./guides/customization.zh-CN.md) | UI 覆盖、组件、Shiki、CSS、页面与服务端路由 |
 | [集成](./guides/integrations.zh-CN.md) | Twikoo、head 脚本与反镜像 |
 

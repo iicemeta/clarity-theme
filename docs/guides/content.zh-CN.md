@@ -61,4 +61,4 @@ Layer 配置了完整的 Markdown 管线；消费方不应重复注册插件：
 - **图片** —— 富图片组件与 Nuxt Image 处理；小数 density 或 ICO 透传可能需要消费方补丁（见[补丁策略](../maintainers/patches.zh-CN.md)）。
 - **阅读时间 / TOC / meta slot** —— 由 remark 插件与 rehype-meta-slots 注入。
 
-已验证的功能矩阵生成于[兼容性说明](../reference/compatibility.zh-CN.md)。自定义渲染输出时，优先使用[自定义](./customization.zh-CN.md)中描述的组件与 Shiki 覆盖。
+已验证的功能矩阵生成于[兼容性说明](../reference/compatibility.zh-CN.md)。面向作者的语法、逐组件 references 与能力审计见 [Markdown / MDC 参考](../mdc/README.zh-CN.md)。自定义渲染输出时，优先使用[自定义](./customization.zh-CN.md)中描述的组件与 Shiki 覆盖。

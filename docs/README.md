@@ -18,6 +18,7 @@ This is the entry point for all Clarity Theme documentation. Documents are organ
 | --- | --- |
 | [Configuration](./guides/configuration.md) | Field-level `clarity.config.ts` and UI app-config contract |
 | [Content](./guides/content.md) | Article collections, frontmatter schema, permalinks, and rendering features |
+| [Markdown / MDC reference](./mdc/README.md) | Article-capability audit, syntax guide, and per-component references |
 | [Customization](./guides/customization.md) | UI overrides, components, Shiki, CSS, pages, and server routes |
 | [Integrations](./guides/integrations.md) | Twikoo, head scripts, and anti-mirror |
 

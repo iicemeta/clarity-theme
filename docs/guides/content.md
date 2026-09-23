@@ -61,4 +61,4 @@ The Layer configures the whole Markdown pipeline; consumers should not re-regist
 - **Images** — rich image components and Nuxt Image processing; consumer patches may be required for fractional densities or ICO passthrough (see [patch strategy](../maintainers/patches.md)).
 - **Reading time / TOC / meta slots** — injected by remark plugins and rehype-meta-slots.
 
-The verified feature matrix is generated in [compatibility](../reference/compatibility.md). To customize rendering output, prefer component and Shiki overrides as described in [customization](./customization.md).
+The verified feature matrix is generated in [compatibility](../reference/compatibility.md). Author-facing syntax, per-component references, and the capability audit live in the [Markdown / MDC reference](../mdc/README.md). To customize rendering output, prefer component and Shiki overrides as described in [customization](./customization.md).
