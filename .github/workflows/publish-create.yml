@@ -62,7 +62,7 @@ jobs:
           set -euo pipefail
           test "$(jq -r '.name' create-clarity-theme/package.json)" = "create-clarity-theme"
           test "$(jq -r '.type' create-clarity-theme/package.json)" = "module"
-          test "$(jq -r '.bin["create-clarity-theme"]' create-clarity-theme/package.json)" = "./src/cli.mjs"
+          test "$(jq -r '.bin["create-clarity-theme"]' create-clarity-theme/package.json)" = "src/cli.mjs"
           test -f create-clarity-theme/src/cli.mjs
           test -f create-clarity-theme/templates/default/package.json
           test -f create-clarity-theme/templates/default/clarity.config.ts
@@ -95,6 +95,9 @@ jobs:
           node-version: ${{ steps.node.outputs.primary }}
           cache: pnpm
           registry-url: https://registry.npmjs.org
+
+      - name: Ensure npm supports Trusted Publishing
+        run: npm install --global npm@^11.5.1
 
       - name: Install workspace dependencies
         run: pnpm install --frozen-lockfile

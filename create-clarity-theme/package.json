@@ -10,7 +10,7 @@
   "homepage": "https://github.com/iicemeta/clarity-theme#readme",
   "repository": {
     "type": "git",
-    "url": "https://github.com/iicemeta/clarity-theme.git",
+    "url": "git+https://github.com/iicemeta/clarity-theme.git",
     "directory": "create-clarity-theme"
   },
   "bugs": {
@@ -24,7 +24,7 @@
     "blog"
   ],
   "bin": {
-    "create-clarity-theme": "./src/cli.mjs"
+    "create-clarity-theme": "src/cli.mjs"
   },
   "files": [
     "CHANGELOG.md",
