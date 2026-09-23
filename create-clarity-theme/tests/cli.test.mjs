@@ -257,7 +257,7 @@ function assertGeneratedProject(project, expected) {
 	const pkg = JSON.parse(readFileSync(join(project, 'package.json'), 'utf8'))
 	assert.equal(pkg.name, expected.name)
 	assert.equal(pkg.private, true)
-	assert.equal(pkg.dependencies['clarity-theme'], '^0.1.2')
+	assert.equal(pkg.dependencies['clarity-theme'], '^0.1.3')
 
 	const clarityConfig = readFileSync(join(project, 'clarity.config.ts'), 'utf8')
 	assert.equal(existsSync(join(project, 'nuxt.config.ts')), true)

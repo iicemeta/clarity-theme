@@ -4,7 +4,9 @@ All notable changes to Clarity Theme are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
 [Semantic Versioning](https://semver.org/).
 
-## Unreleased
+## 0.1.3 - 2026-09-23
+
+Documentation governance and homepage technical-information fixes.
 
 ### Added
 
@@ -26,6 +28,11 @@ All notable changes to Clarity Theme are documented here. The format follows
 - Publishing and release-checklist documentation were rewritten as
   version-agnostic processes; historical audits moved to `docs/history/` and
   are marked non-authoritative.
+
+### Fixed
+
+- Restored the upstream `图片存储` and `软件协议` entries in the homepage
+  `技术信息` widget, preserving the upstream ordering.
 
 ## 0.1.2 - 2026-09-22
 
