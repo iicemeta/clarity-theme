@@ -23,7 +23,22 @@ npx create-clarity-theme@beta my-blog
 
 The `@beta` dist-tag is used while the initial prerelease is the published channel; it becomes the unqualified command once the stable creator release is promoted to `latest`.
 
-The CLI asks for site metadata and your preferred package manager, then generates:
+The CLI asks for site metadata and your preferred package manager. Every prompt
+shows its editable default value, and pressing Enter accepts it:
+
+| Prompt | Default |
+| --- | --- |
+| Project name | `my-blog` |
+| Site title | Humanized project name (`my-blog` → `My Blog`) |
+| Site description | `My personal blog built with Clarity Theme` |
+| Site URL | `https://example.com/` |
+| Author name | `Your Name` |
+| Language | `zh-CN` |
+| Timezone | Detected system timezone, with a `UTC` fallback |
+| Site established date | The project creation date in the selected timezone |
+
+The timezone priority is `--timezone` option > detected system timezone >
+`UTC`. The CLI then generates:
 
 - a Nuxt consumer project with `extends: ['clarity-theme']`
 - `clarity.config.ts` and `content.config.ts` wired to the public Clarity exports
@@ -40,7 +55,7 @@ pnpm dev
 Then:
 
 1. Edit `clarity.config.ts` with your site identity — see [configuration](../guides/configuration.md).
-2. Replace the welcome article with your own posts under `content/posts/` — see [content](../guides/content.md).
+2. Create your first article with `pnpm new-blog "My first post"`, then replace or remove the welcome article — see [content](../guides/content.md).
 3. Optionally add root `feeds.ts` friend data — see [manual installation](./manual-installation.md).
 4. Customize UI defaults, components, and styles — see [customization](../guides/customization.md).
 

@@ -4,6 +4,8 @@ import { existsSync, lstatSync, mkdirSync, readdirSync, readFileSync, statSync, 
 import { basename, dirname, isAbsolute, join, relative, resolve } from 'node:path'
 import process from 'node:process'
 import { fileURLToPath } from 'node:url'
+import { createPrompts, PromptCancelledError } from './prompts.mjs'
+import { detectTimezone, isValidTimezone } from './timezone.mjs'
 
 const packageRoot = fileURLToPath(new URL('..', import.meta.url))
 const templateRoot = join(packageRoot, 'templates', 'default')
@@ -33,7 +35,7 @@ Options:
   --url <url>                 Canonical site URL (http or https)
   --author <name>             Author name
   --language <tag>            Site language, for example zh-CN
-  --timezone <zone>           IANA timezone, for example Asia/Shanghai
+  --timezone <zone>           IANA timezone, for example Asia/Tokyo
   --package-manager <name>    pnpm, npm, or yarn (also --pm)
   --no-install                Create files without installing dependencies
   --yes, -y                   Accept defaults; still refuses non-empty directories
@@ -41,7 +43,11 @@ Options:
   --help, -h                  Show this help
 
 The CLI asks only for values Clarity needs on first launch. All other Theme
-configuration uses the documented defaults.`
+configuration uses the documented defaults.
+
+Every prompt shows its editable default value; press Enter to accept it. The
+timezone default is detected from the system and falls back to UTC only when
+detection fails.`
 
 async function main() {
 	try {
@@ -58,6 +64,11 @@ async function main() {
 		await createProject(args)
 	}
 	catch (error) {
+		if (error instanceof PromptCancelledError) {
+			process.stderr.write(`\n✖ ${error.message}\n`)
+			process.exitCode = 1
+			return
+		}
 		process.stderr.write(`\n✖ ${error instanceof Error ? error.message : String(error)}\n`)
 		process.exitCode = 1
 	}
@@ -128,14 +139,14 @@ function parseArguments(argv) {
 }
 
 async function createProject(options) {
-	console.log('\n◆ Clarity Theme\n')
-
 	if (options.yes && options.projectDirectory) {
+		process.stdout.write('\n◆ Clarity Theme\n\n')
 		return createProjectWithPrompts(options, undefined)
 	}
 
-	const prompts = new PromptReader()
+	const prompts = createPrompts()
 	try {
+		prompts.intro('Clarity Theme')
 		return await createProjectWithPrompts(options, prompts)
 	}
 	finally {
@@ -148,7 +159,11 @@ async function createProjectWithPrompts(options, prompts) {
 		if (options.yes) {
 			throw new Error('A project directory is required when --yes is used.')
 		}
-		options.projectDirectory = await promptText(prompts, 'Project name', 'my-blog', validateProjectDirectory)
+		options.projectDirectory = await prompts.text({
+			message: 'Project name',
+			initialValue: 'my-blog',
+			validate: validateProjectDirectory,
+		})
 	}
 
 	const target = resolveTargetDirectory(options.projectDirectory)
@@ -160,7 +175,7 @@ async function createProjectWithPrompts(options, prompts) {
 	const url = await askOptionOrPrompt(options, prompts, 'url', 'Site URL', defaults.url, validateUrl)
 	const author = await askOptionOrPrompt(options, prompts, 'author', 'Author name', defaults.author, validateText)
 	const language = await askOptionOrPrompt(options, prompts, 'language', 'Language', defaults.language, validateLanguage)
-	const timezone = await askOptionOrPrompt(options, prompts, 'timezone', 'Timezone', defaults.timezone, validateTimezone)
+	const timezone = await askOptionOrPrompt(options, prompts, 'timezone', 'Timezone', defaults.timezone, validateTimezone, 'Detected from your system')
 	const packageManager = resolvePackageManager(options.packageManager)
 
 	const values = {
@@ -171,6 +186,7 @@ async function createProjectWithPrompts(options, prompts) {
 		AUTHOR_NAME: author,
 		LANGUAGE: language,
 		TIMEZONE: timezone,
+		SITE_ESTABLISHED: createEstablishedDate(timezone),
 	}
 
 	console.log('\n◆ Creating project...')
@@ -191,29 +207,17 @@ async function createProjectWithPrompts(options, prompts) {
 	}
 
 	printNextSteps(target, packageManager, options.install)
+	prompts?.outro('Project ready')
 }
 
-async function askOptionOrPrompt(options, prompts, propertyName, label, defaultValue, validate) {
+async function askOptionOrPrompt(options, prompts, propertyName, label, defaultValue, validate, hint) {
 	if (options[propertyName] !== undefined) {
 		return normalizeValue(propertyName, options[propertyName], validate)
 	}
 	if (options.yes) {
 		return normalizeValue(propertyName, defaultValue, validate)
 	}
-	return promptText(prompts, label, defaultValue, validate)
-}
-
-async function promptText(prompts, label, defaultValue, validate) {
-	while (true) {
-		const answer = (await prompts.question(`? ${label} › `)).trim()
-		const value = answer || defaultValue
-		try {
-			return validate(value)
-		}
-		catch (error) {
-			process.stdout.write(`  ✖ ${error instanceof Error ? error.message : String(error)}\n`)
-		}
-	}
+	return prompts.text({ message: label, initialValue: defaultValue, validate, hint })
 }
 
 function normalizeValue(propertyName, value, validate) {
@@ -276,13 +280,10 @@ function validateLanguage(value) {
 
 function validateTimezone(value) {
 	const text = validateText(value, 'Timezone')
-	try {
-		new Intl.DateTimeFormat('en-US', { timeZone: text }).format(new Date())
-		return text
+	if (!isValidTimezone(text)) {
+		throw new Error('Timezone must be a valid IANA timezone, for example Asia/Tokyo.')
 	}
-	catch {
-		throw new Error('Timezone must be a valid IANA timezone, for example Asia/Shanghai.')
-	}
+	return text
 }
 
 function resolveTargetDirectory(input) {
@@ -326,90 +327,13 @@ async function assertSafeTarget(target, prompts, assumeYes) {
 			if (assumeYes) {
 				throw new Error('Refusing to use a non-empty directory with --yes. Review it manually or choose an empty directory.')
 			}
-			const confirmed = await confirm(prompts, `Directory ${target} is not empty. Continue without touching existing files?`)
+			const confirmed = await prompts.confirm({
+				message: `Directory ${target} is not empty. Continue without touching existing files?`,
+				initialValue: false,
+			})
 			if (!confirmed) {
 				throw new Error('Project creation cancelled.')
 			}
-		}
-	}
-}
-
-async function confirm(prompts, question) {
-	const answer = (await prompts.question(`? ${question} (y/N) › `)).trim().toLowerCase()
-	return answer === 'y' || answer === 'yes'
-}
-
-class PromptReader {
-	constructor(stream = process.stdin) {
-		this.stream = stream
-		this.buffer = ''
-		this.lines = []
-		this.pending = null
-		this.ended = false
-		this.onData = this.onData.bind(this)
-		this.onEnd = this.onEnd.bind(this)
-		stream.setEncoding('utf8')
-		stream.on('data', this.onData)
-		stream.on('end', this.onEnd)
-	}
-
-	question(prompt) {
-		process.stdout.write(prompt)
-		if (this.pending) {
-			return Promise.reject(new Error('Another prompt is already waiting for input.'))
-		}
-		if (this.lines.length > 0) {
-			return Promise.resolve(this.lines.shift())
-		}
-		if (this.ended) {
-			return Promise.resolve('')
-		}
-		return new Promise((resolve) => {
-			this.pending = resolve
-		})
-	}
-
-	close() {
-		this.stream.off('data', this.onData)
-		this.stream.off('end', this.onEnd)
-		if (typeof this.stream.pause === 'function') {
-			this.stream.pause()
-		}
-	}
-
-	onData(chunk) {
-		this.buffer += chunk
-		while (true) {
-			const newline = this.buffer.indexOf('\n')
-			if (newline === -1) {
-				break
-			}
-			const line = this.buffer.slice(0, newline).replaceAll('\r', '')
-			this.buffer = this.buffer.slice(newline + 1)
-			this.lines.push(line)
-		}
-		this.drain()
-	}
-
-	onEnd() {
-		this.ended = true
-		if (this.buffer) {
-			this.lines.push(this.buffer.replaceAll('\r', ''))
-			this.buffer = ''
-		}
-		this.drain()
-	}
-
-	drain() {
-		if (this.pending && this.lines.length > 0) {
-			const resolve = this.pending
-			this.pending = null
-			resolve(this.lines.shift())
-		}
-		else if (this.pending && this.ended) {
-			const resolve = this.pending
-			this.pending = null
-			resolve('')
 		}
 	}
 }
@@ -498,6 +422,7 @@ function assertGeneratedProject(target) {
 	const required = [
 		'app/app.config.ts',
 		'content/posts/welcome.md',
+		'scripts/new-blog.mjs',
 		'public/favicon.svg',
 		'clarity.config.ts',
 		'content.config.ts',
@@ -521,7 +446,10 @@ function assertGeneratedProject(target) {
 			throw new Error(`Generated path escaped the project directory: ${file}`)
 		}
 	}
-	JSON.parse(readFileSync(join(root, 'package.json'), 'utf8'))
+	const pkg = JSON.parse(readFileSync(join(root, 'package.json'), 'utf8'))
+	if (pkg.scripts?.['new-blog'] !== 'node scripts/new-blog.mjs') {
+		throw new Error('Generated project is missing the new-blog authoring script.')
+	}
 }
 
 function listGeneratedFiles(base, root = base) {
@@ -546,8 +474,17 @@ function createDefaults(target) {
 		url: 'https://example.com/',
 		author: 'Your Name',
 		language: 'zh-CN',
-		timezone: 'Asia/Shanghai',
+		timezone: detectTimezone(),
 	}
+}
+
+function createEstablishedDate(timezone) {
+	return new Intl.DateTimeFormat('en-CA', {
+		timeZone: timezone,
+		year: 'numeric',
+		month: '2-digit',
+		day: '2-digit',
+	}).format(new Date())
 }
 
 function humanizeProjectName(value) {

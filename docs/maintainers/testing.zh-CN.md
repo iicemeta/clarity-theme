@@ -29,9 +29,9 @@
 | --- | --- |
 | `pnpm test:consumer` | `pnpm pack` → 独立安装 → 五个导出冒烟 → typecheck → 三组配置分支生成与输出断言 |
 | `pnpm test:compatibility` | playground 生产构建 SSR + 真实浏览器（CDP）+ dev 水合，由 `scripts/compatibility-cases.mjs` 驱动 |
-| `pnpm test:create` | 创建器 CLI 行为测试 |
-| `pnpm test:create:e2e` | 生成的消费者安装/typecheck/生成 E2E |
-| `pnpm test:create:tarball` | 打包创建器二进制 E2E |
+| `pnpm test:create` | 创建器 CLI 行为测试：默认值可见性、时区检测/回退/覆盖、取消、包管理器选择、Windows 路径与目录/模板安全 |
+| `pnpm test:create:e2e` | 生成的消费者安装/new-blog/typecheck/生成 E2E |
+| `pnpm test:create:tarball` | 打包创建器二进制 E2E，包含消费方 `new-blog` 脚本的 tarball 交付 |
 
 ## 仅发布时执行
 

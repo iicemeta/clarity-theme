@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict'
+import { execFileSync } from 'node:child_process'
 /* eslint-disable no-console -- command progress is useful during long E2E runs */
 import { mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
@@ -26,6 +27,8 @@ it('packed create-clarity-theme tarball runs through its installed binary and ge
 		mkdirSync(createTarballDir, { recursive: true })
 		run('pnpm', ['--dir', createPackageRoot, 'pack', '--pack-destination', createTarballDir], repositoryRoot)
 		const createTarballPath = findTarball(createTarballDir, /^create-clarity-theme-.*\.tgz$/)
+		const createTarballFiles = execFileSync('tar', ['-tzf', createTarballPath], { encoding: 'utf8' })
+		assert.match(createTarballFiles, /package\/templates\/default\/scripts\/new-blog\.mjs/)
 
 		mkdirEmpty(harness)
 		writeFileSync(join(harness, 'package.json'), `${JSON.stringify({
@@ -62,9 +65,13 @@ it('packed create-clarity-theme tarball runs through its installed binary and ge
 		writeFileSync(packagePath, `${JSON.stringify(pkg, null, 2)}\n`)
 
 		run('pnpm', ['install', '--no-frozen-lockfile'], consumer)
+		run('pnpm', ['new-blog', 'Tarball E2E Article', '--yes'], consumer)
 		run('pnpm', ['exec', 'nuxt', 'typecheck'], consumer)
 		run('pnpm', ['exec', 'nuxt', 'generate'], consumer)
-		assertGenerateOutput(consumer)
+		assertGenerateOutput(consumer, {
+			expectedPosts: 2,
+			titles: ['Tarball E2E Article'],
+		})
 
 		console.log('\n✔ Create CLI tarball E2E passed')
 	}

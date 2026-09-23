@@ -40,5 +40,8 @@
     "test": "node --test tests/cli.test.mjs",
     "test:e2e": "node --test tests/consumer.test.mjs",
     "test:tarball": "node --test tests/tarball.test.mjs"
+  },
+  "dependencies": {
+    "@clack/prompts": "^1.7.0"
   }
 }

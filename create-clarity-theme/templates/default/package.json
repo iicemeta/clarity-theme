@@ -4,15 +4,19 @@
   "private": true,
   "scripts": {
     "dev": "nuxt dev",
+    "dev:host": "nuxt dev --host",
     "build": "nuxt build",
     "generate": "nuxt generate",
     "preview": "nuxt preview",
-    "typecheck": "nuxt typecheck"
+    "typecheck": "nuxt typecheck",
+    "new-blog": "node scripts/new-blog.mjs",
+    "new": "node scripts/new-blog.mjs"
   },
   "dependencies": {
     "clarity-theme": "^0.1.2"
   },
   "devDependencies": {
+    "@clack/prompts": "^1.7.0",
     "@nuxt/content": "^3.16.0",
     "nuxt": "^4.5.2",
     "typescript": "^6.0.3",

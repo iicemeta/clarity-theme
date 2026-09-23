@@ -7,6 +7,7 @@ export default defineClarityConfig({
 		url: '{{SITE_URL}}',
 		language: '{{LANGUAGE}}',
 		timezone: '{{TIMEZONE}}',
+		established: '{{SITE_ESTABLISHED}}',
 		author: {
 			name: '{{AUTHOR_NAME}}',
 		},

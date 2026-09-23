@@ -39,6 +39,9 @@ cd my-blog
 pnpm dev
 ```
 
+The creator shows editable defaults for site identity and detects your system
+timezone; generated projects include the `pnpm new-blog` authoring command.
+
 The creator package is published separately as `create-clarity-theme`; the `@beta` dist-tag is used while its initial prerelease is the published channel. See [`create-clarity-theme/README.md`](./create-clarity-theme/README.md) for all options. The manual path is four files:
 
 ```ts

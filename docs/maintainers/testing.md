@@ -29,9 +29,9 @@ The verification suite is layered and strictly serial — each layer assumes the
 | --- | --- |
 | `pnpm test:consumer` | `pnpm pack` → independent install → five exports smoke → typecheck → three configuration-branch generations with output assertions |
 | `pnpm test:compatibility` | Playground production build SSR + real browser (CDP) + dev hydration, driven by `scripts/compatibility-cases.mjs` |
-| `pnpm test:create` | Creator CLI behavior tests |
-| `pnpm test:create:e2e` | Generated consumer install/typecheck/generate E2E |
-| `pnpm test:create:tarball` | Packed creator binary E2E |
+| `pnpm test:create` | Creator CLI behavior tests: visible defaults, timezone detection/fallback/override, cancellation, package-manager selection, Windows paths, and directory/template safety |
+| `pnpm test:create:e2e` | Generated consumer install/new-blog/typecheck/generate E2E |
+| `pnpm test:create:tarball` | Packed creator binary E2E, including tarball delivery of the consumer `new-blog` script |
 
 ## Release-only checks
 

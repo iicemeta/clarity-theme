@@ -8,6 +8,7 @@ import process from 'node:process'
 // eslint-disable-next-line test/no-import-node-test
 import { it } from 'node:test'
 import { fileURLToPath } from 'node:url'
+import { detectTimezone, FALLBACK_TIMEZONE } from '../src/timezone.mjs'
 
 const packageRoot = fileURLToPath(new URL('..', import.meta.url))
 const cliPath = join(packageRoot, 'src', 'cli.mjs')
@@ -38,13 +39,20 @@ it('cLI prompts for a missing project directory and accepts defaults', () => {
 
 		assert.equal(result.status, 0, result.stderr)
 		assert.match(result.stdout, /\? Project name/)
+		assert.match(result.stdout, /\? Site title › My Blog/)
+		assert.match(result.stdout, /\? Site description › My personal blog built with Clarity Theme/)
+		assert.match(result.stdout, /\? Site URL › https:\/\/example\.com\//)
+		assert.match(result.stdout, /\? Author name › Your Name/)
+		assert.match(result.stdout, /\? Language › zh-CN/)
+		assert.match(result.stdout, /Detected from your system/)
+		assert.match(result.stdout, new RegExp(`\\? Timezone › ${escapeRegExp(detectTimezone())}`))
 		assertGeneratedProject(project, {
 			name: 'my-blog',
 			title: 'My Blog',
 			url: 'https://example.com/',
 			author: 'Your Name',
 			language: 'zh-CN',
-			timezone: 'Asia/Shanghai',
+			timezone: detectTimezone(),
 		})
 	})
 })
@@ -61,9 +69,69 @@ it('cLI creates a project in an empty directory with --yes', () => {
 			url: 'https://example.com/',
 			author: 'Your Name',
 			language: 'zh-CN',
-			timezone: 'Asia/Shanghai',
+			timezone: detectTimezone(),
 		})
 		assert.match(result.stdout, /Dependency installation skipped/)
+	})
+})
+
+it('cLI --yes uses the timezone detected in its own process environment', () => {
+	withTemporaryDirectory((workDir) => {
+		const shouldHonorTzEnv = process.platform !== 'win32'
+		const result = runCli(['tz-blog', '--yes', '--no-install'], {
+			cwd: workDir,
+			env: shouldHonorTzEnv ? { TZ: 'Asia/Tokyo' } : undefined,
+		})
+		const expectedTimezone = shouldHonorTzEnv ? 'Asia/Tokyo' : detectTimezone()
+
+		assert.equal(result.status, 0, result.stderr)
+		assertGeneratedProject(join(workDir, 'tz-blog'), {
+			name: 'tz-blog',
+			title: 'Tz Blog',
+			url: 'https://example.com/',
+			author: 'Your Name',
+			language: 'zh-CN',
+			timezone: expectedTimezone,
+		})
+	})
+})
+
+it('cLI --timezone overrides the detected system timezone', () => {
+	withTemporaryDirectory((workDir) => {
+		const result = runCli(['tz-blog', '--yes', '--no-install', '--timezone', 'America/New_York'], {
+			cwd: workDir,
+			env: process.platform === 'win32' ? undefined : { TZ: 'Asia/Tokyo' },
+		})
+
+		assert.equal(result.status, 0, result.stderr)
+		assertGeneratedProject(join(workDir, 'tz-blog'), {
+			name: 'tz-blog',
+			title: 'Tz Blog',
+			url: 'https://example.com/',
+			author: 'Your Name',
+			language: 'zh-CN',
+			timezone: 'America/New_York',
+		})
+	})
+})
+
+it('timezone detection validates ICU output and falls back to UTC', () => {
+	assert.equal(FALLBACK_TIMEZONE, 'UTC')
+	assert.equal(detectTimezone(() => 'Asia/Tokyo'), 'Asia/Tokyo')
+	assert.equal(detectTimezone(() => undefined), 'UTC')
+	assert.equal(detectTimezone(() => 'Not/AZone'), 'UTC')
+	assert.equal(detectTimezone(() => {
+		throw new Error('ICU unavailable')
+	}), 'UTC')
+})
+
+it('cLI cancels cleanly on the Ctrl+C byte without writing a project', () => {
+	withTemporaryDirectory((workDir) => {
+		const result = runCli(['--no-install'], { cwd: workDir, input: '\x03' })
+
+		assert.notEqual(result.status, 0)
+		assert.match(result.stderr, /Prompt cancelled\./)
+		assert.equal(existsSync(join(workDir, 'my-blog')), false)
 	})
 })
 
@@ -229,6 +297,7 @@ function runCli(args, options = {}) {
 		input: options.input ?? '',
 		env: {
 			...process.env,
+			...options.env,
 			NO_COLOR: '1',
 			npm_config_user_agent: 'pnpm/12.4.1 node/v24.15.0',
 		},
@@ -239,6 +308,7 @@ function assertGeneratedProject(project, expected) {
 	const requiredFiles = [
 		'app/app.config.ts',
 		'content/posts/welcome.md',
+		'scripts/new-blog.mjs',
 		'public/favicon.svg',
 		'clarity.config.ts',
 		'content.config.ts',
@@ -258,6 +328,9 @@ function assertGeneratedProject(project, expected) {
 	assert.equal(pkg.name, expected.name)
 	assert.equal(pkg.private, true)
 	assert.equal(pkg.dependencies['clarity-theme'], '^0.1.2')
+	assert.equal(pkg.scripts['new-blog'], 'node scripts/new-blog.mjs')
+	assert.equal(pkg.scripts.new, 'node scripts/new-blog.mjs')
+	assert.equal(pkg.scripts['dev:host'], 'nuxt dev --host')
 
 	const clarityConfig = readFileSync(join(project, 'clarity.config.ts'), 'utf8')
 	assert.equal(existsSync(join(project, 'nuxt.config.ts')), true)
@@ -266,6 +339,7 @@ function assertGeneratedProject(project, expected) {
 	assert.match(clarityConfig, new RegExp(`url: '${expected.url}'`))
 	assert.match(clarityConfig, new RegExp(`language: '${expected.language}'`))
 	assert.match(clarityConfig, new RegExp(`timezone: '${expected.timezone}'`))
+	assert.match(clarityConfig, /established: '\d{4}-\d{2}-\d{2}'/)
 	if (expected.description) {
 		assert.match(clarityConfig, new RegExp(`description: '${escapeRegExp(toTypeScriptLiteral(expected.description))}'`))
 	}

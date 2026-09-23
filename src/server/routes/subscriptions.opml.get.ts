@@ -15,7 +15,11 @@ function mapEntry(item: FeedEntry, timeZone: string) {
 		$text: item.title || item.sitenick || item.author,
 		$type: 'rss',
 		$xmlUrl: item.feed,
-		$created: toZonedTemporal(item.date, timeZone).toInstant().toString(),
+		// `site.established` and feed entry dates are optional; omit the
+		// attribute instead of failing OPML generation for a new consumer.
+		$created: item.date
+			? toZonedTemporal(item.date, timeZone).toInstant().toString()
+			: undefined,
 		$description: item.desc,
 		$htmlUrl: item.link || item.feed,
 	}

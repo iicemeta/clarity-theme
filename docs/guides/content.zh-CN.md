@@ -24,6 +24,25 @@ export default createClarityContentConfig(clarityConfig)
 
 工厂会再次解析配置（Zod 严格模式）、生成文章 schema，并用 `updated || published || date` 派生的 sitemap `lastmod` 元数据扩展它。
 
+## 创建文章
+
+由 `create-clarity-theme` 生成的项目自带消费方自己的写作脚本：
+
+```bash
+pnpm new-blog
+pnpm new-blog "我的新文章"
+pnpm new-blog "我的新文章" --yes
+```
+
+它会在 `content/posts/<year>/<slug>.md` 创建文章，并生成符合 schema 的
+`title`、`date`、`updated`、`draft`、`categories`、`tags`、`type`
+frontmatter。时间戳使用检测到的系统时区（失败时回退 `UTC`）；已存在的文件名
+不会被覆盖，而是追加数字后缀。
+
+这个脚本属于生成的消费项目，不属于 Theme Layer。手动安装的消费方可以直接
+创建 Markdown 文件，也可以从创建器模板复制 `scripts/new-blog.mjs` 到自己的
+仓库。
+
 ## 文章 frontmatter
 
 | 字段 | 类型 / 默认值 | 说明 |

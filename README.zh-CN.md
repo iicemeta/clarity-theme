@@ -39,6 +39,9 @@ cd my-blog
 pnpm dev
 ```
 
+创建器会显示可编辑的站点默认值并自动检测系统时区；生成的项目自带
+`pnpm new-blog` 写作命令。
+
 创建包以独立的 `create-clarity-theme` npm 包分发；当前初始预发布位于 `@beta` dist-tag。完整参数见 [`create-clarity-theme/README.md`](./create-clarity-theme/README.md)。手动接入只需四个文件：
 
 ```ts

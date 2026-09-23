@@ -4,6 +4,30 @@ All notable changes to `create-clarity-theme` are documented here. The format
 follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the
 package uses [Semantic Versioning](https://semver.org/).
 
+## Unreleased
+
+### Added
+
+- Interactive `@clack/prompts` UX in terminals, with visible editable defaults
+  and a deterministic line-prompt fallback for piped/CI stdin.
+- System timezone detection (`Intl.DateTimeFormat`), an explicit `UTC`
+  fallback, and `--timezone` override for interactive, `--yes`, and explicit
+  option paths.
+- A consumer-owned `scripts/new-blog.mjs` authoring workflow with `new-blog`
+  and `new` package scripts, year-based paths, Clarity-schema frontmatter,
+  collision-safe filenames, and non-interactive `--yes` support.
+- CLI and E2E coverage for prompt defaults, timezone detection/fallback/
+  override, cancellation, generated authoring scripts, and packed tarball
+  delivery of `new-blog`.
+- A creation-date `site.established` value so OPML/sitemap outputs work with
+  already-published Theme versions.
+
+### Changed
+
+- Generated consumer scripts now include `dev:host` while remaining limited to
+  consumer development and authoring; upstream maintenance scripts are not
+  copied into generated projects.
+
 ## 0.1.0-beta.3 - 2026-09-23
 
 Prerelease for retrying the GitHub Actions npm Trusted Publishing pipeline with
