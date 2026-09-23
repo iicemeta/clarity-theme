@@ -2,6 +2,7 @@
   "name": "clarity-theme-playground",
   "private": true,
   "type": "module",
+  "packageManager": "pnpm@12.4.1",
   "scripts": {
     "dev": "nuxt dev",
     "build": "nuxt build",

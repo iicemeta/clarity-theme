@@ -41,7 +41,7 @@ withDefaults(defineProps<{
 
 .dl-group.small {
 	display: flex;
-	flex-wrap: wrap;
+	flex-flow: row wrap;
 	gap: 0.5em 1em;
 	text-align: center;
 

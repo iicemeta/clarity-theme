@@ -13,6 +13,8 @@ const buildInfo = runtimeConfig.public.clarity as {
 }
 const { public: { arch, ci, nodeVersion, platform } } = runtimeConfig
 
+const [packageManager, packageManagerVersion] = buildInfo.sitePackageManager.split('@') as [string, string]
+
 const ciPlatform = computed(() => {
 	const iconName = ciIcons[ci]
 	if (!iconName)
@@ -39,6 +41,7 @@ const techstack = computed(() => ([
 	{ label: 'Vue', value: buildInfo.vueVersion },
 	{ label: 'Nuxt', value: buildInfo.nuxtVersion },
 	{ label: 'Node', value: nodeVersion },
+	...(packageManager ? [{ label: packageManager, value: packageManagerVersion }] : []),
 	{ label: 'OS', value: platform },
 	{ label: 'Arch', value: arch },
 ]))
