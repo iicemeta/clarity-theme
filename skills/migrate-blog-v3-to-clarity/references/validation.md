@@ -67,7 +67,7 @@ Choose representative entries for each category present in the site:
 | custom modules/plugins | Registered once; no duplicate Layer behavior |
 | custom server | Routes respond as before; collisions explicitly adjudicated |
 | Twikoo | Loader script and `envId` both present; `#twikoo` initializes |
-| stats | JSON/widget values match one-pattern fixture or documented limitation |
+| stats | JSON/widget values match the configured include scope; multiple patterns form a union |
 | feature flags | Disabled outputs are absent; enabled outputs and links are present |
 
 ## Theme repository checks
@@ -79,7 +79,7 @@ pnpm test:migration
 pnpm test:compatibility
 ```
 
-For a full release candidate, use the ordered suite in `docs/RELEASE-CHECKLIST.md`.
+For a full release candidate, use the ordered suite in `docs/maintainers/release-checklist.md`.
 
 ## Failure handling
 

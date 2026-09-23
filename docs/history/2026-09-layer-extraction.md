@@ -2,7 +2,7 @@
 
 **English** | [简体中文](./2026-09-layer-extraction.zh-CN.md)
 
-> Historical record — no longer authoritative for current status. Current facts live in [PROJECT-STATUS](../PROJECT-STATUS.md).
+> Historical record — no longer authoritative for current status. Current facts live in [PROJECT-STATUS](../maintainers/project-status.md).
 
 ## Context
 
@@ -37,4 +37,4 @@ That run was a useful migration milestone but was not placed under version contr
 
 ## Disposition
 
-The phase TODO lists that formerly occupied README are complete and have been removed from the user entry point. Detailed one-time audits remain in historical files outside this directory and are marked non-authoritative.
+The phase TODO lists that formerly occupied README are complete and have been removed from the user entry point. The detailed one-time audits moved into this directory alongside this record and are marked non-authoritative.

@@ -116,6 +116,9 @@ jobs:
       - name: Lint
         run: pnpm lint
 
+      - name: Documentation governance checks
+        run: pnpm docs:check
+
   # ============================================================
   # Layer 1 · typecheck + verify + sync / migration / peers 回归（依赖 lint 全部通过）
   # ============================================================

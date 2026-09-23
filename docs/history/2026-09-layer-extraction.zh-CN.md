@@ -2,7 +2,7 @@
 
 [English](./2026-09-layer-extraction.md) | **简体中文**
 
-> 历史记录——不再对当前状态具有权威性。当前事实见 [PROJECT-STATUS](../PROJECT-STATUS.zh-CN.md)。
+> 历史记录——不再对当前状态具有权威性。当前事实见 [PROJECT-STATUS](../maintainers/project-status.zh-CN.md)。
 
 ## 背景
 
@@ -37,4 +37,4 @@ Clarity Theme 最初是对上游 `blog-v3` Nuxt 站点通用部分的抽取。�
 
 ## 处置
 
-曾经占据 README 的阶段 TODO 清单已完成，并已从用户入口移除。详细的一次性审计保留在该目录之外的历史文件中，并标记为非权威。
+曾经占据 README 的阶段 TODO 清单已完成，并已从用户入口移除。详细的一次性审计已随本记录一并移入本目录，并标记为非权威。

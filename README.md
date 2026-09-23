@@ -1,76 +1,45 @@
 # Clarity Theme
 
+[![CI](https://github.com/iicemeta/clarity-theme/actions/workflows/ci.yml/badge.svg)](https://github.com/iicemeta/clarity-theme/actions/workflows/ci.yml)
+[![npm version](https://img.shields.io/npm/v/clarity-theme)](https://www.npmjs.com/package/clarity-theme)
+[![License: MIT](https://img.shields.io/npm/l/clarity-theme)](./LICENSE)
+
 **English** | [简体中文](./README.zh-CN.md)
 
 Clarity Theme is a reusable **Nuxt 4 Layer blog theme** extracted from [L33Z22L11/blog-v3](https://github.com/L33Z22L11/blog-v3). It provides the generic blog UI, page structure, Markdown/MDC rendering, SEO integration, and feed/server outputs; your project provides all site data and content.
 
-## Features
+## Why Clarity?
 
-- Nuxt 4 Layer installation through one `extends` entry
-- Validated site configuration with defaults and strict unknown-field rejection
-- Nuxt Content collection factory for article metadata and sitemap data
-- Markdown, MDC components, Shiki code highlighting, KaTeX, Mermaid, ABC music scores, and rich images
-- Article list, archive, pagination, TOC, search, theme toggle, widgets, preview, and 404 routing
-- Atom, OPML, statistics, robots, sitemap, and LLMs outputs
-- Twikoo, head scripts, and anti-mirror integrations driven by consumer configuration
-- UI defaults, app config overrides, custom Shiki themes, and same-path component overrides
-- Automated workspace, tarball-consumer, SSR, browser, hydration, purity, contract, peer, and upstream-sync checks
+Clarity replaces the traditional sync-fork workflow. Instead of merging thousands of upstream lines into your blog repository, you consume the Theme as a Layer and keep only your own files:
 
-## Requirements
+- **One `extends` entry** installs the whole blog application skeleton.
+- **Theme and consumer are separated**: articles, friend links, redirects, deployment settings, secrets, and dependency patches never enter the Theme package.
+- **Validated configuration**: `clarity.config.ts` is schema-checked with defaults and strict unknown-field rejection.
+- **Content factory**: the Nuxt Content collection and article schema are derived from your configuration.
+- **Rich rendering**: Markdown, MDC components, Shiki code highlighting, KaTeX, Mermaid, ABC music scores, and rich images.
+- **Complete outputs**: article list, archive, pagination, TOC, search, theme toggle, widgets, Atom, OPML, statistics, robots, sitemap, and LLMs.
+- **Integrations stay yours**: Twikoo, head scripts, and anti-mirror are driven by consumer configuration.
+- **Override without forking**: UI app-config overrides, same-path component overrides, custom Shiki themes, and consumer CSS.
 
-| Runtime | Version |
+## Choose your path
+
+| Starting point | Documentation |
 | --- | --- |
-| Node.js | `^22.19 \|\| ^24.11 \|\| >=26` |
-| pnpm | 12.4.1 or a compatible package manager for your project |
-| Nuxt peer | `^4.5.2` |
-| Vue peer | `^3.5.42` |
+| New blog | [Create a project](./docs/getting-started/new-project.md) |
+| Existing blog-v3 site | [Migrate from blog-v3](./docs/getting-started/migration-from-blog-v3.md) · Agent skill: `migrate-blog-v3-to-clarity` |
+| Manual installation into an existing Nuxt app | [Manual installation](./docs/getting-started/manual-installation.md) |
 
-Clarity is available from the npm registry as `clarity-theme`. It is part of your application runtime (the Nuxt build and static generation load the Layer directly), so install it as a regular dependency rather than a development dependency; a production install must still be able to resolve it.
+For an Agent-assisted migration, ask your agent to use the `migrate-blog-v3-to-clarity` skill. The full skill lives in [`skills/migrate-blog-v3-to-clarity`](./skills/migrate-blog-v3-to-clarity/SKILL.md).
 
-## Create a new blog
-
-The initial creator prerelease is distributed under the npm `beta` dist-tag.
-
-### pnpm
+## Quick start
 
 ```bash
 pnpm create clarity-theme@beta my-blog
-```
-
-### npm
-
-```bash
-npx create-clarity-theme@beta my-blog
-```
-
-Then:
-
-```bash
 cd my-blog
 pnpm dev
 ```
 
-The official creator package is published separately as `create-clarity-theme`. It generates an independent Nuxt consumer with the required configuration contracts, a generic welcome article, and the minimum direct dependencies. For all options, see [`create-clarity-theme/README.md`](./create-clarity-theme/README.md).
-
-## Manual Installation
-
-```bash
-pnpm add clarity-theme
-```
-
-### Git commit installation (development fallback)
-
-For unreleased commits, local debugging, or reviewing a specific change before it is published, install directly from GitHub instead:
-
-```bash
-pnpm add github:iicemeta/clarity-theme#<commit>
-```
-
-This path is intended for development only. Released sites should consume the published npm version so installs are reproducible and covered by the release verification matrix.
-
-## Manual Quick Start
-
-### 1. Extend the Layer
+The creator package is published separately as `create-clarity-theme`; the `@beta` dist-tag is used while its initial prerelease is the published channel. See [`create-clarity-theme/README.md`](./create-clarity-theme/README.md) for all options. The manual path is four files:
 
 ```ts
 // nuxt.config.ts
@@ -78,8 +47,6 @@ export default defineNuxtConfig({
 	extends: ['clarity-theme'],
 })
 ```
-
-### 2. Define site configuration
 
 ```ts
 // clarity.config.ts
@@ -90,17 +57,10 @@ export default defineClarityConfig({
 		title: 'My Blog',
 		description: 'Notes about technology and life',
 		url: 'https://example.com/',
-		author: {
-			name: 'My Name',
-			avatar: '/avatar.webp',
-		},
+		author: { name: 'My Name', avatar: '/avatar.webp' },
 	},
 })
 ```
-
-`site.title`, `site.description`, `site.url`, and `site.author.name` are required. Article, feed, stats, integration, feature, and changelog groups are optional and receive documented defaults.
-
-### 3. Create the Content schema
 
 ```ts
 // content.config.ts
@@ -110,261 +70,46 @@ import clarityConfig from './clarity.config'
 export default createClarityContentConfig(clarityConfig)
 ```
 
-Place articles under `content/posts/` and other Content pages under `content/`.
-
-### 4. Optionally provide friend data
-
-```ts
-// feeds.ts
-import type { FeedGroup } from 'clarity-theme/config'
-
-const feeds: FeedGroup[] = []
-
-export default feeds
-```
-
-Without this file, the friend page and OPML output use empty data and the build logs a warning.
-
-### 5. Generate or develop
-
 ```bash
+pnpm add clarity-theme
 pnpm dev
-pnpm generate
 ```
 
-For a complete walkthrough from an existing blog-v3 project, see [Migration](./docs/MIGRATION.md). Theme data and user content are deliberately separate: the package never carries your articles, friend links, redirects, deployment settings, or package patches.
+Place articles under `content/posts/` and other Content pages under `content/`. See [Manual installation](./docs/getting-started/manual-installation.md) for the optional `feeds.ts` friend data and deployment notes.
 
-## Basic Configuration
+## Requirements
 
-| File | Responsibility |
+| Runtime | Version |
 | --- | --- |
-| `clarity.config.ts` | Site identity, article semantics, feeds, stats, integrations, feature flags, changelog |
-| `app/app.config.ts` | Optional reactive UI overrides only |
-| `content.config.ts` | Nuxt Content collection/schema |
-| `feeds.ts` | Optional friend data |
-| consumer `runtimeConfig` | Environment-specific values and the only valid place for secrets |
+| Node.js | `^22.19 \|\| ^24.11 \|\| >=26` |
+| pnpm | 12.4.1 or a compatible package manager for your project |
+| Nuxt peer | `^4.5.2` |
+| Vue peer | `^3.5.42` |
 
-Field-by-field defaults, visibility, and examples are documented in [Configuration](./docs/CONFIGURATION.md).
-
-Example optional groups:
-
-```ts
-export default defineClarityConfig({
-	site: {
-		title: 'My Blog',
-		description: 'A Nuxt blog',
-		url: 'https://example.com/',
-		author: { name: 'My Name' },
-	},
-	article: {
-		defaultCategory: 'Uncategorized',
-		categories: {
-			Tech: { icon: 'tabler:code', color: '#7777ff' },
-		},
-		types: { tech: {}, story: {} },
-	},
-	feed: { limit: 50, enableStyle: true },
-	features: {
-		atom: true,
-		opml: true,
-		stats: true,
-		antiMirror: false,
-	},
-})
-```
-
-Never place tokens or private deployment credentials in `clarity.config.ts` or `app/app.config.ts`; both can affect generated client output.
-
-## Public API
-
-| Entry | API |
-| --- | --- |
-| `clarity-theme` | Nuxt Layer root |
-| `clarity-theme/config` | `defineClarityConfig()` and configuration/schema types |
-| `clarity-theme/content` | `createClarityContentConfig()` and `ArticleSchema` |
-| `clarity-theme/schema` | All `clarity*` Zod schemas and derived types |
-| `clarity-theme/img` | Avatar/favicon/image URL helpers |
-
-The Layer also exposes the `useClarityConfig()`, `useClaritySite()`, `useClarityArticle()`, and `useClaritySiteFeedEntry()` runtime auto-imports, plus the `#clarity/feeds` injection. They are Layer contracts rather than standalone package subpaths.
-
-The exact export/type boundary is documented in [docs/API.md](./docs/API.md).
-
-## Customization
-
-### UI configuration
-
-```ts
-// app/app.config.ts
-export default defineAppConfig({
-	clarity: {
-		header: { emojiTail: ['📝'] },
-		pagination: { perPage: 10 },
-		nav: [
-			{
-				title: '',
-				items: [
-					{ icon: 'tabler:files', text: 'Articles', url: '/' },
-					{ icon: 'tabler:link', text: 'Friends', url: '/link' },
-					{ icon: 'tabler:archive', text: 'Archive', url: '/archive' },
-				],
-			},
-		],
-	},
-})
-```
-
-Objects merge deeply; arrays replace the Theme value entirely.
-
-### Components
-
-Create a Layer-relative component at the same path to replace it, for example:
-
-```text
-app/components/content/Badge.vue
-```
-
-Consumer components take precedence over Layer components. Nuxt currently emits a duplicate-name warning for this intentional override pattern.
-
-### Shiki themes
-
-Provide `app/shiki.config.ts` in the consumer project. The Theme fallback is used only when this file does not exist.
-
-UI groups, same-path component overrides, CSS overrides, server/route customization, and Shiki ownership are described together in [Customization](./docs/CUSTOMIZATION.md).
-
-## Compatibility and Verification
-
-The verification suite is designed to cover:
-
-- Playground static generation
-- Independent `pnpm pack` consumer installation
-- Five package exports in Node and TypeScript
-- Three configuration branches
-- Markdown/MDC/code/math/Mermaid/music/image rendering
-- Production SSR, real browser rendering, and dev hydration
-- Search, pagination, archive, TOC, SEO, robots, sitemap, LLMs, Atom, OPML, stats, permalink, 404, Twikoo branches, anti-mirror injection, UI override, and component override
-- Theme purity, peer dependencies, sync tooling, and upstream drift
-
-The generated release matrix lives in [Compatibility](./docs/COMPATIBILITY.md). Current exact counts, known limitations, technical debt, and release blockers live in [Project status](./docs/PROJECT-STATUS.md) and [Roadmap](./docs/ROADMAP.md). A release must rerun the ordered suite on the exact commit; earlier results are not a substitute.
-
-Site-specific dependency patches are intentionally owned by consumers; see [Patches](./docs/PATCHES.md).
+Clarity is part of your application runtime (the Nuxt build and static generation load the Layer directly), so install it as a regular dependency rather than a development dependency.
 
 ## Documentation
 
-All documents are also available in 简体中文 as sibling `*.zh-CN.md` files.
+All documents are also available in 简体中文 as sibling `*.zh-CN.md` files. Start from the [documentation index](./docs/README.md):
 
-| Document | Purpose |
-| --- | --- |
-| [Project status](./docs/PROJECT-STATUS.md) | Current snapshot, verified capabilities, limitations, debt, gaps, and milestone |
-| [Roadmap](./docs/ROADMAP.md) | Prioritized P0/P1/P2 debt register, deferred decisions, and milestone order |
-| [Migration](./docs/MIGRATION.md) | Preserve blog-v3 content, configuration, redirects, patches, custom code, and assets while adopting Clarity |
-| [Architecture](./docs/ARCHITECTURE.md) | Theme/consumer boundary and build/runtime data flows |
-| [API](./docs/API.md) | Public package/Layer API versus internal implementation |
-| [Configuration](./docs/CONFIGURATION.md) | Field-level Clarity configuration contract and examples |
-| [Customization](./docs/CUSTOMIZATION.md) | UI, component, Shiki, CSS, server, and route overrides |
-| [Compatibility](./docs/COMPATIBILITY.md) | Generated release compatibility matrix |
-| [Upstream sync](./docs/UPSTREAM.md) | Baseline, manifest, commands, conflicts, and workflow |
-| [Patches](./docs/PATCHES.md) | Consumer patch ownership and current conclusions |
-| [Release audit](./docs/RELEASE-AUDIT.md) | Pre-closing engineering audit and remaining release gates |
-| [Release checklist](./docs/RELEASE-CHECKLIST.md) | Exact final checks, remaining blockers, and verification evidence |
-| [Publishing](./docs/PUBLISHING.md) | Versioning, tags, GitHub Releases, OIDC publishing, provenance, and rollback policy |
-| [Changelog](./CHANGELOG.md) | Consumer-facing release history |
-| [Extraction history](./docs/history/2026-09-layer-extraction.md) | Historical phases and one-time differential validation |
-
-## Repository Layout
-
-The repository root is the engineering layer; all Theme runtime source lives
-under `src/`:
-
-```
-clarity-theme/
-├─ src/                  # Theme runtime source (Layer srcDir)
-│  ├─ assets/ components/ composables/ layouts/ middleware/
-│  ├─ pages/ plugins/ stores/ types/ utils/
-│  ├─ app.config.ts app.vue error.vue shiki.config.ts
-│  ├─ config/            # config API sources (npm ./config ./content ./schema)
-│  ├─ img/               # img API sources (npm ./img)
-│  ├─ modules/           # source-layout bootstrap + clarity-config modules
-│  ├─ public/ server/ shared/ remark-plugins/
-├─ skills/               # Agent workflow skills (not part of the npm package)
-├─ docs/                 # Human documentation
-├─ playground/           # Workspace-linked development consumer
-├─ create-clarity-theme/ # Official independent npm creator package
-├─ scripts/  tests/      # Verification and tooling
-└─ nuxt.config.ts, package.json, sync-manifest.json, …
-```
-
-`nuxt.config.ts` stays at the package root. Its first module,
-`src/modules/clarity-source-layout`, applies the `src/` directory metadata to
-the Clarity layer only; static `srcDir`/`serverDir`/`dir.*` values are not
-used because c12 would merge them into consumer root config. npm, Git-commit,
-and local-directory installs therefore resolve the same layout without
-overriding a consumer's own application directories.
-
-The npm package, the Agent skill, and the docs are three separate concerns:
-
-- **`clarity-theme` (npm package)** — the runtime Nuxt Layer installed with
-  `extends: ['clarity-theme']`. Its `files` field ships only `src/` plus the
-  root entry files; dev assets never enter the tarball.
-- **`skills/migrate-blog-v3-to-clarity`** — the canonical Agent workflow for
-  migrating an existing blog-v3 project. It is versioned with the repository
-  but intentionally **not** bundled into the npm package.
-- **`docs/`** — human-readable documentation mirrored in English and Chinese.
-
-### Installing the migration skill
-
-```bash
-npx skills add iicemeta/clarity-theme --list   # discover available skills
-npx skills add iicemeta/clarity-theme --skill migrate-blog-v3-to-clarity
-```
-
-For development, `npx skills add ./skills --list` discovers the local copy.
-To migrate a blog-v3 site with an Agent, ask it to use the
-`migrate-blog-v3-to-clarity` skill; the human walkthrough remains
-[Migration](./docs/MIGRATION.md).
+- **Getting started** — [new project](./docs/getting-started/new-project.md), [manual installation](./docs/getting-started/manual-installation.md), [migrating from blog-v3](./docs/getting-started/migration-from-blog-v3.md)
+- **Guides** — [configuration](./docs/guides/configuration.md), [content](./docs/guides/content.md), [customization](./docs/guides/customization.md), [integrations](./docs/guides/integrations.md)
+- **Reference** — [public API](./docs/reference/api.md), [routes and outputs](./docs/reference/routes-and-outputs.md), [compatibility matrix](./docs/reference/compatibility.md)
+- **Concepts** — [architecture](./docs/concepts/architecture.md)
+- **Maintainers** — [development](./docs/maintainers/development.md), [testing](./docs/maintainers/testing.md), [upstream sync](./docs/maintainers/upstream-sync.md), [patches](./docs/maintainers/patches.md), [publishing](./docs/maintainers/publishing.md), [release checklist](./docs/maintainers/release-checklist.md), [project status](./docs/maintainers/project-status.md), [roadmap](./docs/maintainers/roadmap.md), [documentation rules](./docs/maintainers/documentation.md)
+- **Release history** — [CHANGELOG](./CHANGELOG.md); historical records live under [docs/history](./docs/history/)
 
 ## Development
 
 ```bash
-pnpm install              # Theme + playground workspace
-pnpm dev                  # Playground dev server
-pnpm generate             # Playground static generation
-pnpm lint
+pnpm install        # Theme + playground workspace
+pnpm dev            # Playground dev server
+pnpm generate       # Playground static generation
+pnpm lint           # ESLint + Stylelint
 pnpm typecheck
-pnpm verify               # Purity/static leak checks
-pnpm peers check
-pnpm test:sync
-pnpm test:migration
-pnpm test:contract
-pnpm test:consumer
-pnpm test:compatibility
-pnpm test:create          # Create CLI behavior tests
-pnpm test:create:e2e      # Generated consumer install/typecheck/generate
-pnpm test:create:tarball  # Packed creator binary E2E
-pnpm pack --dry-run       # inspect the npm tarball without writing it
 ```
 
-CI derives Node and pnpm versions from package metadata. It runs lint/typecheck/verify/sync/migration/contract/peers on the fixed Node matrix, then playground generate, real consumer acceptance, and rendering compatibility on the primary Node version. A separate weekly workflow only detects and reports upstream drift.
-
-See [Project status → CI](./docs/PROJECT-STATUS.md#10-ci) for the exact CI stages and permissions.
-
-## Upstream Synchronization
-
-Clarity is extracted from an upstream Nuxt blog and records the exact reviewed baseline in `sync-manifest.json`. The synchronization tooling separates directly includable paths, consumer-owned exclusions, transformed Theme contracts, and manual review paths; unknown upstream changes block apply. Use:
-
-```bash
-pnpm sync:check   # compare manifest baseline with remote
-pnpm sync:diff    # classify upstream changes
-pnpm sync:apply   # transactionally apply reviewed include-only changes
-pnpm sync:verify  # rerun Theme purity and baseline checks
-```
-
-The weekly workflow only detects and reports drift. It never applies, commits, or pushes changes. See [Upstream sync](./docs/UPSTREAM.md).
-
-## Release Status
-
-Clarity Theme `0.1.2` is published on npm through the OIDC release workflow. The Layer/package boundary, validated configuration, Content factory, rendering pipeline, server outputs, playground, real-consumer acceptance, compatibility matrix, three-layer CI, upstream-sync baseline, release gate, provenance, and registry verification are implemented. The separate `create-clarity-theme` creator package is implemented in this repository and awaits its first manual npm Trusted Publisher configuration and GitHub Release.
-
-The v0.1.0 correctness gates from [Roadmap](./docs/ROADMAP.md) are resolved: server/client configuration is split, feature-off routes return 404 at runtime, anti-mirror navigation is verified in a real browser, the no-op random-permalink field is removed, and multi-pattern stats are covered by a regression test. Remaining deferred items are recorded in the roadmap and release notes.
+See [development](./docs/maintainers/development.md) and [testing](./docs/maintainers/testing.md) for the full verification matrix, upstream synchronization, and release workflow.
 
 ## License
 

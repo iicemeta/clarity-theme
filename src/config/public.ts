@@ -10,7 +10,7 @@ import type {
 /**
  * 由 clarity.config.ts 注入 appConfig 的客户端可见配置。
  *
- * 可见性约定（详见 docs/config-api-audit.md）：
+ * 可见性约定（详见 docs/guides/configuration.md）：
  * - 只有客户端渲染确实需要的字段进入 appConfig；
  * - feed、完整 stats、features 与 site.author.email 等服务端/构建期字段
  *   改由 Nitro 私有 runtimeConfig 提供（config/server.ts），不进入客户端 bundle；

@@ -4,7 +4,7 @@
  *
  * 将 playground/content/compatibility 的兼容性基准页从「人工查看」升级为自动回归：
  *
- *   0. Compatibility Contract → 契约完整性 + docs/COMPATIBILITY.md 同步校验
+ *   0. Compatibility Contract → 契约完整性 + docs/reference/compatibility.md 同步校验
  *   1. 生产构建日志扫描     → Nuxt / Vue runtime error、Content parser error、missing component
  *   2. 生产 SSR 路由断言    → 状态码（含 404 / permalink / 隐藏 /posts 前缀）+ 关键 HTML 结构 + payload
  *   3. 浏览器（生产构建）   → Shiki / Mermaid / abcjs 等客户端渲染结果 + runtime error
@@ -20,7 +20,7 @@
  *   node scripts/test-compatibility.mjs --no-browser    # 跳过浏览器阶段（降级为 SSR + 日志）
  *   node scripts/test-compatibility.mjs --no-dev        # 跳过 dev hydration 阶段
  *   node scripts/test-compatibility.mjs --contract-only # 只校验契约与文档同步（无构建）
- *   node scripts/test-compatibility.mjs --update-docs   # 由契约重新生成 docs/COMPATIBILITY.md
+ *   node scripts/test-compatibility.mjs --update-docs   # 由契约重新生成 docs/reference/compatibility.md
  */
 import { spawn } from 'node:child_process'
 import { createWriteStream, existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
@@ -44,7 +44,7 @@ import {
 
 const themeDir = fileURLToPath(new URL('..', import.meta.url))
 const playgroundDir = join(themeDir, 'playground')
-const compatibilityDocPath = join(themeDir, 'docs', 'COMPATIBILITY.md')
+const compatibilityDocPath = join(themeDir, 'docs', 'reference', 'compatibility.md')
 const nuxtBin = join(playgroundDir, 'node_modules', 'nuxt', 'bin', 'nuxt.mjs')
 const serverEntry = join(playgroundDir, '.output', 'server', 'index.mjs')
 
@@ -71,7 +71,7 @@ async function main() {
 		// ---- 0. Compatibility Contract（不依赖构建，先 fail fast）----
 		if (flags.updateDocs) {
 			writeFileSync(compatibilityDocPath, renderCompatibilityDoc())
-			console.log('[1/7] 已根据契约重新生成 docs/COMPATIBILITY.md')
+			console.log('[1/7] 已根据契约重新生成 docs/reference/compatibility.md')
 		}
 		verifyCompatibilityContract()
 
@@ -613,7 +613,7 @@ function verifyCompatibilityContract() {
 			? readFileSync(compatibilityDocPath, 'utf8')
 			: ''
 		if (actual !== expected) {
-			contractFail('docs/COMPATIBILITY.md 与 compatibilityContract 不同步：node scripts/test-compatibility.mjs --update-docs')
+			contractFail('docs/reference/compatibility.md 与 compatibilityContract 不同步：node scripts/test-compatibility.mjs --update-docs')
 		}
 	}
 
@@ -632,11 +632,11 @@ function renderCompatibilityDoc() {
 	const lines = [
 		'# Clarity Theme Release Compatibility Matrix',
 		'',
-		'**English** | [简体中文](./COMPATIBILITY.zh-CN.md)',
+		'**English** | [简体中文](./compatibility.zh-CN.md)',
 		'',
 		'> 本文档由 `scripts/compatibility-cases.mjs` 中的 `compatibilityContract` 生成，请勿手改表格。',
 		'> 重新生成：`node scripts/test-compatibility.mjs --update-docs`；`pnpm test:contract` 会在 CI 中校验同步。',
-		'> 中文版为人工同步的翻译快照，重新生成本文档后需手动同步 `COMPATIBILITY.zh-CN.md`。',
+		'> 中文版为人工同步的翻译快照，重新生成本文档后需手动同步 `compatibility.zh-CN.md`。',
 		'',
 		'契约只断言「功能是否存在、配置是否生效、路由是否正确、输出是否正确」，不追求覆盖 UI 细节。',
 		'',

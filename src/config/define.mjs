@@ -13,7 +13,7 @@ export function defineClarityConfig(config) {
 			.join('\n')
 		throw new Error(
 			`clarity.config.ts 校验失败：\n${issues}\n`
-			+ '未知字段会被拒绝：请检查拼写，或参考 docs/config-api-audit.md 的字段归属表。',
+			+ '未知字段会被拒绝：请检查拼写，或参考 docs/guides/configuration.md 的字段契约。',
 			{ cause: result.error },
 		)
 	}

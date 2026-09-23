@@ -40,7 +40,7 @@ Do not edit article frontmatter while mapping these fields. `permalink` remains 
 | --- | --- | --- | --- | --- |
 | `feed.limit` | `feed.limit` | Default `50` | `AUTO` | Positive integer |
 | `feed.enableStyle` | `feed.enableStyle` | Default `true` | `AUTO` | Atom XSLT |
-| `stats.includePaths` | `stats.includePaths` | Default `[]` | `REVIEW` | SQL-LIKE Content stems; multi-pattern behavior is a known current limitation |
+| `stats.includePaths` | `stats.includePaths` | Default `[]` | `REVIEW` | SQL-LIKE Content stems; multiple patterns are combined as a union (`posts/%` + `notes/%` counts both) |
 | no source field | `changelog` | Default `[]` | `REVIEW` | Add only user-approved site history |
 
 ## Integrations and features

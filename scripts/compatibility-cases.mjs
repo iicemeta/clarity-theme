@@ -595,7 +595,7 @@ export const consoleAllowRules = [
 /* ------------------------------------------------------------------ */
 
 /**
- * 发布兼容性契约：docs/COMPATIBILITY.md 的唯一事实来源。
+ * 发布兼容性契约：docs/reference/compatibility.md 的唯一事实来源。
  *
  * - feature / input / expected / command / status 五列即文档表格
  * - coverage 中的 `compat:<id>` 会被 scripts/test-compatibility.mjs 校验，

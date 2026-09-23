@@ -53,6 +53,7 @@
     "lint": "eslint && stylelint \"src/**/*.{vue,scss}\" \"playground/app/**/*.vue\"",
     "lint:fix": "eslint --fix && stylelint \"src/**/*.{vue,scss}\" \"playground/app/**/*.vue\" --fix",
     "typecheck": "pnpm --dir playground typecheck",
+    "docs:check": "node scripts/check-docs.mjs",
     "verify": "node scripts/verify-theme.mjs",
     "test:sync": "node --test tests/sync-upstream.test.mjs",
     "test:migration": "node --test tests/migration-skill.test.mjs",

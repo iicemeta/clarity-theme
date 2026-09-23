@@ -1,0 +1,64 @@
+# Content
+
+**English** | [简体中文](./content.zh-CN.md)
+
+Clarity renders one Nuxt Content collection named `content`, created by `createClarityContentConfig()` from your site configuration. Source of truth: `src/config/content.ts` / `src/config/content.mjs`, the `content:file:afterParse` hook in `src/modules/clarity-config/index.ts`, and the rendering pipeline in `nuxt.config.ts`.
+
+## Collection layout
+
+```text
+content/
+├─ posts/       # Articles (queried by the home list, archive, and Atom feed)
+├─ previews/    # Unpublished articles, listed on /preview and excluded from the home list
+└─ …            # Any other Content pages, served by the catch-all route
+```
+
+`content.config.ts` must call the factory with the same root config used by `clarity.config.ts`:
+
+```ts
+import { createClarityContentConfig } from 'clarity-theme/content'
+import clarityConfig from './clarity.config'
+
+export default createClarityContentConfig(clarityConfig)
+```
+
+The factory parses the config again (Zod-strict), generates the article schema, and extends it with sitemap `lastmod` metadata derived from `updated || published || date`.
+
+## Article frontmatter
+
+| Field | Type / default | Notes |
+| --- | --- | --- |
+| `title` | string, optional | Page title and SEO title |
+| `description` | string, optional | Excerpt and SEO description |
+| `date` | string, optional | Creation date; drives annual archive and Atom `published` fallback |
+| `updated` | string, optional | Update date; used for sorting and Atom `updated` |
+| `published` | string, optional | Explicit publication date for Atom/sitemap; falls back to `date` |
+| `categories` | string[], default `[article.defaultCategory]` | First category drives list filtering |
+| `tags` | string[], default `[]` | Free-form tags shown in stats and article footer |
+| `type` | enum of `article.types` keys, default first key | Article layout; when `types` is empty the schema falls back to `tech` |
+| `image` | string, optional | Cover/og image |
+| `recommend` | number, optional | Non-null values surface the article in the recommended list, ordered by `recommend` then `date` |
+| `references` | `{ title?, link? }[]`, optional | Reference list |
+| `draft` | boolean, default `false` | Content metadata; the Theme's own unpublished mechanism is the `previews/` path convention |
+| `permalink` | string, optional | Custom route; honored verbatim |
+| `readingTime` | injected | Populated by `remark-reading-time`; do not set manually |
+
+## Routing
+
+- Articles under `content/posts/` are served at `/…` by default: the module's `content:file:afterParse` hook strips the `/posts` prefix when `article.hidePostPrefix` is `true` (the default).
+- A frontmatter `permalink` always wins and is applied before prefix hiding; do not regenerate permalinks during upgrades.
+- `/preview` lists everything under `previews/%`. Configure `article.robotsNotIndex` (for example `['/preview', '/previews/*']`) to keep preview pages out of `robots.txt`; it defaults to an empty array.
+- Any other Content page is rendered by the catch-all page; a missing path returns 404.
+
+## Rendering features
+
+The Layer configures the whole Markdown pipeline; consumers should not re-register duplicate plugins:
+
+- **Markdown/MDC** — MDC component syntax (`:badge{name="Nuxt"}`), prose components, slots, and `remark-code-component`.
+- **Code** — Shiki highlighting runs in Theme prose components at runtime (Content-build highlighting is disabled); fenced `mermaid` and `music-abc` blocks are converted to component props.
+- **Math** — `remark-math` + `rehype-katex` with a remote KaTeX stylesheet.
+- **Music** — ABC notation rendered by the `MusicScore` content component.
+- **Images** — rich image components and Nuxt Image processing; consumer patches may be required for fractional densities or ICO passthrough (see [patch strategy](../maintainers/patches.md)).
+- **Reading time / TOC / meta slots** — injected by remark plugins and rehype-meta-slots.
+
+The verified feature matrix is generated in [compatibility](../reference/compatibility.md). To customize rendering output, prefer component and Shiki overrides as described in [customization](./customization.md).
