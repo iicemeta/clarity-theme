@@ -2,7 +2,7 @@
 
 [English](./RELEASE-CHECKLIST.md) | **简体中文**
 
-> 清单日期：2026-09-22，Asia/Taipei。v0.1.0 的 P0 正确性门禁已解决，门禁 `0.1.1` 已发布（2026-09-22T09:45:26Z），此后运行时源码迁移到标准化 `src/` 布局。当前门禁发布版本为 **`0.1.2`（tag `v0.1.2`）**。当前工作树在打 tag 前通过了预发布验证套件；实际发布仍需在确切 tag 上运行工作流，并完成第 9 节的 npm/GitHub 人工步骤。
+> 清单日期：2026-09-23，Asia/Taipei。v0.1.0 的 P0 正确性门禁已解决，门禁 `0.1.1` 已发布（2026-09-22T09:45:26Z），标准化 `src/` 布局发布 **`0.1.2`（tag `v0.1.2`）** 也已发布（2026-09-22T15:04:33Z）。独立版本化的 `create-clarity-theme@0.1.0-beta.1` 创建包预发布已实现并通过本地/tarball 验证，但首次 npm 发布仍需完成第 10 节的人工步骤。
 
 图例：
 
@@ -13,6 +13,7 @@
 ## 1. 必需文档
 
 - [x] `README.md` 面向用户，覆盖介绍、功能、要求、安装、快速开始、迁移、配置、自定义、开发、测试、上游同步、发布状态与许可证。
+- [x] `create-clarity-theme/README.md` 记录 pnpm/npm 官方创建方式、CLI 参数、生成文件、直接依赖、安全行为与创建器验证。
 - [x] `docs/MIGRATION.md` 覆盖已测试的 blog-v3 基线、备份、盘点、有序迁移、字段/文件映射、补丁归属、数据安全、验证与故障排查。
 - [x] `docs/CONFIGURATION.md` 记录 `site`、`article`、`feed`、`stats`、`integrations`、`features`、`changelog`、app-config 边界、可见性、默认值与完整示例。
 - [x] `docs/CUSTOMIZATION.md` 记录 UI 配置、组件覆盖、Shiki、CSS、自定义应用文件、服务端路由、路由规则、公共资源与验证。
@@ -109,6 +110,10 @@
 
 ## 8. 验证证据
 
+下方保留 Theme 发布时的历史验证证据。创建包新增 `pnpm test:create`、
+`pnpm test:create:e2e` 与 `pnpm test:create:tarball`；当前工作树结果记录在
+实现报告中，不改写历史 `0.1.2` 预发布表格。
+
 ### `v0.1.2` 打 tag 前重跑（src/ 布局代码树，2026-09-22）
 
 | 命令 | 最终结果 | 备注 |
@@ -161,7 +166,7 @@
 
 没有测试被报告为当前失败。
 
-## 9. 发布门槛
+## 9. Theme 发布门槛
 
 ### 包发布
 
@@ -173,26 +178,38 @@
 - [x] publish workflow
 - [x] OIDC permissions
 - [x] npm trusted publisher documentation
-- [ ] actual npm publish
-- [ ] npm install from registry
-- [ ] final exact-commit verification
+- [x] actual npm publish（`clarity-theme@0.1.2`，2026-09-22T15:04:33Z）
+- [x] npm install from registry
+- [x] final exact-commit verification
 
 ### 人工门禁
 
 - [x] 所有 ROADMAP P0 项已解决；P1/P2 推迟项已记录在发布说明中。
 - [!] **检测到绕过流程的发布**：`clarity-theme@0.1.0` 已于 2026-09-22T07:28:22Z 被发布到 npm，发布者 `creampack <creampack@iicemeta.com>`，gitHead `5a03778`（P0 修复前代码树，未经过发布工作流，无 provenance）。registry 消费者测试在该已发布包内部 typecheck 失败（见第 8 节）。
 - [x] 维护者决策：当前门禁发布为 **`0.1.2`（tag `v0.1.2`）**（npm 禁止重新发布 `0.1.0`/`0.1.1`；`0.1.1` 已经工作流发布）；可选执行 `npm deprecate clarity-theme@0.1.0`；**绝不自动 unpublish**。
-- [!] Commit 已审查的工作树、提升到选定的发布版本、打 tag，并在该确切 tag 上重跑完整有序套件（发布工作流会自动执行）。
+- [x] Commit 已审查的工作树、提升到选定的发布版本、打 tag，并在该确切 tag 上重跑完整有序套件（发布工作流已自动执行）。
 - [x] 发布 tag、更新日志、provenance、产物校验和与回滚流程已在[发布指南](./PUBLISHING.zh-CN.md)定义。
 - [x] npm 包名已核实：`clarity-theme` 在 registry 上存在一个（绕过流程的）可用 `0.1.0`；维护者包含 `creampack <creampack@iicemeta.com>`。
 - [ ] 获得 MIT 版权声明的维护者/法律确认。
 - [x] 配置 npm Trusted Publisher（见[发布指南 §6](./PUBLISHING.zh-CN.md#6-trusted-publisher一次性人工配置)）——自门禁 `0.1.1` 发布起已就绪。
-- [ ] 通过发布 `v0.1.2` 的 GitHub Release 触发发布工作流。
-- [ ] 评审最终 tag、包 tarball 校验和、provenance、发布说明与回滚计划。
-- [ ] 发布后：运行 `pnpm test:registry-consumer` 并用 `npm view` 验证已发布版本。
+- [x] 通过发布 `v0.1.2` 的 GitHub Release 触发发布工作流。
+- [x] 评审最终 tag、包 tarball 校验和、provenance、发布说明与回滚计划。
+- [x] 发布后：`npm view` 与 `pnpm test:registry-consumer` 均通过 registry `clarity-theme@0.1.2` 验证（2026-09-23 复查）。
+
+## 10. 创建包发布门槛
+
+- [x] 独立 `create-clarity-theme` 包与 bin 元数据
+- [x] 不含上游/私有站点数据的通用消费者模板
+- [x] CLI 行为测试
+- [x] 生成消费者 install/typecheck/generate E2E
+- [x] 通过已安装 bin 执行的创建器 tarball E2E
+- [x] CI 覆盖与独立 `publish-create.yml` 工作流
+- [x] 创建器 README、更新日志与发布文档
+- [ ] 为 `create-clarity-theme` / `publish-create.yml` 配置 npm Trusted Publisher
+- [ ] 打 `create-v0.1.0-beta.1` tag、发布对应 GitHub Release，并用 `npm view create-clarity-theme@0.1.0-beta.1` 验证
 
 ## 结论
 
 **收尾文档、迁移指引、Skill、夹具、CI 接线与本地验证：完成。**
 
-**门禁发布 `0.1.2`：`src/` 布局迁移，等待 GitHub Release 触发。** 门禁 `0.1.1` 已发布，绕过流程的 `0.1.0`（修复前代码树、未经门禁）保持发布状态且无法重新发布；`0.1.2` 通过文档化工作流发布源码布局迁移后的代码树。「工作流已创建」不等于「发布已完成」——在 registry 存在 `0.1.2` 之前，不要勾选第 9 节的发布项。
+**门禁发布 `0.1.2`：已发布。** 绕过流程的 `0.1.0`（修复前代码树、未经门禁）保持发布状态且无法重新发布；`0.1.2` 是已发布的源码布局版本。`create-clarity-theme@0.1.0-beta.1` 仍待一次性 npm Trusted Publisher 配置与 `create-v0.1.0-beta.1` GitHub Release。

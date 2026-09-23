@@ -1,0 +1,8 @@
+allowBuilds:
+  '@parcel/watcher': true
+  esbuild: true
+  oxc-resolver: true
+  rolldown: true
+  sharp: true
+  unrs-resolver: true
+  vue-demi: true

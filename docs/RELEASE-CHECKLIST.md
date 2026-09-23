@@ -2,7 +2,7 @@
 
 **English** | [简体中文](./RELEASE-CHECKLIST.zh-CN.md)
 
-> Checklist date: 2026-09-22, Asia/Taipei. The v0.1.0 P0 correctness gates are resolved, the gated `0.1.1` release is published (2026-09-22T09:45:26Z), and the runtime source has since moved to the standardized `src/` layout. The current gated release version is **`0.1.2`** from tag `v0.1.2`. The working tree passed the pre-tag verification suite; the actual publish still requires the exact-tag workflow run plus the manual npm/GitHub steps in §9.
+> Checklist date: 2026-09-23, Asia/Taipei. The v0.1.0 P0 correctness gates are resolved, the gated `0.1.1` release is published (2026-09-22T09:45:26Z), and the standardized `src/` layout release **`0.1.2`** is published from tag `v0.1.2` (2026-09-22T15:04:33Z). The separately versioned `create-clarity-theme@0.1.0-beta.1` creator prerelease is implemented and locally/tarball-verified, but its first npm publication still requires the manual steps in §10.
 
 Legend:
 
@@ -13,6 +13,7 @@ Legend:
 ## 1. Required Documents
 
 - [x] `README.md` is user-facing and covers introduction, features, requirements, installation, Quick Start, migration, configuration, customization, development, testing, upstream synchronization, release status, and license.
+- [x] `create-clarity-theme/README.md` documents official creation with pnpm/npm, CLI options, generated files, direct dependencies, safety behavior, and creator verification.
 - [x] `docs/MIGRATION.md` covers the tested blog-v3 baseline, backup, inventory, ordered migration, field/file mappings, patch ownership, data safety, validation, and troubleshooting.
 - [x] `docs/CONFIGURATION.md` documents `site`, `article`, `feed`, `stats`, `integrations`, `features`, `changelog`, app-config boundaries, visibility, defaults, and a complete example.
 - [x] `docs/CUSTOMIZATION.md` documents UI configuration, component overrides, Shiki, CSS, custom application files, server routes, route rules, public assets, and validation.
@@ -109,6 +110,12 @@ These are tracked in [ROADMAP](./ROADMAP.md). Documentation completion does not 
 
 ## 8. Verification Evidence
 
+Historical verification evidence for the Theme release is retained below. The
+creator package adds `pnpm test:create`, `pnpm test:create:e2e`, and
+`pnpm test:create:tarball`; current working-tree results are recorded in the
+implementation report rather than rewriting the historical `0.1.2` pre-release
+table.
+
 ### `v0.1.2` pre-tag rerun (source-layout tree, 2026-09-22)
 
 | Command | Final result | Notes |
@@ -161,7 +168,7 @@ Known non-fatal warnings:
 
 No test is being reported as currently failing.
 
-## 9. Publication Gate
+## 9. Theme Publication Gate
 
 ### Package publication
 
@@ -173,26 +180,38 @@ No test is being reported as currently failing.
 - [x] publish workflow
 - [x] OIDC permissions
 - [x] npm trusted publisher documentation
-- [ ] actual npm publish
-- [ ] npm install from registry
-- [ ] final exact-commit verification
+- [x] actual npm publish (`clarity-theme@0.1.2`, 2026-09-22T15:04:33Z)
+- [x] npm install from registry
+- [x] final exact-commit verification
 
 ### Manual gates
 
 - [x] All ROADMAP P0 items resolved; P1/P2 deferrals recorded in the release notes.
 - [!] **Out-of-band publication detected:** `clarity-theme@0.1.0` was published to npm at 2026-09-22T07:28:22Z by `creampack <creampack@iicemeta.com>` from gitHead `5a03778` — the pre-P0-fix tree, outside the release workflow, without provenance. The registry consumer test fails typecheck inside that published package (see §8).
 - [x] Maintainer decision: the current gated release is **`0.1.2` from tag `v0.1.2`** (npm forbids republishing `0.1.0`/`0.1.1`; `0.1.1` is already published through the workflow); optionally `npm deprecate clarity-theme@0.1.0`; **never auto-unpublish**.
-- [!] Commit the reviewed working tree, bump to the chosen release version, tag, and rerun the full ordered suite at that exact tag (the publish workflow does this automatically).
+- [x] Commit the reviewed working tree, bump to the chosen release version, tag, and rerun the full ordered suite at that exact tag (the publish workflow did this automatically).
 - [x] Release tag, changelog, provenance, artifact checksum, and rollback procedure are defined in [PUBLISHING](./PUBLISHING.md).
 - [x] npm package name verified: `clarity-theme` exists on the registry with a live (out-of-band) `0.1.0`; maintainers include `creampack <creampack@iicemeta.com>`.
 - [ ] Obtain maintainer/legal confirmation for the MIT copyright notice.
 - [x] Configure the npm Trusted Publisher (see [PUBLISHING §6](./PUBLISHING.md#6-trusted-publisher-one-time-manual-setup)) — in place since the gated `0.1.1` publish.
-- [ ] Trigger the publish workflow by publishing the `v0.1.2` GitHub Release.
-- [ ] Review the final tag, package tarball checksum, provenance, release notes, and rollback plan.
-- [ ] After publish: run `pnpm test:registry-consumer` and verify the released version with `npm view`.
+- [x] Trigger the publish workflow by publishing the `v0.1.2` GitHub Release.
+- [x] Review the final tag, package tarball checksum, provenance, release notes, and rollback plan.
+- [x] After publish: `npm view` and `pnpm test:registry-consumer` passed against registry `clarity-theme@0.1.2` (rechecked 2026-09-23).
+
+## 10. Creator Package Publication Gate
+
+- [x] independent `create-clarity-theme` package and bin metadata
+- [x] generic consumer template without upstream/private site data
+- [x] CLI behavior tests
+- [x] generated consumer install/typecheck/generate E2E
+- [x] packed creator tarball E2E through the installed bin
+- [x] CI coverage and dedicated `publish-create.yml` workflow
+- [x] creator README, changelog, and publishing documentation
+- [ ] configure npm Trusted Publisher for `create-clarity-theme` / `publish-create.yml`
+- [ ] tag `create-v0.1.0-beta.1`, publish its GitHub Release, and verify `npm view create-clarity-theme@0.1.0-beta.1`
 
 ## Verdict
 
 **Release-closing documentation, migration guidance, Skill, fixture, CI wiring, and local verification: complete.**
 
-**Gated release `0.1.2`: `src/` layout migration, pending the GitHub Release trigger.** The gated `0.1.1` is published and the out-of-band `0.1.0` (pre-fix tree, no gate) stays published and cannot be republished; `0.1.2` publishes the source-layout tree through the documented workflow. "Workflow created" is not the same as "release completed" — do not mark §9 publication items complete until the registry contains `0.1.2`.
+**Gated release `0.1.2`: published.** The out-of-band `0.1.0` (pre-fix tree, no gate) stays published and cannot be republished; `0.1.2` is the published source-layout release. `create-clarity-theme@0.1.0-beta.1` remains pending its one-time npm Trusted Publisher setup and `create-v0.1.0-beta.1` GitHub Release.

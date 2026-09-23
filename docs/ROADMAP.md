@@ -6,9 +6,9 @@
 
 ## Current Milestone
 
-**Milestone 1 + release enablement complete (2026-09-22).**
+**Milestone 1 + release enablement complete; official creator package implemented (2026-09-23).**
 
-All four P0 correctness blockers are resolved and covered by tests, multi-pattern stats gained a regression test, and the npm release workflow (tag/version gate, release-check, OIDC publish, provenance, registry consumer test) is implemented. The gated `0.1.1` (correcting the out-of-band registry `0.1.0`) is published; the current release `0.1.2` ships the `src/` layout migration and awaits its manual maintainer action. Future development starts with the remaining P1 items below.
+All four P0 correctness blockers are resolved and covered by tests, multi-pattern stats gained a regression test, and the npm release workflow (tag/version gate, release-check, OIDC publish, provenance, registry consumer test) is implemented. The gated `0.1.1` (correcting the out-of-band registry `0.1.0`) and the `src/` layout release `0.1.2` are published. The separate `create-clarity-theme@0.1.0-beta.1` creator prerelease is implemented and verified locally and through its packed tarball; its first npm publication remains a maintainer action. Future development starts with the remaining P1 items below.
 
 ## Completed
 
@@ -463,7 +463,7 @@ First npm release readiness (status 2026-09-22):
 6. ✅ The upstream baseline is current (`sync:check`).
 7. ✅ Public configuration visibility is accurately documented; remote-origin defaults are documented as a deferred limitation.
 
-Remaining human gates: the `v0.1.2` GitHub Release and the post-publish registry consumer test (the Trusted Publisher is configured since the gated `0.1.1` publish).
+Remaining creator-package human gates: configure its npm Trusted Publisher for `publish-create.yml`, publish the `create-v0.1.0-beta.1` GitHub Release, and verify the registry artifact. The Theme `v0.1.2` release is published.
 
 ## Upstream Maintenance
 
@@ -511,7 +511,7 @@ Scope: tag and publish the first package release, migrate documentation from Git
 
 Rationale: publication is a maintainership step, not a substitute for Milestone 1 correctness work. After release, semantic versioning and upstream drift maintenance become the governing constraints.
 
-**Status: pending manual execution** — publish the `v0.1.2` GitHub Release, then run `pnpm test:registry-consumer`.
+**Status: Theme release complete** — `clarity-theme@0.1.2` is published. Maintain SemVer, registry monitoring, and post-release consumer checks; the first `create-clarity-theme` release is the remaining manual creator-package action.
 
 ## Do Not Do Now
 

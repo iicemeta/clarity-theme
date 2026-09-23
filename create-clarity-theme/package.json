@@ -1,0 +1,44 @@
+{
+  "name": "create-clarity-theme",
+  "type": "module",
+  "version": "0.1.0-beta.1",
+  "description": "Create a ready-to-run Nuxt blog powered by Clarity Theme.",
+  "license": "MIT",
+  "publishConfig": {
+    "access": "public"
+  },
+  "homepage": "https://github.com/iicemeta/clarity-theme#readme",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/iicemeta/clarity-theme.git",
+    "directory": "create-clarity-theme"
+  },
+  "bugs": {
+    "url": "https://github.com/iicemeta/clarity-theme/issues"
+  },
+  "keywords": [
+    "clarity-theme",
+    "create",
+    "scaffold",
+    "nuxt",
+    "blog"
+  ],
+  "bin": {
+    "create-clarity-theme": "./src/cli.mjs"
+  },
+  "files": [
+    "CHANGELOG.md",
+    "LICENSE",
+    "README.md",
+    "src",
+    "templates"
+  ],
+  "engines": {
+    "node": "^22.19 || ^24.11 || >=26"
+  },
+  "scripts": {
+    "test": "node --test tests/cli.test.mjs",
+    "test:e2e": "node --test tests/consumer.test.mjs",
+    "test:tarball": "node --test tests/tarball.test.mjs"
+  }
+}

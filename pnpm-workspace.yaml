@@ -1,7 +1,8 @@
-# 仅用于 Theme 仓库自身的开发环境（playground），
+# 仅用于 Theme 仓库自身的开发环境（playground 与创建包测试），
 # Theme package 的依赖全部为普通语义化版本，消费项目无需 pnpm workspace。
 packages:
   - playground
+  - create-clarity-theme
 
 # pnpm 会在部分 Nuxt 子包上下文中为 unctx 解析到旧 optional peers。
 # 开发 workspace 统一锁定满足 unctx@3 声明的版本；该配置不会进入 npm 包。

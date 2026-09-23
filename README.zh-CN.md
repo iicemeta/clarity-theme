@@ -27,7 +27,32 @@ Clarity Theme 是一个从 [L33Z22L11/blog-v3](https://github.com/L33Z22L11/blog
 
 Clarity 已通过 npm 注册表以 `clarity-theme` 分发。它属于应用运行时的一部分（Nuxt 构建与静态生成会直接加载 Layer），因此请将其安装为常规依赖（dependency），而不是开发依赖（devDependency）；生产环境安装也必须能解析到它。
 
-## 安装
+## 创建新博客
+
+初始创建器预发布通过 npm `beta` dist-tag 分发。
+
+### pnpm
+
+```bash
+pnpm create clarity-theme@beta my-blog
+```
+
+### npm
+
+```bash
+npx create-clarity-theme@beta my-blog
+```
+
+然后：
+
+```bash
+cd my-blog
+pnpm dev
+```
+
+官方创建包以独立的 `create-clarity-theme` npm 包分发。它会生成真正独立的 Nuxt 消费项目，包含必要配置契约、通用欢迎文章和最小直接依赖。完整参数见 [`create-clarity-theme/README.md`](./create-clarity-theme/README.md)。
+
+## 手动安装
 
 ```bash
 pnpm add clarity-theme
@@ -43,7 +68,7 @@ pnpm add github:iicemeta/clarity-theme#<commit>
 
 该方式仅用于开发场景。正式站点应使用已发布的 npm 版本，以保证安装可复现并被发布验证矩阵覆盖。
 
-## 快速开始
+## 手动快速开始
 
 ### 1. 继承 Layer
 
@@ -283,6 +308,7 @@ clarity-theme/
 ├─ skills/               # Agent 工作流 Skill（不进入 npm 包）
 ├─ docs/                 # 人工文档
 ├─ playground/           # workspace 链接的开发用消费项目
+├─ create-clarity-theme/ # 官方独立 npm 创建包
 ├─ scripts/  tests/      # 验证与工具脚本
 └─ nuxt.config.ts、package.json、sync-manifest.json、…
 ```
@@ -329,6 +355,9 @@ pnpm test:migration
 pnpm test:contract
 pnpm test:consumer
 pnpm test:compatibility
+pnpm test:create          # 创建 CLI 行为测试
+pnpm test:create:e2e      # 生成消费者 install/typecheck/generate
+pnpm test:create:tarball  # 打包后的创建器二进制 E2E
 pnpm pack --dry-run       # 不落盘检查 npm tarball
 ```
 
@@ -351,7 +380,7 @@ pnpm sync:verify  # 重新运行主题纯度与基线检查
 
 ## 发布状态
 
-Clarity Theme 是一个 **v0.1.2 门禁 npm 发布版本**。Layer/包边界、已校验配置、Content 工厂、渲染管线、服务端输出、playground、真实消费者验收、兼容性矩阵、三层 CI、上游同步基线、发布门禁与 OIDC 发布工作流均已实现。剩余的人工发布步骤见[发布检查清单](./docs/RELEASE-CHECKLIST.zh-CN.md)。
+Clarity Theme `0.1.2` 已通过 OIDC 发布工作流进入 npm。Layer/包边界、已校验配置、Content 工厂、渲染管线、服务端输出、playground、真实消费者验收、兼容性矩阵、三层 CI、上游同步基线、发布门禁、provenance 与 registry 验证均已实现。独立的 `create-clarity-theme` 创建包已在本仓库实现，尚待首次人工配置 npm Trusted Publisher 并触发 GitHub Release。
 
 [路线图](./docs/ROADMAP.zh-CN.md)中的 v0.1.0 正确性门禁已解决：服务端/客户端配置已拆分、功能关闭路由在运行时返回 404、反镜像导航已在真实浏览器中验证、no-op 随机固定链接字段已移除，多模式统计已增加回归测试。其余推迟事项记录在路线图与发布说明中。
 

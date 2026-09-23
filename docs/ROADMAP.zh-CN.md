@@ -6,9 +6,9 @@
 
 ## 当前里程碑
 
-**里程碑 1 + 发布赋能完成（2026-09-22）。**
+**里程碑 1 + 发布赋能完成；官方创建包已实现（2026-09-23）。**
 
-四个 P0 正确性阻塞项全部解决并有测试覆盖，多模式统计增加了回归测试，npm 发布工作流（tag/version 门禁、release-check、OIDC 发布、provenance、registry 消费者测试）已实现。门禁 `0.1.1`（修正绕过流程的 registry `0.1.0`）已发布；当前发布 `0.1.2` 包含 `src/` 布局迁移，等待维护者的人工发布动作。未来开发从下文剩余 P1 项开始。
+四个 P0 正确性阻塞项全部解决并有测试覆盖，多模式统计增加了回归测试，npm 发布工作流（tag/version 门禁、release-check、OIDC 发布、provenance、registry 消费者测试）已实现。门禁 `0.1.1`（修正绕过流程的 registry `0.1.0`）与 `src/` 布局版本 `0.1.2` 均已发布。独立 `create-clarity-theme@0.1.0-beta.1` 创建包预发布已实现，并通过本地与打包 tarball 验证；首次 npm 发布仍是维护者操作。未来开发从下文剩余 P1 项开始。
 
 ## 已完成
 
@@ -458,7 +458,7 @@ P1 发布赋能，在里程碑 3 执行，且只在 P0 工作与选定的 P1 契
 6. ✅ 上游基线最新（`sync:check`）。
 7. ✅ 公共配置可见性已准确文档化；远程来源默认值作为推迟限制记录。
 
-剩余人工门禁：发布 `v0.1.2` GitHub Release，以及发布后运行 registry 消费者测试（Trusted Publisher 自门禁 `0.1.1` 发布起已配置）。
+创建包剩余人工门禁：为 `publish-create.yml` 配置其 npm Trusted Publisher、发布 `create-v0.1.0-beta.1` GitHub Release，并验证 registry 产物。Theme `v0.1.2` 已发布。
 
 ## 上游维护
 
@@ -506,7 +506,7 @@ P1 发布赋能，在里程碑 3 执行，且只在 P0 工作与选定的 P1 契
 
 理由：发布是维护步骤，不能替代里程碑 1 的正确性工作。发布后，语义化版本与上游漂移维护成为主导约束。
 
-**状态：等待人工执行**——发布 `v0.1.2` GitHub Release，然后运行 `pnpm test:registry-consumer`。
+**状态：Theme 发布已完成**——`clarity-theme@0.1.2` 已发布。后续维护 SemVer、registry 监控与发布后消费者检查；首个 `create-clarity-theme` 发布是创建包剩余的人工操作。
 
 ## 现在不要做
 

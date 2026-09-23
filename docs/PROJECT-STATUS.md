@@ -2,7 +2,7 @@
 
 **English** | [简体中文](./PROJECT-STATUS.zh-CN.md)
 
-> Snapshot date: 2026-09-22, Asia/Taipei. This document describes the current repository. Historical phase narratives and old one-off audit results are kept in [history](./history/2026-09-layer-extraction.md) or marked as historical audit records.
+> Snapshot date: 2026-09-23, Asia/Taipei. This document describes the current repository. Historical phase narratives and old one-off audit results are kept in [history](./history/2026-09-layer-extraction.md) or marked as historical audit records.
 
 ## Documentation Source of Truth
 
@@ -22,14 +22,14 @@ Code, tests, CI, and the sync manifest override prose. A statement in this file 
 | Item | Current fact |
 | --- | --- |
 | Repository branch | `master` |
-| HEAD at Phase 20 start | `433d042ed3b626a048e84000ba2039102df61f28` (`docs: establish current reality-sync baseline`) |
-| Working tree | Clean and synchronized with `origin/master` before documentation changes |
+| Task baseline | `e2b2d9e` (`chore(release): bump version to 0.1.2 for the src-layout release`); the current `v0.1.2` tag points at this repository's release history |
+| Working tree | Contains the reviewed-but-uncommitted creator-package, CI, workflow, and documentation changes for this task; no unrelated user changes were present at task start |
 | Package | `clarity-theme` v0.1.2, MIT |
-| Distribution state | npm release pipeline ready (OIDC publish workflow, release gate, changelog); the gated `0.1.1` is published (2026-09-22T09:45:26Z) and the current gated release is **`0.1.2` from tag `v0.1.2`** (the `src/` layout migration). **A defective `clarity-theme@0.1.0` was published out-of-band at 2026-09-22T07:28:22Z** by `creampack <creampack@iicemeta.com>` from pre-P0 gitHead `5a03778`, without the gate or provenance; the registry consumer test fails typecheck inside it |
+| Distribution state | `clarity-theme@0.1.2` is published from tag `v0.1.2` through the OIDC workflow (2026-09-22T15:04:33Z) and is registry `latest`. **A defective `clarity-theme@0.1.0` was published out-of-band at 2026-09-22T07:28:22Z** by `creampack <creampack@iicemeta.com>` from pre-P0 gitHead `5a03778`, without the gate or provenance; the registry consumer test fails typecheck inside it. The independent `create-clarity-theme@0.1.0-beta.1` prerelease is implemented and locally/tarball-verified but not yet published |
 | Upstream baseline | `blog-v3` 3.7.2, `main` @ `f6ea97d745517feb52f0c100e89acb36f0adc12f` |
 | Upstream drift | None: a Phase 20 direct remote-head check returned the manifest baseline commit |
 | Local runtime used for verification | Node.js 24.15.0, pnpm 12.4.1, Nuxt 4.5.2, Vue 3.5.43 |
-| Current local verification | The full ordered suite passed at code commit `e601eb5`; Phase 20 reran only purity verification and the compatibility contract, and did not rerun build/consumer/browser suites |
+| Current local verification | On 2026-09-23, the current tree passed install, lint, typecheck, purity, playground generate, sync (18/18), migration (10/10), contract, peers, real tarball consumer, compatibility (53 assertion groups), all three creator suites, registry consumer, and release check |
 
 The differential consumer outside this Git repository is a historical/manual environment, not part of CI. Its persisted output predates the current Theme HEAD and must not be treated as a current release gate.
 
@@ -47,6 +47,7 @@ The differential consumer outside this Git repository is a historical/manual env
 | Vue peer | `^3.5.42` |
 | Nuxt installed in development workspace | 4.5.2 |
 | Vue installed in development workspace | 3.5.43 |
+| Creator package | `create-clarity-theme` v0.1.0-beta.1 in `create-clarity-theme/`; independent npm metadata, bin, template, tests, prerelease dist-tag handling, and publish workflow |
 | Published package payload | `src/` (all Theme runtime source), root Layer/config metadata, license, and README |
 | Excluded from package payload | `docs/`, `playground/`, `scripts/`, `tests/`, `skills/`, `.github/`, workspace and lock files, sync manifest |
 
@@ -166,7 +167,7 @@ Legend: ✅ Implemented, 🧪 Verified by current automated tests unless explici
 | Sitemap | ✅ 🧪 | Base site, ordinary article, and permalink URLs verified |
 | LLMs | ✅ 🧪 | Site title/description output verified |
 | Atom | ✅ 🧪 | Default and `enableStyle=false`, limits, entries, permalinks, and XSLT branch verified |
-| OPML | ✅ 🧪 | Own feed and friend feed output verified |
+| OPML | ✅ 🧪 ⚠️ | Own feed and friend feed output verified with an established-date fixture; a minimal site without `site.established` logs a non-fatal Temporal parse error for `/subscriptions.opml` during generate |
 | Stats | ✅ 🧪 | Count, words, category, and annual JSON assertions pass; multi-pattern `includePaths` union covered |
 | 404/error route | ✅ 🧪 ⚠️ | Missing/permalink-source routes return 404 in SSR tests; the complete custom error UI is not asserted |
 | Permalink | ✅ 🧪 | Frontmatter `permalink` overrides source path and hides the source route |
@@ -186,25 +187,28 @@ Legend: ✅ Implemented, 🧪 Verified by current automated tests unless explici
 | `pnpm lint` | ESLint across repository sources plus Stylelint for Theme/Playground Vue and SCSS | ✅ Pass |
 | `pnpm typecheck` | Playground `nuxt typecheck`, including Layer type generation and consumer-style app config types | ✅ Pass, with expected `NUXT_B3011` Badge warning |
 | `pnpm verify` | Static purity: forbidden upstream author/site identifiers, site files, and cross-project imports | ✅ Pass |
-| `pnpm test:sync` | 13 temporary-Git tests for sync fast-forward, conflicts, deletes, new files, transform/manual exclusion, unknown blocking, verify failure, and rollback | ✅ 13/13 |
+| `pnpm test:sync` | 18 temporary-Git tests for sync fast-forward, conflicts, deletes, new files, transform/manual exclusion, unknown blocking, verify failure, rollback, and `src/` path mapping | ✅ 18/18 |
 | `pnpm test:migration` | Static Migration Skill contract plus fake blog-v3 fixture checks for discovery, schema mapping, UI boundary, Twikoo/feed/stats, redirects, patches, custom overrides, and protected assets | ✅ 10/10 |
 | `pnpm test:contract` | 41 contract rows and required feature/coverage references stay synchronized with generated `docs/COMPATIBILITY.md` | ✅ Pass |
 | `pnpm peers check` | Workspace peer dependency audit | ✅ No issues |
 | `pnpm generate` | Playground static generation through workspace Layer link | ✅ Pass; Nitro prerenders 51 routes; one expected link-checker warning |
 | `pnpm test:consumer` | Pack, tarball boundary/leak audit, export/type declaration graph, independent install, pure Node smoke, typecheck, three generate variants, client-config boundary assertions, and a features-off runtime 404 server check | ✅ Pass |
-| `pnpm test:compatibility` | Contract, production build log scan, 24 SSR cases, 12 real-browser cases, 11 dev hydration routes, and the anti-mirror real-navigation dev case | ✅ Pass; 52 assertion groups |
+| `pnpm test:compatibility` | Contract, production build log scan, 24 SSR cases, 12 real-browser cases, 11 dev hydration routes, and the anti-mirror real-navigation dev case | ✅ Pass; 53 assertion groups |
+| `pnpm test:create` | Creator CLI help/version, prompts, empty/non-empty/critical directories, Unicode/quote replacement, JSON validity, generated completeness, package-manager validation, traversal rejection, and Windows-style nested paths | ✅ Pass; 12/12 tests |
+| `pnpm test:create:e2e` | Source creator → CLI-selected `pnpm install` from the real registry → typecheck → generate → welcome/Atom/stats output assertions | ✅ Pass |
+| `pnpm test:create:tarball` | Pack creator → install its tarball in an isolated harness → execute installed bin → generated consumer install/typecheck/generate | ✅ Pass |
 | `pnpm sync:check` | Remote upstream head versus manifest baseline | ✅ Up to date |
-| `pnpm release:check` | package.json/tag/CHANGELOG contract, exports/files integrity, pack success, and tarball boundary audit | ✅ Pass locally with `--allow-untagged`; exact-tag enforcement runs in `publish.yml` |
-| `pnpm test:registry-consumer` | Release-only: install the published version from the npm registry (no local tarball), exports smoke, typecheck, generate, and output assertions | ❌ Not yet run against `0.1.2`: run it after publication; the out-of-band `0.1.0` fails typecheck inside the published package, and the gated `0.1.2` must pass |
+| `pnpm release:check` | package.json/tag/CHANGELOG contract, exports/files integrity, pack success, and tarball boundary audit | ✅ Pass; HEAD also carries `v0.1.2` |
+| `pnpm test:registry-consumer` | Release-only: install the published version from the npm registry (no local tarball), exports smoke, typecheck, generate, and output assertions | ✅ Pass against registry `clarity-theme@0.1.2` |
 | `pnpm test:release` | Verify + real consumer + compatibility | Script exists; current local run executed its component commands with the broader CI set above |
 
 Current consumer variant facts:
 
-- Tarball: 151 files; 30 required files; five export entries.
+- Tarball: 152 files; 30 required files; five export entries.
 - Runtime contract derived from the current script: 100 assertion invocations plus 15 pure-Node smoke checks.
-- `default`: 42 prerendered routes.
-- `branches` (`enableStyle=false`, `hidePostPrefix=false`, Twikoo, anti-mirror, multi-pattern stats): 42 prerendered routes.
-- `features-off` (Atom/OPML/stats off): 39 prerendered routes plus runtime 404 assertions through `nuxt build` and a real server.
+- `default`: 43 prerendered routes.
+- `branches` (`enableStyle=false`, `hidePostPrefix=false`, Twikoo, anti-mirror, multi-pattern stats): 43 prerendered routes.
+- `features-off` (Atom/OPML/stats off): 40 prerendered routes plus runtime 404 assertions through `nuxt build` and a real server.
 
 Compatibility warnings are non-fatal and are listed under Known Limitations.
 
@@ -222,9 +226,9 @@ Compatibility warnings are non-fatal and are listed under Known Limitations.
 Stages are strictly ordered:
 
 1. **Layer 1 lint** on the Node matrix.
-2. **Layer 1 typecheck + verify + sync regression + migration fixture + compatibility contract + peers** on the Node matrix.
+2. **Layer 1 typecheck + verify + sync regression + migration fixture + creator CLI tests + compatibility contract + peers** on the Node matrix.
 3. **Layer 2 playground generate** on primary Node 24.11.
-4. **Layer 3 real consumer test + compatibility regression** on primary Node 24.11.
+4. **Layer 3 real consumer test, compatibility regression, creator consumer E2E, and packed creator tarball E2E** on primary Node 24.11.
 
 ### `sync.yml`
 
@@ -285,6 +289,7 @@ The full generated feature matrix is [COMPATIBILITY](./COMPATIBILITY.md).
 2. **Feature-off semantics are uniform.** Disabled Atom/OPML/stats routes are absent from static output and return 404 from dev/SSR runtime, verified against a real built server.
 3. **Anti-mirror navigation is verified.** The script derives the canonical host from `site.url`, and a real-browser case navigates from a mirror-like hostname back to the canonical host.
 4. **Multi-pattern stats are verified as a union.** `@nuxt/content` 3.16 joins conditions inside one `orWhere` group with `OR`; the earlier conjunctive-behavior claim was stale. A two-pattern consumer regression locks the behavior.
+5. **Minimal OPML generation logs a non-fatal route error.** When `site.established` is omitted and feeds are empty, the OPML route tries to parse an empty date for the site's own feed. `nuxt generate` still exits successfully and all creator E2E assertions pass, but the route logs a Temporal parse error and is not written. This pre-exists the creator package and should be fixed in the Theme runtime before relying on a minimal OPML artifact.
 5. **Regional CDN defaults are fixed.** KaTeX, Inter, and Google font links point to China-oriented mirror domains without a consumer override.
 6. **Automated Theme tests run unpatched.** This is the correct default environment, but tab preservation, fractional image density, and exact plain-Shiki scope therefore differ from the patched real blog environment.
 7. **Differential consumer is not current or automated.** It is outside Git, points at an older local tarball, and its persisted output predates current HEAD.
@@ -343,6 +348,6 @@ The old phase-based TODO lists are no longer the active planning track.
 
 ## 19. Current Milestone
 
-**v0.1.2 release — `src/` layout migration.**
+**Official creator package and Milestone 2 maintenance.**
 
-The gated `0.1.1` release is published (2026-09-22T09:45:26Z through the OIDC workflow). Since then the runtime source moved to the standardized `src/` layout with the public exports unchanged; `0.1.2` publishes that tree. What remains before `0.1.2` is on npm: publish the `v0.1.2` GitHub Release and run the post-publish registry verification. Deferred P1/P2 work stays ordered in [ROADMAP](./ROADMAP.md).
+`clarity-theme@0.1.2` is published. The current implementation work adds the independently versioned `create-clarity-theme` package; its remaining prerelease actions are the one-time npm Trusted Publisher setup and the `create-v0.1.0-beta.1` GitHub Release. Deferred Theme P1/P2 work stays ordered in [ROADMAP](./ROADMAP.md).

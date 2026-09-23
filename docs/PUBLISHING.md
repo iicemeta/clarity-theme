@@ -4,7 +4,8 @@
 
 This document describes how Clarity Theme is versioned, validated, and
 published to npm with provenance. The intended reader is the package
-maintainer.
+maintainer. The runtime Theme and `create-clarity-theme` are independently
+versioned npm packages.
 
 ## 1. Release prerequisites
 
@@ -24,6 +25,8 @@ Before creating a release:
 
 - `package.json` is the single source of truth for the version.
 - The project follows [SemVer](https://semver.org/) from `0.1.0` onward.
+- `create-clarity-theme/package.json` is independently versioned; it does not
+  need to match `clarity-theme/package.json`.
 - The first release is `0.1.0`. Fixes bump the patch version (`0.1.1`);
    breaking contract changes bump the minor (`0.2.0`) while pre-1.0, and the
    major (`1.0.0`) once the public API is declared stable.
@@ -43,6 +46,9 @@ Before creating a release:
 - **npm package version + Git tag + GitHub Release must all use the same
   version.** The publish workflow refuses to run when the release tag does not
   equal `v${package.json version}`.
+- Creator releases use `create-v<version>` (for example
+  `create-v0.1.0-beta.1`) and are handled by `publish-create.yml`; they never
+  collide with Theme tags.
 - Tag the exact commit that passed the ordered verification suite:
 
 ```bash
@@ -80,6 +86,11 @@ A maintainer must configure this once on the npm website:
 | Registry | `npmjs.org` |
 | Environment | `npm` (optional, for release approvals) |
 
+For `create-clarity-theme`, configure a second Trusted Publisher with the same
+repository, registry, and environment, but workflow filename
+`publish-create.yml`. This one-time setup is still pending for the creator
+package's initial release.
+
 ### npm package name and version status (verified 2026-09-22)
 
 Registry state verified during the 2026-09-22 release work:
@@ -94,7 +105,9 @@ Registry state verified during the 2026-09-22 release work:
   `orWhere` void-return and `app/pages/link.vue` `never[]` feed typing); both
   defects are fixed in this repository.
 - The gated `clarity-theme@0.1.1` was published through the OIDC workflow at
-  2026-09-22T09:45:26Z and is the registry `latest`.
+  2026-09-22T09:45:26Z.
+- `clarity-theme@0.1.2` was published through the OIDC workflow at
+  2026-09-22T15:04:33Z and is the registry `latest`.
 
 Maintainer decisions recorded for the `0.1.1` release (executed):
 
@@ -137,6 +150,12 @@ npm audit signatures --package-lock-only 2>/dev/null || true
 6. Publishes that same audited tarball with `npm publish --access public
    --provenance`.
 
+[`publish-create.yml`](../.github/workflows/publish-create.yml) is the
+independent equivalent for `create-clarity-theme`. It ignores Theme release
+tags, validates `create-v${creator version}`, runs the creator CLI and both
+real E2E suites, packs/audits the creator tarball, and publishes it with OIDC
+provenance.
+
 Permissions are minimal: `contents: read`, `id-token: write`.
 
 ## 9. Release verification
@@ -155,6 +174,14 @@ completes the three consumption layers:
 
 ```text
 Workspace → Tarball (test:consumer) → Registry (test:registry-consumer)
+```
+
+After publishing `create-clarity-theme`, verify its registry metadata and the
+public command:
+
+```bash
+npm view create-clarity-theme@0.1.0-beta.1 version dist.tarball
+npx create-clarity-theme@beta --help
 ```
 
 ## 10. Rollback / unpublish policy
@@ -186,3 +213,22 @@ immutable.
    command may add `--tag next` for non-`latest` channels.
 - Document in the release notes that pre-releases are not covered by the
   stability promises.
+
+## 13. Publishing create-clarity-theme
+
+The creator package has no runtime dependencies and is released independently:
+
+1. Keep `clarity-theme` in `templates/default/package.json` pointed at a real
+   published registry range (currently `^0.1.2`).
+2. Bump only `create-clarity-theme/package.json` when CLI behavior or the
+   template changes, and add its `CHANGELOG.md` entry.
+3. Run `pnpm test:create`, `pnpm test:create:e2e`, and
+   `pnpm test:create:tarball` serially on the exact release commit.
+4. Ensure the npm Trusted Publisher for workflow `publish-create.yml` is
+   configured once.
+5. For the initial prerelease, tag the exact commit as
+   `create-v0.1.0-beta.1`, push the tag, and publish a GitHub Release from it.
+   The workflow automatically assigns prereleases to npm dist-tag `beta`.
+6. Confirm the workflow publishes the audited tarball with provenance, then
+   run the registry verification commands in §9. Promote `0.1.0` from the
+   reviewed beta only when no further creator changes are needed.

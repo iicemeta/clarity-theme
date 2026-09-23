@@ -2,7 +2,7 @@
 
 [English](./PROJECT-STATUS.md) | **简体中文**
 
-> 快照日期：2026-09-22，Asia/Taipei。本文档描述当前仓库。历史阶段叙述与旧的一次性审计结果保留在 [history](./history/2026-09-layer-extraction.zh-CN.md) 或被标记为历史审计记录。
+> 快照日期：2026-09-23，Asia/Taipei。本文档描述当前仓库。历史阶段叙述与旧的一次性审计结果保留在 [history](./history/2026-09-layer-extraction.zh-CN.md) 或被标记为历史审计记录。
 
 ## 文档事实来源
 
@@ -22,14 +22,14 @@
 | 项目 | 当前事实 |
 | --- | --- |
 | 仓库分支 | `master` |
-| Phase 20 开始时的 HEAD | `433d042ed3b626a048e84000ba2039102df61f28`（`docs: establish current reality-sync baseline`） |
-| 工作树 | 文档变更前干净并与 `origin/master` 同步 |
+| 任务基线 | `e2b2d9e`（`chore(release): bump version to 0.1.2 for the src-layout release`）；当前 `v0.1.2` tag 指向该发布历史 |
+| 工作树 | 包含本次任务待提交的创建包、CI、workflow 与文档变更；任务开始时没有无关用户修改 |
 | 包 | `clarity-theme` v0.1.2，MIT |
-| 分发状态 | npm 发布管线已就绪（OIDC 发布工作流、发布门禁、更新日志）；门禁 `0.1.1` 已发布（2026-09-22T09:45:26Z），当前门禁发布为 **`0.1.2`（tag `v0.1.2`，`src/` 布局迁移）**。**一个有缺陷的 `clarity-theme@0.1.0` 已于 2026-09-22T07:28:22Z 被绕过流程发布**，发布者 `creampack <creampack@iicemeta.com>`，来自 P0 修复前的 gitHead `5a03778`，未经门禁、无 provenance；registry 消费者测试在其内部 typecheck 失败 |
+| 分发状态 | `clarity-theme@0.1.2` 已经 tag `v0.1.2` 与 OIDC 工作流发布（2026-09-22T15:04:33Z），是 registry `latest`。**一个有缺陷的 `clarity-theme@0.1.0` 已于 2026-09-22T07:28:22Z 被绕过流程发布**，发布者 `creampack <creampack@iicemeta.com>`，来自 P0 修复前的 gitHead `5a03778`，未经门禁、无 provenance；registry 消费者测试在其内部 typecheck 失败。独立的 `create-clarity-theme@0.1.0-beta.1` 预发布已实现并通过本地/tarball 验证，但尚未发布 |
 | 上游基线 | `blog-v3` 3.7.2，`main` @ `f6ea97d745517feb52f0c100e89acb36f0adc12f` |
 | 上游漂移 | 无：Phase 20 的一次直接远端头检查返回了 manifest 基线 commit |
 | 用于验证的本地运行时 | Node.js 24.15.0、pnpm 12.4.1、Nuxt 4.5.2、Vue 3.5.43 |
-| 当前本地验证 | 完整有序套件在代码 commit `e601eb5` 通过；Phase 20 只重跑了纯度验证与兼容性契约，未重跑 build/consumer/浏览器套件 |
+| 当前本地验证 | 2026-09-23 在当前树通过 install、lint、typecheck、纯度、playground generate、同步（18/18）、迁移（10/10）、契约、peers、真实 tarball 消费者、兼容性（53 个断言组）、三个创建器套件、registry 消费者与 release check |
 
 本 Git 仓库之外的差分消费者是历史/手工环境，不属于 CI。其持久化输出早于当前主题 HEAD，不得被视为当前发布门槛。
 
@@ -47,6 +47,7 @@
 | Vue peer | `^3.5.42` |
 | 开发 workspace 中安装的 Nuxt | 4.5.2 |
 | 开发 workspace 中安装的 Vue | 3.5.43 |
+| 创建包 | `create-clarity-theme/` 中的 `create-clarity-theme` v0.1.0-beta.1；独立 npm 元数据、bin、模板、测试、预发布 dist-tag 处理与发布工作流 |
 | 发布包负载 | `src/`（全部 Theme 运行时源码）、根 Layer/config 元数据、许可证与 README |
 | 不打入包负载 | `docs/`、`playground/`、`scripts/`、`tests/`、`skills/`、`.github/`、workspace 与 lock 文件、同步 manifest |
 
@@ -166,7 +167,7 @@ Layer 还支持 `useClarity*` 运行时自动导入与同路径组件覆盖。�
 | Sitemap | ✅ 🧪 | 基础站点、普通文章与固定链接 URL 已验证 |
 | LLMs | ✅ 🧪 | 站点标题/描述输出已验证 |
 | Atom | ✅ 🧪 | 默认与 `enableStyle=false`、上限、条目、固定链接与 XSLT 分支已验证 |
-| OPML | ✅ 🧪 | 自有 feed 与友链 feed 输出已验证 |
+| OPML | ✅ 🧪 ⚠️ | 自有 feed 与友链 feed 输出在含建站日期的夹具中验证；省略 `site.established` 的最小站点会在 generate 期间为 `/subscriptions.opml` 记录非致命 Temporal 解析错误 |
 | 统计 | ✅ 🧪 | 计数、字数、分类与年度 JSON 断言通过 |
 | 404/错误路由 | ✅ 🧪 ⚠️ | 缺失/固定链接源路由在 SSR 测试中返回 404；完整自定义错误 UI 未断言 |
 | 固定链接 | ✅ 🧪 | frontmatter `permalink` 覆盖源路径并隐藏源路由 |
@@ -186,25 +187,28 @@ Layer 还支持 `useClarity*` 运行时自动导入与同路径组件覆盖。�
 | `pnpm lint` | 仓库源码 ESLint 加主题/Playground Vue 与 SCSS 的 Stylelint | ✅ 通过 |
 | `pnpm typecheck` | Playground `nuxt typecheck`，包括 Layer 类型生成与消费者式 app config 类型 | ✅ 通过，伴随预期的 `NUXT_B3011` Badge 警告 |
 | `pnpm verify` | 静态纯度：禁止的上游作者/站点标识、站点文件与跨项目导入 | ✅ 通过 |
-| `pnpm test:sync` | 13 个临时 Git 测试：同步快进、冲突、删除、新文件、transform/manual 排除、unknown 阻止、verify 失败与回滚 | ✅ 13/13 |
+| `pnpm test:sync` | 18 个临时 Git 测试：同步快进、冲突、删除、新文件、transform/manual 排除、unknown 阻止、verify 失败、回滚与 `src/` 路径映射 | ✅ 18/18 |
 | `pnpm test:migration` | 静态迁移 Skill 契约加伪 blog-v3 夹具检查：发现、schema 映射、UI 边界、Twikoo/feed/统计、重定向、补丁、自定义覆盖与受保护资产 | ✅ 10/10 |
 | `pnpm test:contract` | 41 个契约行与必需的功能/覆盖引用与生成的 `docs/COMPATIBILITY.md` 保持同步 | ✅ 通过 |
 | `pnpm peers check` | workspace peer 依赖审计 | ✅ 无问题 |
 | `pnpm generate` | 经 workspace Layer 链接的 playground 静态生成 | ✅ 通过；Nitro 预渲染 51 条路由；一条预期的链接检查器警告 |
 | `pnpm test:consumer` | 打包、tarball 边界/泄漏审计、导出/类型声明图、独立安装、纯 Node 冒烟、typecheck 与三种生成变体 | ✅ 通过 |
-| `pnpm test:compatibility` | 契约、生产构建日志扫描、24 个 SSR 用例、12 个真实浏览器用例、11 条 dev 水合路由，以及反镜像真实导航 dev 用例 | ✅ 通过；52 个断言组 |
+| `pnpm test:compatibility` | 契约、生产构建日志扫描、24 个 SSR 用例、12 个真实浏览器用例、11 条 dev 水合路由，以及反镜像真实导航 dev 用例 | ✅ 通过；53 个断言组 |
+| `pnpm test:create` | 创建器 CLI help/version、交互、空/非空/关键文件目录、Unicode/引号替换、JSON 合法性、生成完整性、包管理器校验、路径穿越拒绝与 Windows 风格嵌套路径 | ✅ 通过；12/12 测试 |
+| `pnpm test:create:e2e` | 源码创建器 → CLI 选择 `pnpm install` 并从真实 registry 安装 → typecheck → generate → welcome/Atom/stats 产物断言 | ✅ 通过 |
+| `pnpm test:create:tarball` | 打包创建器 → 隔离 harness 安装其 tarball → 执行已安装 bin → 生成消费者 install/typecheck/generate | ✅ 通过 |
 | `pnpm sync:check` | 远端上游头对比 manifest 基线 | ✅ 最新 |
-| `pnpm release:check` | package.json/tag/CHANGELOG 契约、exports/files 完整性、pack 成功与 tarball 边界审计 | ✅ 本地以 `--allow-untagged` 通过；确切 tag 强制校验在 `publish.yml` 中执行 |
-| `pnpm test:registry-consumer` | 仅发布后：从 npm registry 安装已发布版本（无本地 tarball）、exports 冒烟、类型检查、generate 与产物断言 | ❌ 尚未针对 `0.1.2` 运行：发布后执行；绕过流程的 `0.1.0` 在已发布包内部 typecheck 失败，门禁后的 `0.1.2` 必须通过 |
+| `pnpm release:check` | package.json/tag/CHANGELOG 契约、exports/files 完整性、pack 成功与 tarball 边界审计 | ✅ 通过；HEAD 亦带有 `v0.1.2` |
+| `pnpm test:registry-consumer` | 仅发布后：从 npm registry 安装已发布版本（无本地 tarball）、exports 冒烟、类型检查、generate 与产物断言 | ✅ 针对 registry `clarity-theme@0.1.2` 通过 |
 | `pnpm test:release` | verify + 真实消费者 + 兼容性 | 脚本存在；当前本地运行以上文更广的 CI 集合执行了其组件命令 |
 
 当前消费者变体事实：
 
-- Tarball：151 个文件；30 个必需文件；五个导出入口。
+- Tarball：152 个文件；30 个必需文件；五个导出入口。
 - 从当前脚本派生的运行时契约：100 次断言调用加 15 项纯 Node 冒烟检查。
-- `default`：42 条预渲染路由。
-- `branches`（`enableStyle=false`、`hidePostPrefix=false`、Twikoo、反镜像、多模式统计）：42 条预渲染路由。
-- `features-off`（Atom/OPML/统计关闭）：39 条预渲染路由，外加经 `nuxt build` 与真实服务的运行时 404 断言。
+- `default`：43 条预渲染路由。
+- `branches`（`enableStyle=false`、`hidePostPrefix=false`、Twikoo、反镜像、多模式统计）：43 条预渲染路由。
+- `features-off`（Atom/OPML/统计关闭）：40 条预渲染路由，外加经 `nuxt build` 与真实服务的运行时 404 断言。
 
 兼容性警告为非致命，列于已知限制。
 
@@ -222,9 +226,9 @@ Layer 还支持 `useClarity*` 运行时自动导入与同路径组件覆盖。�
 阶段严格有序：
 
 1. Node 矩阵上的 **Layer 1 lint**。
-2. Node 矩阵上的 **Layer 1 typecheck + verify + 同步回归 + 迁移夹具 + 兼容性契约 + peers**。
+2. Node 矩阵上的 **Layer 1 typecheck + verify + 同步回归 + 迁移夹具 + 创建器 CLI 测试 + 兼容性契约 + peers**。
 3. 主 Node 24.11 上的 **Layer 2 playground generate**。
-4. 主 Node 24.11 上的 **Layer 3 真实消费者测试 + 兼容性回归**。
+4. 主 Node 24.11 上的 **Layer 3 真实消费者测试 + 兼容性回归 + 创建器消费者 E2E + 打包创建器 tarball E2E**。
 
 ### `sync.yml`
 
@@ -285,6 +289,7 @@ Clarity Theme 本身不携带补丁。包管理器补丁是 workspace/安装根�
 2. **功能关闭语义一致。** 禁用的 Atom/OPML/统计路由在静态产物中缺省，并在 dev/SSR 运行时返回 404（经真实构建服务验证）。
 3. **反镜像导航已验证。** 脚本从 `site.url` 派生规范主机，真实浏览器用例完成从镜像类主机到规范主机的导航。
 4. **多模式统计验证为并集。** `@nuxt/content` 3.16 对同一 `orWhere` 组内条件以 `OR` 连接；此前「交集」的描述已过时。双模式消费者回归锁定该行为。
+5. **最小 OPML 生成记录非致命路由错误。** 省略 `site.established` 且友链为空时，OPML 路由会为站点自身 feed 解析空日期。`nuxt generate` 仍成功退出，创建器 E2E 断言全部通过，但该路由记录 Temporal 解析错误且不写入产物。该问题先于创建包存在；若依赖最小 OPML 产物，应先在 Theme 运行时修复。
 5. **区域 CDN 默认值固定。** KaTeX、Inter 与 Google 字体链接指向面向中国的镜像域名，无使用方覆盖。
 6. **自动化主题测试在无补丁环境运行。** 这是正确的默认环境，但 tab 保留、小数图片密度与精确 plain-Shiki 作用域因此与打了补丁的真实博客环境不同。
 7. **差分消费者不是当前的，也未自动化。** 它在 Git 之外，指向较旧的本地 tarball，其持久化输出早于当前 HEAD。
@@ -343,6 +348,6 @@ Clarity Theme 本身不携带补丁。包管理器补丁是 workspace/安装根�
 
 ## 19. 当前里程碑
 
-**v0.1.2 发布——`src/` 布局迁移。**
+**官方创建包与 Milestone 2 维护。**
 
-门禁 `0.1.1` 已发布（2026-09-22T09:45:26Z，经 OIDC 工作流）。此后运行时源码迁移到标准化 `src/` 布局，公共导出保持不变；`0.1.2` 发布该代码树。`0.1.2` 上 npm 之前剩余事项：发布 `v0.1.2` GitHub Release，以及发布后的 registry 验证。推迟的 P1/P2 工作继续按[路线图](./ROADMAP.zh-CN.md)排序。
+`clarity-theme@0.1.2` 已发布。当前实现工作新增独立版本化的 `create-clarity-theme` 包；其剩余预发布动作是一次性 npm Trusted Publisher 配置与 `create-v0.1.0-beta.1` GitHub Release。推迟的 Theme P1/P2 工作继续按[路线图](./ROADMAP.zh-CN.md)排序。

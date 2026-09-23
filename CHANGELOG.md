@@ -4,6 +4,22 @@ All notable changes to Clarity Theme are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
 [Semantic Versioning](https://semver.org/).
 
+## Unreleased
+
+### Added
+
+- Added the separate `create-clarity-theme` workspace package and its official
+  consumer template. `pnpm create clarity-theme my-blog` or
+  `npx create-clarity-theme@latest my-blog` now generates an independent Nuxt
+  project with the required Clarity contracts, one generic welcome article,
+  and the minimum tested direct dependencies.
+- Prepared the initial `create-clarity-theme@0.1.0-beta.1` prerelease with the
+  npm `beta` dist-tag; the stable public commands return after `0.1.0` is
+  promoted.
+- Added creator CLI tests, real generated-consumer E2E, packed-tarball E2E,
+  CI coverage, and a dedicated OIDC publish workflow for the independently
+  versioned creator package.
+
 ## 0.1.2 - 2026-09-22
 
 Source-layout release, published through the `v0.1.2` tag and the OIDC

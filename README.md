@@ -27,7 +27,32 @@ Clarity Theme is a reusable **Nuxt 4 Layer blog theme** extracted from [L33Z22L1
 
 Clarity is available from the npm registry as `clarity-theme`. It is part of your application runtime (the Nuxt build and static generation load the Layer directly), so install it as a regular dependency rather than a development dependency; a production install must still be able to resolve it.
 
-## Installation
+## Create a new blog
+
+The initial creator prerelease is distributed under the npm `beta` dist-tag.
+
+### pnpm
+
+```bash
+pnpm create clarity-theme@beta my-blog
+```
+
+### npm
+
+```bash
+npx create-clarity-theme@beta my-blog
+```
+
+Then:
+
+```bash
+cd my-blog
+pnpm dev
+```
+
+The official creator package is published separately as `create-clarity-theme`. It generates an independent Nuxt consumer with the required configuration contracts, a generic welcome article, and the minimum direct dependencies. For all options, see [`create-clarity-theme/README.md`](./create-clarity-theme/README.md).
+
+## Manual Installation
 
 ```bash
 pnpm add clarity-theme
@@ -43,7 +68,7 @@ pnpm add github:iicemeta/clarity-theme#<commit>
 
 This path is intended for development only. Released sites should consume the published npm version so installs are reproducible and covered by the release verification matrix.
 
-## Quick Start
+## Manual Quick Start
 
 ### 1. Extend the Layer
 
@@ -263,6 +288,7 @@ clarity-theme/
 ├─ skills/               # Agent workflow skills (not part of the npm package)
 ├─ docs/                 # Human documentation
 ├─ playground/           # Workspace-linked development consumer
+├─ create-clarity-theme/ # Official independent npm creator package
 ├─ scripts/  tests/      # Verification and tooling
 └─ nuxt.config.ts, package.json, sync-manifest.json, …
 ```
@@ -311,6 +337,9 @@ pnpm test:migration
 pnpm test:contract
 pnpm test:consumer
 pnpm test:compatibility
+pnpm test:create          # Create CLI behavior tests
+pnpm test:create:e2e      # Generated consumer install/typecheck/generate
+pnpm test:create:tarball  # Packed creator binary E2E
 pnpm pack --dry-run       # inspect the npm tarball without writing it
 ```
 
@@ -333,7 +362,7 @@ The weekly workflow only detects and reports drift. It never applies, commits, o
 
 ## Release Status
 
-Clarity Theme is a **v0.1.2 gated npm release**. The Layer/package boundary, validated configuration, Content factory, rendering pipeline, server outputs, playground, real-consumer acceptance, compatibility matrix, three-layer CI, upstream-sync baseline, release gate, and OIDC publish workflow are implemented. See the [release checklist](./docs/RELEASE-CHECKLIST.md) for the exact remaining manual publication steps.
+Clarity Theme `0.1.2` is published on npm through the OIDC release workflow. The Layer/package boundary, validated configuration, Content factory, rendering pipeline, server outputs, playground, real-consumer acceptance, compatibility matrix, three-layer CI, upstream-sync baseline, release gate, provenance, and registry verification are implemented. The separate `create-clarity-theme` creator package is implemented in this repository and awaits its first manual npm Trusted Publisher configuration and GitHub Release.
 
 The v0.1.0 correctness gates from [Roadmap](./docs/ROADMAP.md) are resolved: server/client configuration is split, feature-off routes return 404 at runtime, anti-mirror navigation is verified in a real browser, the no-op random-permalink field is removed, and multi-pattern stats are covered by a regression test. Remaining deferred items are recorded in the roadmap and release notes.
 

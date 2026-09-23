@@ -153,6 +153,9 @@ jobs:
       - name: Migration skill regression（fixture / safety rules / API mapping）
         run: pnpm test:migration
 
+      - name: Create CLI regression
+        run: pnpm test:create
+
       - name: Compatibility contract（Release Matrix 覆盖 + docs 同步）
         run: pnpm test:contract
 
@@ -209,3 +212,9 @@ jobs:
 
       - name: Compatibility regression（契约 → SSR + 客户端渲染 + hydration）
         run: pnpm test:compatibility
+
+      - name: Generated create-CLI consumer E2E（install → typecheck → generate）
+        run: pnpm test:create:e2e
+
+      - name: Packed create-CLI tarball E2E（独立安装 bin → consumer 构建）
+        run: pnpm test:create:tarball

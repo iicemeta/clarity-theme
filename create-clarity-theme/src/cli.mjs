@@ -1,0 +1,609 @@
+#!/usr/bin/env node
+import { spawn } from 'node:child_process'
+import { existsSync, lstatSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs'
+import { basename, dirname, isAbsolute, join, relative, resolve } from 'node:path'
+import process from 'node:process'
+import { fileURLToPath } from 'node:url'
+
+const packageRoot = fileURLToPath(new URL('..', import.meta.url))
+const templateRoot = join(packageRoot, 'templates', 'default')
+const ownPackage = JSON.parse(readFileSync(join(packageRoot, 'package.json'), 'utf8'))
+
+const valueOptions = new Map([
+	['--title', 'title'],
+	['--description', 'description'],
+	['--url', 'url'],
+	['--author', 'author'],
+	['--language', 'language'],
+	['--timezone', 'timezone'],
+	['--package-manager', 'packageManager'],
+	['--pm', 'packageManager'],
+])
+
+const help = `Clarity Theme project creator (${ownPackage.version})
+
+Usage:
+  create-clarity-theme [project-directory]
+  pnpm create clarity-theme my-blog
+  npx create-clarity-theme@latest my-blog
+
+Options:
+  --title <title>             Site title
+  --description <description> Site description
+  --url <url>                 Canonical site URL (http or https)
+  --author <name>             Author name
+  --language <tag>            Site language, for example zh-CN
+  --timezone <zone>           IANA timezone, for example Asia/Shanghai
+  --package-manager <name>    pnpm, npm, or yarn (also --pm)
+  --no-install                Create files without installing dependencies
+  --yes, -y                   Accept defaults; still refuses non-empty directories
+  --version, -v               Print the CLI version
+  --help, -h                  Show this help
+
+The CLI asks only for values Clarity needs on first launch. All other Theme
+configuration uses the documented defaults.`
+
+async function main() {
+	try {
+		const args = parseArguments(process.argv.slice(2))
+		if (args.help) {
+			process.stdout.write(`${help}\n`)
+			return
+		}
+		if (args.version) {
+			process.stdout.write(`${ownPackage.version}\n`)
+			return
+		}
+
+		await createProject(args)
+	}
+	catch (error) {
+		process.stderr.write(`\n✖ ${error instanceof Error ? error.message : String(error)}\n`)
+		process.exitCode = 1
+	}
+}
+
+function parseArguments(argv) {
+	const positional = []
+	const options = {
+		help: false,
+		version: false,
+		yes: false,
+		install: true,
+	}
+
+	for (let index = 0; index < argv.length; index++) {
+		const argument = argv[index]
+
+		if (argument === '--help' || argument === '-h') {
+			options.help = true
+			continue
+		}
+		if (argument === '--version' || argument === '-v') {
+			options.version = true
+			continue
+		}
+		if (argument === '--yes' || argument === '-y') {
+			options.yes = true
+			continue
+		}
+		if (argument === '--no-install') {
+			options.install = false
+			continue
+		}
+		if (argument === '--install') {
+			options.install = true
+			continue
+		}
+
+		if (argument.startsWith('--')) {
+			const equals = argument.indexOf('=')
+			const name = equals === -1 ? argument : argument.slice(0, equals)
+			const inlineValue = equals === -1 ? undefined : argument.slice(equals + 1)
+			const propertyName = valueOptions.get(name)
+
+			if (!propertyName) {
+				throw new Error(`Unknown option: ${name}. Run with --help for available options.`)
+			}
+
+			const value = inlineValue ?? argv[++index]
+			if (value === undefined || value === '') {
+				throw new Error(`${name} requires a non-empty value.`)
+			}
+			options[propertyName] = value
+			continue
+		}
+
+		if (argument.startsWith('-') && argument !== '-') {
+			throw new Error(`Unknown option: ${argument}. Run with --help for available options.`)
+		}
+		positional.push(argument)
+	}
+
+	if (positional.length > 1) {
+		throw new Error('Provide only one project directory.')
+	}
+	options.projectDirectory = positional[0]
+	return options
+}
+
+async function createProject(options) {
+	console.log('\n◆ Clarity Theme\n')
+
+	if (options.yes && options.projectDirectory) {
+		return createProjectWithPrompts(options, undefined)
+	}
+
+	const prompts = new PromptReader()
+	try {
+		return await createProjectWithPrompts(options, prompts)
+	}
+	finally {
+		prompts.close()
+	}
+}
+
+async function createProjectWithPrompts(options, prompts) {
+	if (!options.projectDirectory) {
+		if (options.yes) {
+			throw new Error('A project directory is required when --yes is used.')
+		}
+		options.projectDirectory = await promptText(prompts, 'Project name', 'my-blog', validateProjectDirectory)
+	}
+
+	const target = resolveTargetDirectory(options.projectDirectory)
+	await assertSafeTarget(target, prompts, options.yes)
+
+	const defaults = createDefaults(target)
+	const siteTitle = await askOptionOrPrompt(options, prompts, 'title', 'Site title', defaults.siteTitle, validateText)
+	const description = await askOptionOrPrompt(options, prompts, 'description', 'Site description', defaults.description, validateText)
+	const url = await askOptionOrPrompt(options, prompts, 'url', 'Site URL', defaults.url, validateUrl)
+	const author = await askOptionOrPrompt(options, prompts, 'author', 'Author name', defaults.author, validateText)
+	const language = await askOptionOrPrompt(options, prompts, 'language', 'Language', defaults.language, validateLanguage)
+	const timezone = await askOptionOrPrompt(options, prompts, 'timezone', 'Timezone', defaults.timezone, validateTimezone)
+	const packageManager = resolvePackageManager(options.packageManager)
+
+	const values = {
+		PROJECT_NAME: createPackageName(basename(target)),
+		SITE_TITLE: siteTitle,
+		SITE_DESCRIPTION: description,
+		SITE_URL: url,
+		AUTHOR_NAME: author,
+		LANGUAGE: language,
+		TIMEZONE: timezone,
+	}
+
+	console.log('\n◆ Creating project...')
+	copyTemplate(target, values)
+	finalizePackageJson(target)
+	assertGeneratedProject(target)
+	console.log('✔ Creating project')
+	console.log('✔ Writing configuration')
+	console.log('✔ Generating welcome article')
+
+	if (options.install) {
+		console.log('◆ Installing dependencies...')
+		await installDependencies(packageManager, target)
+		console.log('✔ Installing dependencies')
+	}
+	else {
+		console.log('· Dependency installation skipped (--no-install)')
+	}
+
+	printNextSteps(target, packageManager, options.install)
+}
+
+async function askOptionOrPrompt(options, prompts, propertyName, label, defaultValue, validate) {
+	if (options[propertyName] !== undefined) {
+		return normalizeValue(propertyName, options[propertyName], validate)
+	}
+	if (options.yes) {
+		return normalizeValue(propertyName, defaultValue, validate)
+	}
+	return promptText(prompts, label, defaultValue, validate)
+}
+
+async function promptText(prompts, label, defaultValue, validate) {
+	while (true) {
+		const answer = (await prompts.question(`? ${label} › `)).trim()
+		const value = answer || defaultValue
+		try {
+			return validate(value)
+		}
+		catch (error) {
+			process.stdout.write(`  ✖ ${error instanceof Error ? error.message : String(error)}\n`)
+		}
+	}
+}
+
+function normalizeValue(propertyName, value, validate) {
+	if (typeof value !== 'string') {
+		throw new TypeError(`--${propertyName} must be a string.`)
+	}
+	return validate(value.trim())
+}
+
+function validateProjectDirectory(value) {
+	const text = validateText(value, 'Project name')
+	if (text === '.' || text === '..' || text.includes('\0')) {
+		throw new Error('Project name must be a usable directory name.')
+	}
+	return text
+}
+
+function validateText(value, label = 'Value') {
+	const text = value.trim()
+	if (!text) {
+		throw new Error(`${label} cannot be empty.`)
+	}
+	if (text.length > 300) {
+		throw new Error(`${label} is too long.`)
+	}
+	// eslint-disable-next-line no-control-regex -- rejecting control characters is the purpose of this check
+	if (/[\0-\x08\v\f\x0E-\x1F]/.test(text) || /\{\{\w+\}\}/.test(text)) {
+		throw new Error(`${label} contains unsupported characters.`)
+	}
+	return text
+}
+
+function validateUrl(value) {
+	let parsed
+	try {
+		parsed = new URL(value.trim())
+	}
+	catch {
+		throw new Error('Site URL must be a valid URL, for example https://example.com/.')
+	}
+	if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
+		throw new Error('Site URL must use http or https.')
+	}
+	if (!parsed.hostname || parsed.username || parsed.password) {
+		throw new Error('Site URL must have a hostname and cannot contain credentials.')
+	}
+	if (parsed.hash) {
+		throw new Error('Site URL cannot contain a fragment.')
+	}
+	return `${parsed.origin}${parsed.pathname === '/' ? '/' : `${parsed.pathname.replace(/\/?$/, '/')}`}${parsed.search}`
+}
+
+function validateLanguage(value) {
+	const text = validateText(value, 'Language')
+	if (!/^[A-Z]{2,3}(?:-[A-Z0-9]{1,8})*$/i.test(text)) {
+		throw new Error('Language must be a BCP 47 style tag, for example zh-CN or en.')
+	}
+	return text
+}
+
+function validateTimezone(value) {
+	const text = validateText(value, 'Timezone')
+	try {
+		new Intl.DateTimeFormat('en-US', { timeZone: text }).format(new Date())
+		return text
+	}
+	catch {
+		throw new Error('Timezone must be a valid IANA timezone, for example Asia/Shanghai.')
+	}
+}
+
+function resolveTargetDirectory(input) {
+	const currentDirectory = process.cwd()
+	const target = resolve(currentDirectory, validateProjectDirectory(input))
+	const relativePath = relative(currentDirectory, target)
+
+	if (!relativePath || relativePath === '.' || relativePath.startsWith('..') || isAbsolute(relativePath)) {
+		throw new Error('Project directory must be a new path inside the current directory.')
+	}
+	// eslint-disable-next-line no-control-regex -- rejecting control characters is the purpose of this check
+	if (/[\0-\x1F]/.test(target)) {
+		throw new Error('Project directory contains unsupported characters.')
+	}
+	return target
+}
+
+async function assertSafeTarget(target, prompts, assumeYes) {
+	const templateFiles = listTemplateFiles()
+
+	if (existsSync(target)) {
+		if (!statSync(target).isDirectory()) {
+			throw new Error('Project destination exists and is not a directory.')
+		}
+
+		const entries = readdirSync(target)
+		const criticalFiles = entries.filter(isCriticalProjectFile)
+		if (criticalFiles.length > 0) {
+			throw new Error(`Refusing to overwrite an existing project (found ${criticalFiles.join(', ')}).`)
+		}
+
+		const conflicts = templateFiles
+			.map(file => join(target, file))
+			.filter(existsSync)
+			.map(file => relative(target, file))
+		if (conflicts.length > 0) {
+			throw new Error(`Refusing to overwrite existing files: ${conflicts.join(', ')}.`)
+		}
+
+		if (entries.length > 0) {
+			if (assumeYes) {
+				throw new Error('Refusing to use a non-empty directory with --yes. Review it manually or choose an empty directory.')
+			}
+			const confirmed = await confirm(prompts, `Directory ${target} is not empty. Continue without touching existing files?`)
+			if (!confirmed) {
+				throw new Error('Project creation cancelled.')
+			}
+		}
+	}
+}
+
+async function confirm(prompts, question) {
+	const answer = (await prompts.question(`? ${question} (y/N) › `)).trim().toLowerCase()
+	return answer === 'y' || answer === 'yes'
+}
+
+class PromptReader {
+	constructor(stream = process.stdin) {
+		this.stream = stream
+		this.buffer = ''
+		this.lines = []
+		this.pending = null
+		this.ended = false
+		this.onData = this.onData.bind(this)
+		this.onEnd = this.onEnd.bind(this)
+		stream.setEncoding('utf8')
+		stream.on('data', this.onData)
+		stream.on('end', this.onEnd)
+	}
+
+	question(prompt) {
+		process.stdout.write(prompt)
+		if (this.pending) {
+			return Promise.reject(new Error('Another prompt is already waiting for input.'))
+		}
+		if (this.lines.length > 0) {
+			return Promise.resolve(this.lines.shift())
+		}
+		if (this.ended) {
+			return Promise.resolve('')
+		}
+		return new Promise((resolve) => {
+			this.pending = resolve
+		})
+	}
+
+	close() {
+		this.stream.off('data', this.onData)
+		this.stream.off('end', this.onEnd)
+		if (typeof this.stream.pause === 'function') {
+			this.stream.pause()
+		}
+	}
+
+	onData(chunk) {
+		this.buffer += chunk
+		while (true) {
+			const newline = this.buffer.indexOf('\n')
+			if (newline === -1) {
+				break
+			}
+			const line = this.buffer.slice(0, newline).replaceAll('\r', '')
+			this.buffer = this.buffer.slice(newline + 1)
+			this.lines.push(line)
+		}
+		this.drain()
+	}
+
+	onEnd() {
+		this.ended = true
+		if (this.buffer) {
+			this.lines.push(this.buffer.replaceAll('\r', ''))
+			this.buffer = ''
+		}
+		this.drain()
+	}
+
+	drain() {
+		if (this.pending && this.lines.length > 0) {
+			const resolve = this.pending
+			this.pending = null
+			resolve(this.lines.shift())
+		}
+		else if (this.pending && this.ended) {
+			const resolve = this.pending
+			this.pending = null
+			resolve('')
+		}
+	}
+}
+
+main()
+
+function isCriticalProjectFile(entry) {
+	return entry === 'package.json'
+		|| entry === 'content'
+		|| /^nuxt\.config\.(?:ts|js|mjs)$/.test(entry)
+		|| /^clarity\.config\.(?:ts|js|mjs)$/.test(entry)
+}
+
+function listTemplateFiles(base = templateRoot) {
+	const files = []
+	if (!existsSync(templateRoot) || !statSync(templateRoot).isDirectory()) {
+		throw new Error('The bundled default template is missing.')
+	}
+
+	for (const entry of readdirSync(base)) {
+		const fullPath = join(base, entry)
+		const stats = lstatSync(fullPath)
+		if (stats.isSymbolicLink()) {
+			throw new Error('Template symlinks are not supported.')
+		}
+		if (stats.isDirectory()) {
+			files.push(...listTemplateFiles(fullPath))
+			continue
+		}
+		if (!stats.isFile()) {
+			throw new Error(`Unsupported template entry: ${entry}`)
+		}
+		const relativePath = relative(templateRoot, fullPath)
+		if (!relativePath || relativePath.startsWith('..') || isAbsolute(relativePath)) {
+			throw new Error('Template path escaped the template directory.')
+		}
+		files.push(relativePath.replaceAll('\\', '/'))
+	}
+	return files.sort()
+}
+
+function copyTemplate(target, values) {
+	mkdirSync(target, { recursive: true })
+	for (const relativePath of listTemplateFiles()) {
+		const source = join(templateRoot, relativePath)
+		const destination = join(target, relativePath)
+		if (existsSync(destination)) {
+			throw new Error(`Refusing to overwrite existing file: ${relativePath}`)
+		}
+		mkdirSync(dirname(destination), { recursive: true })
+
+		const rendered = renderTemplate(readFileSync(source, 'utf8'), values, relativePath.endsWith('.ts'))
+		writeFileSync(destination, rendered, { encoding: 'utf8', flag: 'wx' })
+	}
+}
+
+function renderTemplate(content, values, escapeTypeScript) {
+	const rendered = content.replace(/\{\{(\w+)\}\}/g, (match, key) => (
+		Object.hasOwn(values, key)
+			? (escapeTypeScript ? escapeTypeScriptValue(values[key]) : values[key])
+			: match
+	))
+	const leftover = rendered.match(/\{\{[A-Z][A-Z0-9_]*\}\}/)
+	if (leftover) {
+		throw new Error(`Template variable was not replaced: ${leftover[0]}`)
+	}
+	return rendered
+}
+
+function escapeTypeScriptValue(value) {
+	return value.replace(/[\\'"]/g, character => (
+		character === '\\' ? '\\\\' : `\\${character}`
+	))
+}
+
+function finalizePackageJson(target) {
+	const packagePath = join(target, 'package.json')
+	const pkg = JSON.parse(readFileSync(packagePath, 'utf8'))
+	if (typeof pkg.name !== 'string' || !/^(?:@[a-z0-9-~][a-z0-9-._~]*\/)?[a-z0-9-~][a-z0-9-._~]*$/.test(pkg.name)) {
+		throw new Error('Generated package.json has an invalid name.')
+	}
+	writeFileSync(packagePath, `${JSON.stringify(pkg, null, 2)}\n`, { encoding: 'utf8' })
+}
+
+function assertGeneratedProject(target) {
+	const required = [
+		'app/app.config.ts',
+		'content/posts/welcome.md',
+		'public/favicon.svg',
+		'clarity.config.ts',
+		'content.config.ts',
+		'feeds.ts',
+		'nuxt.config.ts',
+		'package.json',
+		'pnpm-workspace.yaml',
+		'tsconfig.json',
+		'.gitignore',
+	]
+	const missing = required.filter(file => !existsSync(join(target, file)))
+	if (missing.length > 0) {
+		throw new Error(`Generated project is incomplete; missing ${missing.join(', ')}.`)
+	}
+
+	const root = resolve(target)
+	for (const file of listGeneratedFiles(target)) {
+		const fullPath = join(target, file)
+		const relativePath = relative(root, resolve(fullPath))
+		if (!relativePath || relativePath.startsWith('..') || isAbsolute(relativePath)) {
+			throw new Error(`Generated path escaped the project directory: ${file}`)
+		}
+	}
+	JSON.parse(readFileSync(join(root, 'package.json'), 'utf8'))
+}
+
+function listGeneratedFiles(base, root = base) {
+	const files = []
+	for (const entry of readdirSync(base)) {
+		const fullPath = join(base, entry)
+		if (lstatSync(fullPath).isDirectory()) {
+			files.push(...listGeneratedFiles(fullPath, root))
+		}
+		else {
+			files.push(relative(root, fullPath).replaceAll('\\', '/'))
+		}
+	}
+	return files
+}
+
+function createDefaults(target) {
+	const projectName = basename(target)
+	return {
+		siteTitle: humanizeProjectName(projectName),
+		description: 'My personal blog built with Clarity Theme',
+		url: 'https://example.com/',
+		author: 'Your Name',
+		language: 'zh-CN',
+		timezone: 'Asia/Shanghai',
+	}
+}
+
+function humanizeProjectName(value) {
+	const words = value.replace(/[-_.]+/g, ' ').trim()
+	if (!words) {
+		return 'My Blog'
+	}
+	return words
+		.split(' ')
+		.map(word => word.charAt(0).toUpperCase() + word.slice(1))
+		.join(' ')
+}
+
+function createPackageName(value) {
+	const packageName = value
+		.trim()
+		.toLowerCase()
+		.replace(/[^a-z0-9-_]+/g, '-')
+		.replace(/^[-.]+|-+$/g, '')
+	return packageName || 'clarity-blog'
+}
+
+function resolvePackageManager(requested) {
+	const packageManager = requested ?? detectPackageManager()
+	if (!['pnpm', 'npm', 'yarn'].includes(packageManager)) {
+		throw new Error('Package manager must be pnpm, npm, or yarn.')
+	}
+	return packageManager
+}
+
+function detectPackageManager() {
+	const agent = process.env.npm_config_user_agent?.split('/')[0]
+	return agent === 'pnpm' || agent === 'yarn' ? agent : 'npm'
+}
+
+function installDependencies(packageManager, target) {
+	const command = packageManager
+	const args = ['install']
+	return new Promise((resolvePromise, rejectPromise) => {
+		const child = spawn(command, args, {
+			cwd: target,
+			stdio: 'inherit',
+			env: { ...process.env, NUXT_TELEMETRY_DISABLED: '1', NO_COLOR: process.env.NO_COLOR ?? '1' },
+			shell: process.platform === 'win32',
+		})
+		child.once('error', rejectPromise)
+		child.once('exit', code => (code === 0 ? resolvePromise() : rejectPromise(new Error(`${packageManager} install failed with exit code ${code}.`))))
+	})
+}
+
+function printNextSteps(target, packageManager, installed) {
+	const displayedPath = relative(process.cwd(), target) || '.'
+	console.log('\nDone!\n\nNext steps:\n')
+	console.log(`  cd ${displayedPath.replaceAll('\\', '/')}`)
+	if (!installed) {
+		console.log(`  ${packageManager} install`)
+	}
+	console.log(`  ${packageManager === 'pnpm' ? 'pnpm dev' : `${packageManager} run dev`}\n`)
+}
