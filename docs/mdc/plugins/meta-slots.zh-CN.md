@@ -18,7 +18,7 @@ aside: [toc, meta-aside-github]
 ::link-card
 ---
 title: blog-v3
-link: https://github.com/L33Z22L11/blog-v3
+link: https://github.com/example/project
 ---
 ::
 :::
