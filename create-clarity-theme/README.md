@@ -3,7 +3,7 @@
 Create an independent Nuxt 4 blog that consumes the published
 [Clarity Theme](https://www.npmjs.com/package/clarity-theme) Layer.
 
-The current initial prerelease is `0.1.0-beta.1` and is distributed through
+The current initial prerelease is `0.1.0-beta.2` and is distributed through
 the npm `beta` dist-tag:
 
 ```bash
