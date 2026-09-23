@@ -10,7 +10,7 @@
     "typecheck": "nuxt typecheck"
   },
   "dependencies": {
-    "clarity-theme": "^0.1.3"
+    "clarity-theme": "^0.1.2"
   },
   "devDependencies": {
     "@nuxt/content": "^3.16.0",
