@@ -117,7 +117,7 @@ jobs:
       - name: Pack final creator tarball
         run: |
           mkdir -p artifacts/create
-          pnpm --dir create-clarity-theme pack --pack-destination artifacts/create
+          pnpm --dir create-clarity-theme pack --pack-destination "${GITHUB_WORKSPACE}/artifacts/create"
           tarball="artifacts/create/create-clarity-theme-${{ steps.version.outputs.version }}.tgz"
           test -f "$tarball"
 

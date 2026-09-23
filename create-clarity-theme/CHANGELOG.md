@@ -4,6 +4,18 @@ All notable changes to `create-clarity-theme` are documented here. The format
 follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the
 package uses [Semantic Versioning](https://semver.org/).
 
+## 0.1.0-beta.3 - 2026-09-23
+
+Prerelease for retrying the GitHub Actions npm Trusted Publishing pipeline with
+correct release routing and artifact paths.
+
+### Fixed
+
+- Restricted the Theme publish workflow to `v*` release tags so creator
+  `create-v*` releases no longer start it.
+- Packed the creator release tarball into the repository-level `artifacts/create`
+  directory, matching the subsequent audit and npm publish steps.
+
 ## 0.1.0-beta.2 - 2026-09-23
 
 Release-candidate beta for validating the GitHub Actions npm Trusted Publishing
