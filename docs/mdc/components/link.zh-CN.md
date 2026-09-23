@@ -8,7 +8,7 @@
 
 ## 基本语法
 
-```md
+```mdc
 参见 [Nuxt 文档](https://nuxt.com/docs) 或某个[小节](#支持的取值)。
 ```
 
@@ -26,7 +26,7 @@
 
 ## 示例
 
-```md
+```mdc
 [a](#section){icon="tabler:color-swatch"} —— 行内 props 语法可以传图标；纯 Markdown 无法传递。
 ```
 

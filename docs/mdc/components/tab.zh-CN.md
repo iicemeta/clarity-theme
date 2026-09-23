@@ -8,7 +8,7 @@
 
 ## 基本语法
 
-```md
+```mdc
 ::tab{:tabs='["Vue", "Markdown"]'}
 #tab1
 Vue 内容。
@@ -33,7 +33,7 @@ Markdown 内容。
 
 长标签数组用 YAML 最方便：
 
-```md
+```mdc
 ::tab
 ---
 tabs:
@@ -50,7 +50,7 @@ active: 2
 
 ## 示例
 
-```md
+```mdc
 :::tab{:tabs='["旧", "新"]' center}
 #tab1
 旧实现。

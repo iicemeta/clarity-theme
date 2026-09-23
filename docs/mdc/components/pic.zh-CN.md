@@ -8,7 +8,7 @@
 
 ## 基本语法
 
-```md
+```mdc
 ::pic{src="https://example.com/photo.jpg" caption="一段图注"}
 ::
 

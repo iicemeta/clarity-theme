@@ -8,7 +8,7 @@ Ordinary Markdown links get themed rendering automatically: external links show 
 
 ## Basic Syntax
 
-```md
+```mdc
 See the [Nuxt docs](https://nuxt.com/docs) or a [section](#supported-values).
 ```
 
@@ -26,7 +26,7 @@ External URLs get automatic domain icons (source: `getDomainIcon`); internal sit
 
 ## Examples
 
-```md
+```mdc
 [a](#section){icon="tabler:color-swatch"} — inline-props syntax passes the icon; plain Markdown cannot.
 ```
 

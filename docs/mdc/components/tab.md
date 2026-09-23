@@ -8,7 +8,7 @@ Tabbed panels: alternatives of the same content (examples, before/after, languag
 
 ## Basic Syntax
 
-```md
+```mdc
 ::tab{:tabs='["Vue", "Markdown"]'}
 #tab1
 Vue content.
@@ -33,7 +33,7 @@ Markdown content.
 
 Long label arrays are easiest in YAML:
 
-```md
+```mdc
 ::tab
 ---
 tabs:
@@ -50,7 +50,7 @@ active: 2
 
 ## Examples
 
-```md
+```mdc
 :::tab{:tabs='["Old", "New"]' center}
 #tab1
 Old implementation.

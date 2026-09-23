@@ -8,7 +8,7 @@ A rich image: Nuxt Image processing, optional caption, and lightbox zoom on clic
 
 ## Basic Syntax
 
-```md
+```mdc
 ::pic{src="https://example.com/photo.jpg" caption="A caption"}
 ::
 

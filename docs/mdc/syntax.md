@@ -57,7 +57,7 @@ YAML props and brace props are interchangeable in expressiveness; prefer braces 
 
 Named slots are `#`-prefixed lines inside a container:
 
-```md
+```mdc
 ::pic{src="/img/photo.jpg"}
 #caption
 Optional rich caption with **Markdown**.

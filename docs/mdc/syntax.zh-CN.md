@@ -57,7 +57,7 @@ YAML props 与花括号 props 表达能力等价；一两个简单 props 用花�
 
 命名插槽是容器内以 `#` 为前缀的行：
 
-```md
+```mdc
 ::pic{src="/img/photo.jpg"}
 #caption
 可选的富文本图注，支持 **Markdown**。
