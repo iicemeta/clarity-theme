@@ -12,7 +12,6 @@ Open work, ordered. Completed work is not tracked here — it is recorded in the
 ## Next
 
 1. **Configurable external asset origins** — KaTeX/Inter default to `s4.zstatic.net` and JetBrains Mono/Noto Serif SC to Google `.cn` endpoints as fixed Layer head links. Add one documented asset-origin configuration group with explicit defaults, replacement, and a way to disable Theme-provided remote links.
-2. **Complete sync-manifest classification** — classify known upstream-derived paths (`app/stores/**`, selected `app/types/**`, `app/utils/**` as include vs transform) so future drift stops blocking unnecessarily; keep `unknown` as the final safety net.
 3. **Reduce the `plain-shiki` consumer patch** — evaluate a Theme-side public selector option, then pursue the upstream dependency fix; do not fork the dependency.
 4. **`@nuxt/image` fractional densities** — pursue the upstream `parseInt → parseFloat` parsing fix and add a Theme regression case when supported.
 

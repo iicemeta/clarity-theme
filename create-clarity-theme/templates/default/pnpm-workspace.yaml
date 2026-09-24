@@ -6,3 +6,21 @@ allowBuilds:
   sharp: true
   unrs-resolver: true
   vue-demi: true
+
+# BlogTech（上游组件）通过 `~~/pnpm-workspace.yaml` catalogs 展示技术栈版本。
+# 注意保持至少两个分组：上游使用 es-toolkit 的 merge(...Object.values(catalogs))。
+catalogs:
+  content:
+    '@nuxt/content': ^3.16.0
+  framework:
+    nuxt: ^4.5.2
+    vue: ^3.5.42
+
+# 与上游 blog-v3 一致的依赖补丁（行内代码高亮 / 图片密度等行为依赖这些补丁）
+patchedDependencies:
+  '@nuxt/image': patches/@nuxt__image.patch
+  '@nuxtjs/mdc': patches/@nuxtjs__mdc.patch
+  ipx: patches/ipx.patch
+  plain-shiki: patches/plain-shiki.patch
+  # 上游使用 Temporal.DateTimeUnit 旧称（上游不运行 typecheck），补充类型别名
+  temporal-spec: patches/temporal-spec.patch

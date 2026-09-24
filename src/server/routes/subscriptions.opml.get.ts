@@ -1,6 +1,7 @@
 import type { FeedEntry, FeedGroup } from '../../types/feed'
 import XmlBuilder from 'fast-xml-builder'
-import { toZonedTemporal } from '../../shared/utils/time'
+import blogConfig, { myFeed } from '~~/blog.config'
+import feeds from '~/feeds'
 
 const runtimeConfig = useRuntimeConfig()
 
@@ -10,58 +11,36 @@ const builder = new XmlBuilder({
 	ignoreAttributes: false,
 })
 
-function mapEntry(item: FeedEntry, timeZone: string) {
+function mapEntry(item: FeedEntry) {
 	return {
 		$text: item.title || item.sitenick || item.author,
 		$type: 'rss',
 		$xmlUrl: item.feed,
-		// `site.established` and feed entry dates are optional; omit the
-		// attribute instead of failing OPML generation for a new consumer.
-		$created: item.date
-			? toZonedTemporal(item.date, timeZone).toInstant().toString()
-			: undefined,
+		$created: toZonedTemporal(item.date).toInstant().toString(),
 		$description: item.desc,
 		$htmlUrl: item.link || item.feed,
 	}
 }
 
-function flattenGroups(groups: FeedGroup[], timeZone: string) {
-	return groups.flatMap(({ entries }) => entries.filter(({ feed }) => feed).map(item => mapEntry(item, timeZone)))
+function flattenGroups(groups: FeedGroup[]) {
+	return groups.flatMap(({ entries }) => entries.filter(({ feed }) => feed).map(mapEntry))
 }
 
-export default defineEventHandler(async () => {
-	const { site, features } = useClarityServerConfig()
-	if (!features.opml) {
-		throw createError({ statusCode: 404, statusMessage: 'OPML subscription output is disabled' })
-	}
-	const feeds = (await import('#clarity/feeds')).default as FeedGroup[]
-	const myFeed: FeedEntry = {
-		author: site.author.name,
-		title: site.title,
-		desc: site.subtitle || site.description,
-		link: site.url,
-		feed: new URL('/atom.xml', site.url).toString(),
-		icon: site.favicon,
-		avatar: site.author.avatar || site.favicon,
-		date: site.established || '',
-	}
-
+export default defineEventHandler(async (_e) => {
 	const outlines = [
-		mapEntry(myFeed, site.timezone),
-		...flattenGroups(feeds, site.timezone),
+		mapEntry(myFeed),
+		...flattenGroups(feeds),
 	]
 
 	const opml = {
 		$version: '2.0',
 		head: {
-			title: `${site.title}的友链订阅`,
-			dateCreated: site.established
-				? toZonedTemporal(site.established, site.timezone).toInstant().toString()
-				: undefined,
+			title: `${blogConfig.title}的友链订阅`,
+			dateCreated: toZonedTemporal(blogConfig.timeEstablished).toInstant().toString(),
 			dateModified: runtimeConfig.public.buildTime,
-			ownerName: site.author.name,
-			ownerEmail: site.author.email,
-			ownerId: site.author.homepage,
+			ownerName: blogConfig.author.name,
+			ownerEmail: blogConfig.author.email,
+			ownerId: blogConfig.author.homepage,
 			docs: 'https://opml.org/spec2.opml',
 		},
 		body: { outline: outlines },

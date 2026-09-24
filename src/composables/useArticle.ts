@@ -1,5 +1,5 @@
+import type { ContentCollectionItem } from '@nuxt/content'
 import type { MetaSlotsTree } from '../remark-plugins/rehype-meta-slots'
-import type { ClarityContentRow } from '../shared/types/content'
 import type { ArticleOrderType, ArticleProps } from '../types/article'
 import { orderBy } from 'es-toolkit/array'
 
@@ -7,7 +7,7 @@ import { orderBy } from 'es-toolkit/array'
 export function useArticle(path?: MaybeRefOrGetter<string | undefined>) {
 	const route = useRoute()
 	const dataKey = computed(() => `content:${toValue(path) ?? route.path}`)
-	const post = computed(() => useNuxtData<ClarityContentRow | null | undefined>(dataKey.value).data.value)
+	const post = computed(() => useNuxtData<ContentCollectionItem | null | undefined>(dataKey.value).data.value)
 
 	return {
 		dataKey,
@@ -64,12 +64,12 @@ interface UseArticleSortOptions {
 }
 
 export function useArticleSort(list: MaybeRefOrGetter<ArticleProps[]>, options?: UseArticleSortOptions) {
-	const clarity = useClarityConfig()
+	const appConfig = useAppConfig()
 	const {
 		bindDirectionQuery,
 		bindOrderQuery,
 		initialAscend = false,
-		initialOrder = (clarity.pagination.sortOrder as ArticleOrderType) || 'date',
+		initialOrder = appConfig.pagination.sortOrder || 'date',
 	} = options || {}
 
 	const sortOrder = bindOrderQuery
@@ -87,7 +87,7 @@ export function useArticleSort(list: MaybeRefOrGetter<ArticleProps[]>, options?:
 
 	const listSorted = computed(() => orderBy(
 		toValue(list),
-		[sortOrder.value, 'date'] as any,
+		[sortOrder.value, 'date'],
 		[isAscending.value ? 'asc' : 'desc'],
 	))
 
@@ -99,13 +99,13 @@ export function useArticleSort(list: MaybeRefOrGetter<ArticleProps[]>, options?:
 }
 
 export function getCategoryIcon(category?: string) {
-	const clarity = useClarityConfig()
-	return clarity.article.categories[category!]?.icon ?? 'tabler:folder'
+	const appConfig = useAppConfig()
+	return appConfig.article.categories[category!]?.icon ?? 'tabler:folder'
 }
 
 export function getCategoryColor(category?: string) {
-	const clarity = useClarityConfig()
-	return clarity.article.categories[category!]?.color
+	const appConfig = useAppConfig()
+	return appConfig.article.categories[category!]?.color
 }
 
 interface GetPostTypeClassNameOptions {

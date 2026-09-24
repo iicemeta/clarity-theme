@@ -4,13 +4,52 @@ All notable changes to Clarity Theme are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
 [Semantic Versioning](https://semver.org/).
 
-## Unreleased
+## 0.1.4 - 2026-09-24
+
+Upstream fidelity reset: Clarity is now a Layer extraction of blog-v3 with an
+enforced parity gate. No public API break; the `clarity` app-config key remains
+supported as a compatibility path.
+
+### Added
+
+- `pnpm test:upstream-parity` regression gate with
+  `tests/upstream-parity.manifest.json`, recording `identical` / `mechanical` /
+  `boundary` / `bugfix` difference classes per synced file (reports
+  upstream/Theme baselines and per-class counts on failure).
+- Theme dependency patches (`patches/`) and consumer template equivalents,
+  including the `@nuxtjs/mdc` inline-code patch upstream relies on.
+- `@iconify-json/devicon` dependency required by the upstream BlogTech widget.
+
+### Changed
+
+- Restored 46 upstream files at baseline `f6ea97d` (34 byte-identical, 12 with
+  explicit mechanical import rewrites); components, layouts, pages, styles,
+  composables, widgets, icons, and server routes now match blog-v3.
+- Upstream components read a flat upstream-shaped `useAppConfig()`; the
+  `clarity-config` module injects that shape from `clarity.config.ts` (UI
+  defaults, site-derived values, and 0.1.x `clarity` overrides merged) and
+  generates build-time data modules for `~~/package.json` and
+  `~~/pnpm-workspace.yaml`.
+- `sync-manifest.json` now includes `app/stores/**`, `app/types/**`, and
+  `app/utils/**`; the migration, compatibility, consumer, and purity suites
+  encode upstream behavior (Twikoo container, upstream app-config shape,
+  upstream anti-mirror contract, tab-preserving code blocks).
 
 ### Fixed
 
 - OPML generation now omits an entry's optional `created` attribute when the
   site or feed entry has no date, instead of failing the route for new
   consumers without `site.established`.
+- `modules/anti-mirror` uses `minifySync` (upstream called the async `minify`
+  synchronously, so the script never injected) and loads the generated data
+  module inside `setup` so the injected URL is never stale; the module is
+  registered explicitly after `clarity-config`.
+
+### Deprecated
+
+- `features.antiMirror` custom blacklist input: the upstream anti-mirror
+  module is always on with its hard-coded blacklist; the key is kept for
+  0.1.x input compatibility only.
 
 ## 0.1.3 - 2026-09-23
 

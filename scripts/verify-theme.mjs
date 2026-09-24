@@ -2,17 +2,28 @@
 /**
  * Clarity Theme 提纯验证（sync:verify 的一部分）
  *
- * 检查 Theme 中不存在：
- * 1. 上游作者个人信息（域名、统计 ID、评论服务、社交账号等）
- * 2. 站点内容文件（content/、feeds 数据、redirects 等）
- * 3. 错误的 Layer 路径（~~/blog.config、~/feeds 等消费项目路径）
+ * 边界原则（2026-09 upstream parity reset 后）：
+ * 1. 上游同步面（identical / mechanical / bugfix，见 tests/upstream-parity.manifest.json
+ *    与 pnpm test:upstream-parity）中的上游作者硬编码内容（交流群、更新日志、
+ *    反镜像黑名单等）由 parity 门禁保证与上游一致，不在本脚本重复检查；
+ * 2. Theme 自有边界文件（boundary：config / modules / 兼容层）不得出现上游个人信息；
+ * 3. 站点内容文件（content/、feeds 数据、redirects 等）与根目录消费项目文件不得进入仓库；
+ * 4. Theme 基础设施（src/config、clarity-config / clarity-source-layout 模块）不得
+ *    直接引用消费项目路径（~~/blog.config 等），必须经由别名与适配层。
  */
+import { execFileSync } from 'node:child_process'
 import { readdirSync, readFileSync, statSync } from 'node:fs'
 import { extname, join, relative } from 'node:path'
 import process from 'node:process'
 import { fileURLToPath } from 'node:url'
 
 const themeDir = fileURLToPath(new URL('..', import.meta.url))
+
+const parityClasses = JSON.parse(execFileSync(
+	process.execPath,
+	[join(themeDir, 'scripts/test-upstream-parity.mjs'), '--list-json'],
+	{ encoding: 'utf8', maxBuffer: 1024 * 1024 * 16 },
+))
 
 const forbiddenFiles = [
 	'content',
@@ -34,11 +45,20 @@ const forbiddenPatterns = [
 	[/陕ICP备/, '上游备案号'],
 ]
 
-const forbiddenImportPatterns = [
+/** Theme 基础设施中不允许出现消费项目路径引用（上游同步面除外） */
+const infraImportPatterns = [
 	[/['"]~~?\/blog\.config['"]/, 'blog.config 引用'],
 	[/['"]~~?\/feeds['"]/, 'feeds 数据引用'],
 	[/['"]~~?\/content\.config['"]/, 'content.config 引用'],
 	[/['"]~~?\/redirects\.json['"]/, 'redirects 引用'],
+]
+
+const infraPathPrefixes = [
+	'src/config/',
+	'src/img/',
+	'src/modules/clarity-config/',
+	'src/modules/clarity-source-layout/',
+	'nuxt.config.ts',
 ]
 
 /** 允许出现上游标识的文件（署名、同步元数据与检测规则本体）；其 *.zh-CN.md 译本同样允许携带署名 */
@@ -46,12 +66,14 @@ const attributionAllowList = new Set([
 	'LICENSE',
 	'README.md',
 	'CHANGELOG.md',
-	'docs/history/2026-09-theme-audit.md',
+	'docs/',
 	'package.json',
 	'sync-manifest.json',
+	'skills/',
 	'scripts/test-consumer.mjs',
 	'scripts/release-check.mjs',
 	'scripts/verify-theme.mjs',
+	'tests/',
 ])
 
 const ignoredDirs = new Set(['node_modules', '.git', '.nuxt', '.output', '.data', 'dist', '.test-consumer'])
@@ -73,7 +95,7 @@ if (errors.length) {
 	}
 	process.exit(1)
 }
-console.log('✔ clarity-theme 提纯验证通过：无作者信息泄漏、无站点文件、无跨项目路径引用')
+console.log('✔ clarity-theme 提纯验证通过：边界文件无作者信息泄漏、无站点文件、Theme 基础设施无跨项目路径引用')
 
 function walk(dir) {
 	for (const entry of readdirSync(dir)) {
@@ -94,16 +116,27 @@ function walk(dir) {
 		// 将 <name>.zh-CN.md 译本归一化为对应英文原文路径：
 		// 译文与原文携带相同的合法署名，不应因语言版本不同而失败。
 		const attributionPath = relPath.replace(/\.zh-CN\.md$/, '.md')
-		if (!attributionAllowList.has(attributionPath)) {
+		const isAttributionAllowed = [...attributionAllowList].some(allowed =>
+			attributionPath === allowed || attributionPath.startsWith(allowed),
+		)
+		const parityClass = parityClasses[relPath]
+		const isUpstreamSynced = parityClass === 'identical' || parityClass === 'mechanical' || parityClass === 'bugfix'
+
+		if (!isAttributionAllowed && !isUpstreamSynced) {
 			for (const [pattern, label] of forbiddenPatterns) {
 				if (pattern.test(content)) {
 					errors.push(`${relPath} 含${label} ${pattern}`)
 				}
 			}
 		}
-		for (const [pattern, label] of forbiddenImportPatterns) {
-			if (pattern.test(content)) {
-				errors.push(`${relPath} 含跨项目路径引用（${label}）`)
+		// clarity-config 模块本身就是别名注册点（~~/blog.config / ~/feeds 的键名），
+		// 其内容由 upstream parity boundary hash 锁定，这里不重复检查。
+		const isAliasRegistrar = relPath === 'src/modules/clarity-config/index.ts'
+		if (!isAliasRegistrar && infraPathPrefixes.some(prefix => relPath.startsWith(prefix) || relPath === prefix)) {
+			for (const [pattern, label] of infraImportPatterns) {
+				if (pattern.test(content)) {
+					errors.push(`${relPath} 含跨项目路径引用（${label}）；Theme 基础设施必须经由 #clarity/* 别名或 src/blog.config.ts 适配层`)
+				}
 			}
 		}
 	}

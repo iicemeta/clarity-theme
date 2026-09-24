@@ -1,110 +1,14 @@
 /**
- * Clarity Theme UI 默认配置。
+ * Layer 级 app.config。
  *
- * 站点数据（标题、作者、文章分类等）来自根目录 clarity.config.ts，
- * 由 src/modules/clarity-config 注入到 appConfig.clarity 中。
- *
- * 消费项目可在自己的 app/app.config.ts 中按需覆盖任意键。
+ * UI 默认值由 src/modules/clarity-config 从 src/config/ui.ts 注入（inline 层），
+ * 此处仅提供需要字面量类型的键：pagination.sortOrder 若由模块注入，
+ * JSON 字面量会被宽化为 string，导致上游 useArticle 的
+ * ref<ArticleOrderType>(initialOrder) 类型不匹配。以 Layer cfg 提供
+ * 'date' 字面量（运行时与默认值一致，可被消费项目顶层键覆盖）。
  */
 export default defineAppConfig({
-	clarity: {
-		// @keep-sorted
-		component: {
-			alert: {
-				/** 默认使用卡片风格还是扁平风格 */
-				defaultStyle: 'card' as 'card' | 'flat',
-			},
-
-			codeblock: {
-				/** 代码块触发折叠的行数 */
-				triggerRows: 32,
-				/** 代码块折叠后的行数 */
-				collapsedRows: 16,
-				/** 启用代码块缩进导航会关闭空格渲染 */
-				enableIndentGuide: true,
-				/** 代码块缩进导航竖线匹配空格数 */
-				indent: 4,
-				/** tab 渲染宽度 */
-				tabSize: 3,
-			},
-
-			/** 文章开头摘要 */
-			excerpt: {
-				animation: true,
-				caret: '_',
-			},
-
-			/** 精选文章 Slide */
-			slide: {
-				/** 适合封面图无字时启用 */
-				showTitle: true,
-			},
-
-			stats: {
-				/** 归档页面每年标题对应的年龄，无需展示时可留空 */
-				birthYear: undefined as number | undefined,
-			},
-		},
-
-		// @keep-sorted
-		footer: {
-			/** 侧边栏底部图标导航 */
-			iconNav: [] as { icon: string, text: string, url: string }[],
-			/** 页脚站点地图 */
-			nav: [] as {
-				title: string
-				items: { icon: string, text: string, url: string }[]
-			}[],
-		},
-
-		/** 左侧栏顶部 Logo */
-		header: {
-			/** 展示标题文本，否则展示纯 Logo */
-			showTitle: true,
-			emojiTail: [] as string[],
-		},
-
-		/** 友链页面 */
-		link: {
-			/** 无订阅源展示静音图标 */
-			remindNoFeed: true,
-			/** 友链分组内随机排序 */
-			randomInGroup: true,
-		},
-
-		/** 左侧栏导航 */
-		nav: [
-			{
-				title: '',
-				items: [
-					{ icon: 'tabler:files', text: '文章', url: '/' },
-					{ icon: 'tabler:link', text: '友链', url: '/link' },
-					{ icon: 'tabler:archive', text: '归档', url: '/archive' },
-				],
-			},
-		],
-
-		pagination: {
-			perPage: 10,
-			/** 默认排序方式，需要是 article.order 中的键名 */
-			sortOrder: 'date',
-			/** 允许（普通/预览/归档）文章列表正序，开启后排序方式左侧图标可切换顺序 */
-			allowAscending: false,
-		},
-
-		themes: {
-			light: {
-				icon: 'tabler:sun',
-				tip: '浅色模式',
-			},
-			system: {
-				icon: 'tabler:device-desktop',
-				tip: '跟随系统',
-			},
-			dark: {
-				icon: 'tabler:moon',
-				tip: '深色模式',
-			},
-		},
+	pagination: {
+		sortOrder: 'date' as const,
 	},
 })

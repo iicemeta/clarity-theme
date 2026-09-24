@@ -12,7 +12,6 @@
 ## 下一步
 
 1. **外部资产来源可配置** —— KaTeX/Inter 默认使用 `s4.zstatic.net`，JetBrains Mono/Noto Serif SC 默认使用 Google `.cn` 端点，都是固定的 Layer head 链接。增加一个有文档的 asset-origin 配置组，支持显式默认值、替换与禁用 Theme 提供的远程链接。
-2. **补全 sync-manifest 分类** —— 为已知的上游派生路径分类（`app/stores/**`、部分 `app/types/**`、`app/utils/**` 归入 include 或 transform），避免未来漂移造成不必要的阻塞；保留 `unknown` 作为最终安全网。
 3. **减少 `plain-shiki` 消费方补丁** —— 先评估 Theme 侧公开 selector 选项，再推动上游依赖修复；不要 fork 依赖。
 4. **`@nuxt/image` 小数 density** —— 推动上游 `parseInt → parseFloat` 解析修复，并在支持时补 Theme 回归用例。
 

@@ -5,10 +5,10 @@ interface UsePaginationOptions {
 }
 
 export default function usePagination<T>(list: MaybeRefOrGetter<T[]>, options?: UsePaginationOptions) {
-	const clarity = useClarityConfig()
+	const appConfig = useAppConfig()
 	const {
 		initialPage = 1,
-		perPage = clarity.pagination.perPage || 10,
+		perPage = appConfig.pagination.perPage || 10,
 		bindQuery,
 	} = options || {}
 

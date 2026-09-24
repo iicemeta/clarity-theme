@@ -22,6 +22,12 @@ export interface ArticleSchema {
 	permalink?: string
 
 	readingTime?: ReadTimeResults
+
+	/**
+	 * 开放索引签名：clarity.config.ts 的 article.order 允许自定义排序键，
+	 * 上游归档页通过 article[sortOrder] 索引（上游依赖其配置字面量类型）。
+	 */
+	[key: string]: unknown
 }
 
 function createArticleSchema(config: ClarityConfig) {

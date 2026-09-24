@@ -21,6 +21,13 @@ Clarity 取代传统的 sync fork 工作流。你不需要把上游数千行代�
 - **集成仍归你所有**：Twikoo、head 脚本与反镜像均由消费方配置驱动
 - **覆盖而无需 fork**：UI app config 覆盖、同路径组件覆盖、自定义 Shiki 主题与消费方 CSS
 
+## 核心原则
+
+- **Clarity 是 blog-v3 的 Layer 化提取**，不是重新实现的独立主题。上游 UI、布局与交互默认是 source of truth，除 `tests/upstream-parity.manifest.json` 中显式记录的机械路径改写外保持 byte-identical。
+- **上游硬编码行为优先保留**：泛化、配置化与清理属于后续路线，不属于本次 parity。
+- **个人站点数据归消费方管理**，边界以上游 `init-project` 重置范围为准。
+- **漂移即缺陷**：同步面内任何未登记差异都会让 `pnpm test:upstream-parity` 失败。
+
 ## 选择你的路径
 
 | 起点 | 文档 |

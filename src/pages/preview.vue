@@ -1,8 +1,8 @@
 <script setup lang="ts">
-const clarity = useClarityConfig()
+const appConfig = useAppConfig()
 useSeoMeta({
 	title: '预览',
-	description: `${clarity.site.title}的文章预览。`,
+	description: `${appConfig.title}的文章预览。`,
 })
 const { data: listRaw } = await useAsyncData('previews:index', () => getArticleIndexOptions('previews/%'), { default: () => [] })
 const { listSorted, isAscending, sortOrder } = useArticleSort(listRaw)

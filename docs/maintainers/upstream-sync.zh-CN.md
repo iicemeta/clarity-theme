@@ -113,6 +113,17 @@ manifest 中所有 glob 与 `upstream` 块描述的都是**上游**（blog-v3）
 | `pnpm sync:apply` | 要求主题工作树干净，事务式应用安全的 include 操作，校验纯度，然后更新基线 |
 | `pnpm sync:verify` | 运行主题纯度校验，并要求 manifest 基线等于远端分支头 |
 
+## Upstream Parity 门禁
+
+`pnpm test:upstream-parity` 通过 `pathMap` 将每个 `include` 文件与 manifest commit 对比，并为每个 Theme 文件强制一种已登记的差异分类：
+
+- `identical`（默认）：EOL 归一化后 byte-identical。
+- `mechanical`：上游内容经显式替换（Layer 相对导入路径）后与 Theme 文件完全一致。
+- `boundary`：SHA-256 哈希锁定并附书面理由（Layer 基础设施、包边界、配置桥接、类型兼容垫片）。
+- `bugfix`：哈希锁定并附上游问题说明（例如 `modules/anti-mirror` 中对异步 `minify` 的误用）。
+
+同步面内任何未登记的 Theme 侧额外文件都会让门禁失败。仅在审查差异后刷新哈希：`node scripts/test-upstream-parity.mjs --update-hashes`。门禁输出包含上游/Theme 基线与 identical、mechanical、boundary、bugfix 计数。
+
 ## Apply 与冲突语义
 
 对 include 变更：
@@ -157,13 +168,6 @@ manifest 基线只在以下条件全部满足后推进：
 
 ## 当前边界缺口
 
-manifest 未显式分类：
+Manifest 现已将 `app/stores/**`、`app/types/**` 与 `app/utils/**` 归入 `include`；parity 门禁还登记了同步面内全部 Theme 侧文件（`src/` 之外的文档、CI、脚本与测试按定义仍属 Theme 自有）。
 
-- `app/stores/**`
-- `app/types/**`
-- `app/utils/**`
-- 主题独有的文档、CI、脚本与测试
-
-其中一些文件是未修改的上游文件，而 `app/types/article.ts` 与 `app/types/feed.ts` 已被适配。未来上游对未列出路径的变更会变成 `unknown` 并阻止 apply。这是有意的保护，但使 manifest 不是主题自有与上游派生路径的完整地图。
-
-本次文档任务没有设计或实现新的同步机制。
+未来上游对未列出路径的变更会成为 `unknown` 并阻塞 apply——这一保护仍然有意保留。同步面内的新文件必须在 `tests/upstream-parity.manifest.json` 中登记差异分类与理由。

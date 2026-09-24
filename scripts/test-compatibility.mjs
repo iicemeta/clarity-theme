@@ -22,6 +22,7 @@
  *   node scripts/test-compatibility.mjs --contract-only # 只校验契约与文档同步（无构建）
  *   node scripts/test-compatibility.mjs --update-docs   # 由契约重新生成 docs/reference/compatibility.md
  */
+import { Buffer } from 'node:buffer'
 import { spawn } from 'node:child_process'
 import { createWriteStream, existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
@@ -158,28 +159,28 @@ async function main() {
 			scanLogFile(join(reportDir, 'dev.log'), 'dev')
 		}
 
-		// ---- 5. dev 模式 anti-mirror 真实导航（P0-3）----
-		// 用 127.0.0.1 模拟镜像主机、localhost 作为规范主机：
-		// 注入脚本必须把浏览器从 127.0.0.1:<port> 导航回 localhost:<port>。
-		if (browser && !flags.noDev) {
+		// ---- 5. dev 模式 anti-mirror 注入契约（upstream parity）----
+		// 上游 anti-mirror 使用硬编码黑名单（Layer 中显式注册、始终注入）；
+		// 这里在真实 dev SSR 输出中断言：上游黑名单与站点 URL（btoa 编码）
+		// 均进入页面，且已废弃的自定义黑名单不再生效。
+		if (!flags.noDev) {
 			const mirrorPort = 20000 + Math.floor(Math.random() * 20000)
-			const mirrorServer = await startServer({
-				log: 'mirror-dev.log',
-				title: '启动 dev 服务（anti-mirror 导航验证）',
+			const antiServer = await startServer({
+				log: 'anti-mirror-dev.log',
+				title: '启动 dev 服务（anti-mirror 注入契约验证）',
 				dev: true,
 				port: mirrorPort,
 				timeout: 240000,
 				env: {
 					CLARITY_COMPAT_SITE_URL: `http://localhost:${mirrorPort}/`,
-					CLARITY_COMPAT_ANTI_MIRROR_BLACKLIST: '127.0.0.1',
 				},
 			})
 			try {
-				await assertAntiMirrorNavigation(browser, mirrorServer.baseUrl, `localhost:${mirrorPort}`)
+				await assertAntiMirrorInjection(antiServer.baseUrl, `http://localhost:${mirrorPort}/`)
 			}
 			finally {
-				await stopServer(mirrorServer)
-				scanLogFile(join(reportDir, 'mirror-dev.log'), 'dev')
+				await stopServer(antiServer)
+				scanLogFile(join(reportDir, 'anti-mirror-dev.log'), 'dev')
 			}
 		}
 		else if (!flags.noBrowser) {
@@ -493,49 +494,32 @@ async function assertBrowserCases(browser, baseUrl, cases) {
 }
 
 /**
- * P0-3：anti-mirror 真实浏览器导航验证。
- *
- * 从镜像主机（127.0.0.1:<port>，命中黑名单）打开页面后，
- * 注入脚本必须完成一次真实导航回到规范主机（localhost:<port>）。
+ * anti-mirror 注入契约（upstream parity）：
+ * 上游硬编码黑名单 + 站点 URL（btoa 编码）必须进入 dev SSR 输出；
+ * 已废弃的自定义黑名单（features.antiMirror）不再生效。
  */
-async function assertAntiMirrorNavigation(browser, baseUrl, expectedHost) {
-	const testCase = { id: 'anti-mirror-navigation' }
-	console.log(`      mirror 主机导航断言：${baseUrl} → ${expectedHost}`)
-	const page = await browser.open(`${baseUrl}/`, { timeout: 60000 })
+async function assertAntiMirrorInjection(baseUrl, siteUrl) {
+	const testCase = { id: 'anti-mirror-injection' }
+	console.log(`      anti-mirror 注入断言：${baseUrl}`)
+	const html = await (await fetch(`${baseUrl}/`, { signal: AbortSignal.timeout(30000) })).text()
+	const encode = value => Buffer.from(value, 'latin1').toString('base64')
 
-	for (const entry of page.exceptions) {
-		fail(testCase, 'Nuxt / Vue runtime', `未捕获异常：${entry}`)
-	}
-	for (const entry of page.console) {
-		if (entry.type === 'error' && !consoleAllowRules.some(re => re.test(entry.text))) {
-			fail(testCase, 'Nuxt / Vue runtime', `console.error：${entry.text}`)
+	const checks = [
+		['上游黑名单 dgjlx.com 已编码注入', html.includes(encode('dgjlx.com'))],
+		['站点 URL 已编码注入', html.includes(encode(siteUrl))],
+		['废弃的自定义黑名单不再注入', !html.includes(encode('mirror.example.com'))],
+	]
+	let failed = false
+	for (const [name, ok] of checks) {
+		if (!ok) {
+			fail(testCase, 'anti-mirror injection', name)
+			failed = true
 		}
 	}
-
-	let actualHost = ''
-	try {
-		const redirected = await waitFor(async () => {
-			actualHost = await browser.evaluate('location.host')
-			return actualHost === expectedHost
-		}, 15000, 250)
-		if (!redirected)
-			throw new Error(`15s 内未导航回规范主机（当前 ${actualHost || '(unknown)'}）`)
+	if (!failed) {
+		passedCount += 1
+		console.log(`      ✓ ${testCase.id}（上游黑名单 + ${siteUrl}）`)
 	}
-	catch (error) {
-		fail(testCase, 'anti-mirror navigation', error.message)
-		return
-	}
-
-	const canonical = await browser.evaluate(
-		'document.querySelector(\'link[rel="canonical"]\')?.href ?? \'\'',
-	).catch(() => '')
-	if (canonical && !canonical.includes(expectedHost)) {
-		fail(testCase, 'anti-mirror navigation', `canonical 链接仍指向镜像：${canonical}`)
-		return
-	}
-
-	passedCount += 1
-	console.log(`      ✓ ${testCase.id}（${baseUrl} → http://${expectedHost}/）`)
 }
 
 function checkEqual(testCase, name, actual, expected) {
@@ -568,7 +552,7 @@ function compatibilityCaseIds() {
 		...ssrCases.map(item => item.id),
 		...browserCases.map(item => item.id),
 		...hydrationRoutes.map(item => `${item.id}-hydration`),
-		'anti-mirror-navigation',
+		'anti-mirror-injection',
 	])
 }
 

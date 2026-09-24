@@ -1,27 +1,17 @@
 <script setup lang="ts">
-const clarity = useClarityConfig()
+const { timeEstablished } = useAppConfig()
 
-const blogLog = computed(() => {
-	const entries = clarity.changelog.map(({ date, text }) => ({ label: date, value: text }))
-	if (clarity.site.established) {
-		entries.push({ label: clarity.site.established, value: '发布第一篇文章' })
-	}
-	return entries
-})
+const blogLog = [
+	{ label: '2025-07-26', value: '重构到 Nuxt 4 + Nuxt Content v3，启用 zhilu.site 域名' },
+	{ label: '2024-08-11', value: '重构到 Nuxt 3 + Nuxt Content v2' },
+	{ label: '2023-05-24', value: '更换框架为 Hexo，升级博客' },
+	{ label: '2020-08-24', value: '使用 zhilu.cyou 域名' },
+	{ label: timeEstablished, value: '发布第一篇文章' },
+]
 </script>
 
 <template>
 <BlogWidget card title="更新日志">
-	<ZDlGroup v-if="blogLog.length" size="large" :items="blogLog" />
-	<p v-else class="no-log">
-		暂无更新日志，可在 clarity.config.ts 的 changelog 中配置。
-	</p>
+	<ZDlGroup size="large" :items="blogLog" />
 </BlogWidget>
 </template>
-
-<style lang="scss" scoped>
-.no-log {
-	padding: 1em;
-	color: var(--c-text-3);
-}
-</style>

@@ -1,7 +1,11 @@
-import type { ClarityContentRow } from '../../shared/types/content'
+import type { ContentCollectionItem } from '@nuxt/content'
 import { queryCollection } from '@nuxt/content/server'
+import { pascalCase } from 'es-toolkit/string'
 import XmlBuilder from 'fast-xml-builder'
-import { toZonedTemporal } from '../../shared/utils/time'
+import { Temporal } from 'temporal-polyfill'
+import blogConfig from '~~/blog.config'
+import packageJson from '~~/package.json'
+import { toZonedTemporal } from '~~/shared/utils/time'
 
 const runtimeConfig = useRuntimeConfig()
 
@@ -13,48 +17,42 @@ const builder = new XmlBuilder({
 	textNodeName: '_',
 })
 
+function formatIsoDate(date?: string) {
+	if (!date)
+		return
+	try {
+		return toZonedTemporal(date).toInstant().toString()
+	}
+	catch {
+		console.error('Invalid date format', date)
+		return date
+	}
+}
+
+function getUrl(path: string | undefined) {
+	return new URL(path ?? '', blogConfig.url).toString()
+}
+
+function renderContent(post: ContentCollectionItem) {
+	return [
+		post.image && `<img src="${post.image}" alt="${post.title}" />`,
+		post.description && `<p>${post.description}</p>`,
+		`<a class="view-full" href="${getUrl(post.path)}" target="_blank">点击查看全文</a>`,
+	].join(' ')
+}
+
 export default defineEventHandler(async (event) => {
-	const { site, feed, features } = useClarityServerConfig()
-	if (!features.atom) {
-		throw createError({ statusCode: 404, statusMessage: 'Atom feed is disabled' })
-	}
-	const themeInfo = runtimeConfig.public.clarity as { theme: string, themeVersion: string, themeHomepage: string }
-
-	function formatIsoDate(date?: string) {
-		if (!date)
-			return
-		try {
-			return toZonedTemporal(date, site.timezone).toInstant().toString()
-		}
-		catch {
-			console.error('Invalid date format', date)
-			return date
-		}
-	}
-
-	function getUrl(path: string | undefined) {
-		return new URL(path ?? '', site.url).toString()
-	}
-
-	function renderContent(post: ClarityContentRow) {
-		return [
-			post.image && `<img src="${post.image}" alt="${post.title}" />`,
-			post.description && `<p>${post.description}</p>`,
-			`<a class="view-full" href="${getUrl(post.path)}" target="_blank">点击查看全文</a>`,
-		].filter(Boolean).join(' ')
-	}
-
-	const posts = await queryCollection(event, 'content' as never)
+	const posts = await queryCollection(event, 'content')
 		.where('stem', 'LIKE', 'posts/%')
 		.order('updated', 'DESC')
-		.limit(feed.limit)
-		.all() as ClarityContentRow[]
+		.limit(blogConfig.feed.limit)
+		.all()
 
 	const entries = posts.map(post => ({
 		id: getUrl(post.path),
 		title: post.title ?? '',
 		updated: formatIsoDate(post.updated),
-		author: { name: (post as any).author || site.author.name },
+		author: { name: post.author || blogConfig.author.name },
 		content: {
 			$type: 'html',
 			$: renderContent(post),
@@ -65,37 +63,37 @@ export default defineEventHandler(async (event) => {
 		published: formatIsoDate(post.published ?? post.date),
 	}))
 
-	const feedData = {
+	const feed = {
 		$xmlns: 'http://www.w3.org/2005/Atom',
-		id: site.url,
-		title: site.title,
+		id: blogConfig.url,
+		title: blogConfig.title,
 		updated: runtimeConfig.public.buildTime,
-		description: site.description,
+		description: blogConfig.description, // RSS 2.0
 		author: {
-			name: site.author.name,
-			email: site.author.email,
-			uri: site.author.homepage,
+			name: blogConfig.author.name,
+			email: blogConfig.author.email,
+			uri: blogConfig.author.homepage,
 		},
 		link: [
 			{ $href: getUrl('atom.xml'), $rel: 'self' },
-			{ $href: site.url, $rel: 'alternate' },
+			{ $href: blogConfig.url, $rel: 'alternate' },
 		],
-		language: site.language,
+		language: blogConfig.language, // RSS 2.0
 		generator: {
-			$uri: themeInfo.themeHomepage,
-			$version: themeInfo.themeVersion,
-			_: themeInfo.theme,
+			$uri: 'https://github.com/L33Z22L11/blog-v3',
+			$version: packageJson.version,
+			_: pascalCase(packageJson.name),
 		},
-		icon: site.favicon,
-		logo: site.author.avatar,
-		rights: `© ${new Date().getFullYear()} ${site.author.name}`,
-		subtitle: site.subtitle || site.description,
+		icon: blogConfig.favicon,
+		logo: blogConfig.author.avatar, // Ratio should be 2:1
+		rights: `© ${Temporal.Now.plainDateISO().year.toString()} ${blogConfig.author.name}`,
+		subtitle: blogConfig.subtitle || blogConfig.description,
 		entry: entries,
 	}
 
 	return builder.build({
 		'?xml': { $version: '1.0', $encoding: 'UTF-8' },
-		'?xml-stylesheet': feed.enableStyle ? { $type: 'text/xsl', $href: '/assets/atom.xsl' } : undefined,
-		'feed': feedData,
+		'?xml-stylesheet': blogConfig.feed.enableStyle ? { $type: 'text/xsl', $href: '/assets/atom.xsl' } : undefined,
+		feed,
 	})
 })

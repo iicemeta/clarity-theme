@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import { orderBy } from 'es-toolkit/array'
 
-const clarity = useClarityConfig()
+const appConfig = useAppConfig()
 useSeoMeta({
-	description: clarity.site.description,
-	ogImage: clarity.site.author.avatar,
+	description: appConfig.description,
+	ogImage: appConfig.author.avatar,
 })
 
 const { data: listRaw } = await useAsyncData('posts:index', () => getArticleIndexOptions(), { default: () => [] })
@@ -34,6 +34,7 @@ const { data: previewCount } = useAsyncData(
 <template #aside>
 	<WidgetBlogStats />
 	<WidgetBlogTech />
+	<WidgetCommGroup />
 </template>
 
 <BlogHeader class="mobile-only" to="/" tag="h1" />

@@ -108,19 +108,14 @@ consumer blog
 
 ## 5. App Config 流
 
-主题的 `src/app.config.ts` 只提供 `clarity` 下的 UI 默认值：
+上游组件通过 `useAppConfig()` 读取**上游形状的扁平 app config**（`title`、`nav`、`component.*`、`article.*` 等），与 blog-v3 中 `blog.config.ts` 展开进 `app/app.config.ts` 的行为完全一致。
 
-- `component`
-- `footer`
-- `header`
-- `link`
-- `nav`
-- `pagination`
-- `themes`
+- `clarity-config` 从 `clarity.config.ts` + UI 默认值（`src/config/ui.ts`）+ 站点派生值（header logo/subtitle、footer copyright）注入该扁平结构。
+- 消费方 `app/app.config.ts` 可直接覆盖扁平键（上游习惯），也可通过 0.1.x 的 `clarity` 兼容键覆盖；两条路径合并进同一结构。
+- Layer 级 `src/app.config.ts` 为空占位，避免 Layer 默认值遮蔽消费方覆盖。
+- Nuxt 将消费方输入合并到模块注入之上；对象深度合并，数组按 defu 语义按下标合并。
 
-Nuxt 将 app config 与使用方输入合并，且使用方输入优先于主题默认值；模块注入的由站点派生的默认值优先级更低。对象分支深度合并，数组整体替换。当使用方把站点级键放进 `app.config.ts` 时模块会发出警告，因为这些键可能覆盖从 `clarity.config.ts` 派生的值。
-
-生成的 TypeScript 模板同时扩展 `CustomAppConfig` 的输入侧与读取侧，因此使用方覆盖可获得部分 UI 类型提示，而主题读取方保留解析后的完整形态。
+生成的 TypeScript 模板扩展 `CustomAppConfig`（扁平 UI 键 + `article`）与 `AppConfigInput`（`clarity`），消费方保持类型化覆盖，上游读取方保留解析后的完整形态。
 
 ## 6. Content 流
 
@@ -180,8 +175,12 @@ Markdown 处理由 Layer 配置：
 | `#clarity/feeds` | 使用方 feeds 模块或主题空回退 | Layer/服务端代码受支持的注入契约 |
 | `#clarity/config` | 使用方 clarity 配置模块路径 | 内部构建别名 / 潜在的服务端安全配置来源；不是稳定的独立公共导出 |
 | `~/shiki.config` | 存在时指向使用方文件；否则指向主题 `src/shiki.config.ts` | 受支持的回退机制 |
+| `~~/blog.config` | `src/blog.config.ts` 适配层（由 `clarity.config.ts` 派生上游扁平结构） | Layer 适配层，使上游文件（`shared/utils/time`、服务端路由）保持 byte-identical |
+| `~~/shared` | 消费方无 `shared/` 时指向主题 `src/shared` | 上游 `~~/shared/...` 导入的 Layer 回退 |
+| `~/feeds` | 消费方无 `app/feeds.ts` 时指向主题 feeds 回退 | 上游 `~/feeds` 的 Layer 回退 |
+| `~~/package.json` / `~~/pnpm-workspace.yaml` | `src/generated/` 下的构建期数据模块 | 上游 BlogTech/atom 的构建数据桥接；按消费方生成 |
 
-这些别名避免主题代码假设使用方的目录布局。
+这些别名避免主题代码假设使用方的目录布局；上游文件保留其原始导入说明符。
 
 ## 10. 组件覆盖机制
 

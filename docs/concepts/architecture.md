@@ -109,19 +109,14 @@ Configuration is strict. `integrations.scripts` is omitted from appConfig and co
 
 ## 5. App Config Flow
 
-The Theme's `src/app.config.ts` supplies only UI defaults under `clarity`:
+Upstream components read a **flat upstream-shaped app config** through `useAppConfig()` (`title`, `nav`, `component.*`, `article.*`, ...), exactly like blog-v3 where `blog.config.ts` is spread into `app/app.config.ts`.
 
-- `component`
-- `footer`
-- `header`
-- `link`
-- `nav`
-- `pagination`
-- `themes`
+- `clarity-config` injects that flat shape from `clarity.config.ts` plus UI defaults (`src/config/ui.ts`) and site-derived values (header logo/subtitle, footer copyright).
+- Consumer `app/app.config.ts` may override flat keys directly (upstream style) or through the 0.1.x `clarity` compat key; both paths are merged into the same shape.
+- The layer-level `src/app.config.ts` is an empty placeholder so consumer overrides are never shadowed by Layer defaults.
+- Nuxt merges app config with consumer input above module-injected defaults. Object branches merge deeply; arrays merge index-wise per defu semantics.
 
-Nuxt merges app config with consumer input above Theme defaults; module-injected site-derived defaults are lower priority. Object branches merge deeply, while arrays replace wholesale. The module warns when a consumer puts site-level keys in `app.config.ts`, because those keys can override values derived from `clarity.config.ts`.
-
-Generated TypeScript templates augment both input and read sides of `CustomAppConfig`, so consumer overrides receive partial UI typing while Theme readers retain the resolved full shape.
+Generated TypeScript templates augment `CustomAppConfig` (flat UI keys plus `article`) and `AppConfigInput` (`clarity`), so consumers keep typed overrides while upstream readers keep the resolved full shape.
 
 ## 6. Content Flow
 
@@ -181,8 +176,12 @@ Server handlers no longer read feed/stats configuration through appConfig, so th
 | `#clarity/feeds` | Consumer feeds module or Theme empty fallback | Supported injection contract for Layer/server code |
 | `#clarity/config` | Consumer clarity config module path | Internal build alias / potential server-safe config source; not a stable standalone public export |
 | `~/shiki.config` | Consumer file when present; otherwise Theme `src/shiki.config.ts` | Supported fallback mechanism |
+| `~~/blog.config` | `src/blog.config.ts` adapter (upstream flat shape derived from `clarity.config.ts`) | Layer adapter so upstream files (`shared/utils/time`, server routes) stay byte-identical |
+| `~~/shared` | Theme `src/shared` when the consumer has no `shared/` | Layer fallback for upstream `~~/shared/...` imports |
+| `~/feeds` | Theme feeds fallback when the consumer has no `app/feeds.ts` | Layer fallback for upstream `~/feeds` |
+| `~~/package.json` / `~~/pnpm-workspace.yaml` | Generated build-time data modules under `src/generated/` | Build-data bridge for upstream BlogTech/atom; generated per consumer |
 
-The aliases prevent Theme code from assuming consumer directory layout.
+The aliases prevent Theme code from assuming consumer directory layout; upstream files keep their original import specifiers.
 
 ## 10. Component Override Mechanism
 

@@ -45,6 +45,19 @@ export default defineNuxtModule({
 			shared: directories.shared,
 		}
 
+		// Nuxt 的 LayerAliasingPlugin 会把 Layer 源码内的 ~ / ~~ 前缀按
+		// layer 自身目录改写（node_modules Layer 默认指向 Theme 包根）。
+		// 上游组件中的 ~~ 语义是「站点根目录」（~~/package.json、~/feeds 等），
+		// 这里把本 Layer 的别名显式指向消费项目目录；消费项目不存在的文件
+		// （blog.config、shared/、feeds）由 clarity-config 的精确别名兜底。
+		layer.config.alias = {
+			...layer.config.alias,
+			'~': nuxt.options.srcDir,
+			'@': nuxt.options.srcDir,
+			'~~': nuxt.options.rootDir,
+			'@@': nuxt.options.rootDir,
+		}
+
 		// `getLayerDirectories()` caches a plain metadata object per layer before
 		// modules are installed. Nuxt exposes no invalidation API, so update the
 		// cached paths in place as well as `layer.config`.

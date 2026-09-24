@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import feeds from '#clarity/feeds'
+import { myFeed } from '~~/blog.config'
+import feeds from '~/feeds'
 
-const clarity = useClarityConfig()
-const myFeed = useClaritySiteFeedEntry()
+const appConfig = useAppConfig()
 
 const { data: postLink } = await useAsyncData(
 	'content:/link',
@@ -12,7 +12,7 @@ const { data: postLink } = await useAsyncData(
 useSeoMeta({
 	title: '友链',
 	ogType: 'profile',
-	description: `${clarity.site.title}的友链页面，收集了添加他为友链的网站和他订阅的网站列表。`,
+	description: `${appConfig.title}的友链页面，收集了添加他为友链的网站和他订阅的网站列表。`,
 })
 
 const copyFields = {
@@ -33,7 +33,7 @@ const copyFields = {
 	v-for="group in feeds"
 	:key="group.name"
 	v-bind="group"
-	:shuffle="clarity.link.randomInGroup"
+	:shuffle="appConfig.link.randomInGroup"
 />
 
 <Tab :tabs="['我的博客信息', '申请友链']" center>

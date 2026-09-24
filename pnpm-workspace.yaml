@@ -19,3 +19,12 @@ allowBuilds:
   sharp: true
   unrs-resolver: true
   vue-demi: true
+
+# 与上游保持一致的依赖补丁（playground 开发环境）
+patchedDependencies:
+  '@nuxt/image': patches/@nuxt__image.patch
+  '@nuxtjs/mdc': patches/@nuxtjs__mdc.patch
+  ipx: patches/ipx.patch
+  plain-shiki: patches/plain-shiki.patch
+  # 上游使用 Temporal.DateTimeUnit 旧称（上游不运行 typecheck），补充类型别名
+  temporal-spec: patches/temporal-spec.patch

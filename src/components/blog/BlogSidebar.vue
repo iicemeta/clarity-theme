@@ -1,5 +1,5 @@
 <script setup lang="ts">
-const clarity = useClarityConfig()
+const appConfig = useAppConfig()
 const layoutStore = useLayoutStore()
 const searchStore = useSearchStore()
 
@@ -25,7 +25,7 @@ const debouncedSelection = refDebounced(text)
 			<Key class="keycut" code="K" cmd prevent @press="layoutStore.toggle('search')" />
 		</div>
 
-		<template v-for="(group, groupIndex) in clarity.nav" :key="groupIndex">
+		<template v-for="(group, groupIndex) in appConfig.nav" :key="groupIndex">
 			<h3 v-if="group.title">
 				{{ group.title }}
 			</h3>
@@ -44,7 +44,7 @@ const debouncedSelection = refDebounced(text)
 
 	<footer class="sidebar-footer">
 		<BlogThemeToggle />
-		<ZIconNavList :list="clarity.footer.iconNav" />
+		<ZIconNavList :list="appConfig.footer.iconNav" />
 	</footer>
 </aside>
 </template>

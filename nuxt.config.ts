@@ -3,6 +3,7 @@ import { arch, env, version as nodeVersion, platform } from 'node:process'
 import { fileURLToPath, pathToFileURL } from 'node:url'
 import { name as ciName, CLOUDFLARE_PAGES, GITHUB_ACTIONS, NETLIFY } from 'ci-info'
 import { Temporal } from 'temporal-polyfill'
+import Yaml from 'unplugin-yaml/vite'
 import { homepage, name as themeName, version as themeVersion } from './package.json'
 
 /** Theme 根目录（Layer 本地路径基准，兼容 npm 包 / git 包 / 本地目录安装） */
@@ -88,6 +89,9 @@ export default defineNuxtConfig({
 		// Layer 配置中的相对 module 路径会以消费项目为基准解析，必须使用绝对路径；
 		// 且 clarity-config 必须先于 nuxt-llms 运行：后者在 setup 时读取注入的 llms 站点配置
 		toThemePath('src/modules/clarity-config'),
+		// 上游通过 Nuxt 的 modules 目录自动加载；Layer 场景下显式注册，且必须在
+		// clarity-config 之后（其导入 clarity-config 生成的 blog.config 数据模块）。
+		toThemePath('src/modules/anti-mirror'),
 		'nuxt-llms',
 	],
 
@@ -112,6 +116,13 @@ export default defineNuxtConfig({
 	},
 
 	typescript: {
+		// Theme 的 server 目录位于 src/ 内（跟随上游布局），会命中 App tsconfig
+		// 对 srcDir 的整体 include，导致 server 路由在 App 上下文被检查
+		// （queryCollection 等 Nitro 自动导入类型错误）。此处从 App tsconfig 排除；
+		// server 代码仍由 tsconfig.server.json 正常覆盖。
+		tsConfig: {
+			exclude: [toThemePath('src/server')],
+		},
 		nodeTsConfig: {
 			// @keep-sorted
 			include: [
@@ -122,6 +133,10 @@ export default defineNuxtConfig({
 	},
 
 	vite: {
+		// 上游 BlogTech 通过 `~~/pnpm-workspace.yaml` 读取技术栈版本，
+		// 需要 YAML 导入支持（上游注册 unplugin-yaml/nuxt；这里直接注册 vite 插件，
+		// 避免其向消费项目 compilerOptions.types 注入 pnpm 严格布局下无法解析的条目）
+		plugins: [Yaml()],
 		css: {
 			preprocessorOptions: {
 				scss: {
@@ -192,7 +207,8 @@ ${homepage}
 
 	icon: {
 		customCollections: [
-			{ prefix: 'clarity', dir: toThemePath('src/assets/icons') },
+			// 上游使用 `zi` 前缀（zhilu icons）与原始 PascalCase 文件名，保持一致
+			{ prefix: 'zi', dir: toThemePath('src/assets/icons') },
 		],
 		clientBundle: {
 			scan: {
