@@ -12,16 +12,25 @@ The fastest way to start is the official creator package. It is published separa
 ## pnpm
 
 ```bash
-pnpm create clarity-theme@beta my-blog
+pnpm create clarity-theme my-blog
 ```
 
 ## npm
 
 ```bash
-npx create-clarity-theme@beta my-blog
+npx create-clarity-theme@latest my-blog
 ```
 
-The `@beta` dist-tag is used while the initial prerelease is the published channel; it becomes the unqualified command once the stable creator release is promoted to `latest`.
+The commands resolve the stable creator from the npm `latest` dist-tag. Pin
+`@<version>` explicitly, or use the historical `@beta` dist-tag, when you
+deliberately need a prerelease creator.
+
+The creator is the source of truth for new-project skeletons, `package.json`,
+Nuxt configuration, Clarity configuration, and the minimum tested direct
+dependencies. Do not hand-write a `package.json`, guess Nuxt/Vue/Nuxt Content
+versions, or assemble a Nuxt skeleton by hand — Agents asked to create a
+Clarity blog must run the creator instead. Migrating an existing `blog-v3`
+site is a different workflow; see [migration from blog-v3](./migration-from-blog-v3.md).
 
 The CLI asks for site metadata and your preferred package manager. Every prompt
 shows its editable default value, and pressing Enter accepts it:
@@ -60,6 +69,39 @@ Then:
 4. Customize UI defaults, components, and styles — see [customization](../guides/customization.md).
 
 For all CLI options (including `--yes`, `--help`, and `--no-install`), see [`create-clarity-theme/README.md`](../../create-clarity-theme/README.md).
+
+## Upstream example content
+
+Clarity is extracted from blog-v3 and intentionally keeps a few public
+examples from the upstream author in the Layer — the same content the upstream
+author's own `init-project` script leaves as a reference. After creation, the
+CLI prints an `Upstream example content` notice listing them; the short
+version:
+
+| Content | Where it appears | How to change it |
+| --- | --- | --- |
+| CommGroup widget (QQ group `169994096`, group avatar, `纸网接入点`) | Articles whose frontmatter sets `aside: [comm-group]` | Create `app/components/widget/CommGroup.vue` in your project |
+| BlogLog widget (upstream site history, incl. `zhilu.site` / `zhilu.cyou`) | Sidebar of non-article / 404 pages | Create `app/components/widget/BlogLog.vue` with your own history |
+
+The unused `zi:zhilu` icon asset, the internal anti-mirror blacklist, and the
+Atom feed `generator` URI that credits blog-v3 need no action — they are not
+rendered as your site content.
+
+## Updating the Theme
+
+The generated `package.json` declares a caret range (for example `^0.1.3`).
+Under npm node-semver that means `>=0.1.3 <0.2.0`: later `0.1.x` patch releases
+are accepted, `0.2.0` is not, and the range is not an exact pin. The lockfile
+records the resolved version actually installed, which may stay on an older
+in-range patch until you request an update — `pnpm install` alone does not
+refresh it:
+
+```bash
+pnpm update clarity-theme          # refresh the resolved version within the declared range
+pnpm add clarity-theme@<version>   # explicitly change the declared dependency range
+```
+
+Never hand-edit `pnpm-lock.yaml`.
 
 ## Deploying
 

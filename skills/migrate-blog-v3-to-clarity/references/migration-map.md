@@ -13,8 +13,8 @@ This reference describes file ownership and migration disposition. Field values 
 
 | Source | Target / action | Classification | Notes |
 | --- | --- | --- | --- |
-| `package.json` | Edit in place | `REVIEW` | Add Clarity as a runtime dependency; retain custom dependencies/scripts; remove generic dependencies only after imports and validation prove they are unused |
-| `pnpm-lock.yaml` | Regenerate after dependency/patch decisions | `AUTO` | Inspect the diff; never hand-edit |
+| `package.json` | Edit in place | `REVIEW` | Add Clarity as a runtime dependency via a package-manager command (`pnpm add clarity-theme`, or `pnpm add clarity-theme@<version>` for an explicit range change); retain custom dependencies/scripts; remove generic dependencies only after imports and validation prove they are unused |
+| `pnpm-lock.yaml` | Regenerate through the package manager after dependency/patch decisions | `AUTO` | A `package.json` range (for example `^0.1.3` = `>=0.1.3 <0.2.0`) is not the resolved version the lockfile records; use `pnpm update clarity-theme` for in-range refreshes and never hand-edit the lockfile |
 | `pnpm-workspace.yaml` | Edit only patch/catalog/workspace-specific sections | `REVIEW` | Preserve required `patchedDependencies`; Clarity does not carry patches |
 | `nuxt.config.ts` | Replace blog application config with Layer entry plus consumer settings | `REVIEW` | Preserve redirects, custom modules/plugins/hooks, runtime config, deployment, custom route rules, and custom prerender |
 | `blog.config.ts` | Create root `clarity.config.ts`; keep source during migration | `AUTO` then `REVIEW` | Remove runtime imports; delete the old file only after report/validation and user confirmation |

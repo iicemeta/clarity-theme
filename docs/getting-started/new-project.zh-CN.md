@@ -12,16 +12,23 @@
 ## pnpm
 
 ```bash
-pnpm create clarity-theme@beta my-blog
+pnpm create clarity-theme my-blog
 ```
 
 ## npm
 
 ```bash
-npx create-clarity-theme@beta my-blog
+npx create-clarity-theme@latest my-blog
 ```
 
-当前初始预发布位于 `@beta` dist-tag；稳定版创建器提升为 `latest` 后即可使用不带标签的命令。
+上述命令从 npm `latest` dist-tag 解析稳定版创建器。如需刻意使用预发布创建器，
+可显式固定 `@<version>` 或使用历史 `@beta` dist-tag。
+
+创建器是新项目骨架、`package.json`、Nuxt 配置、Clarity 配置与最小已测试直接
+依赖的 source of truth。不要手写 `package.json`、自行猜测 Nuxt/Vue/Nuxt
+Content 版本或手工拼接 Nuxt 骨架 —— 如果 Agent 被要求创建 Clarity 博客，必须
+运行官方创建器。迁移既有 `blog-v3` 站点是另一条工作流，见
+[blog-v3 迁移指南](./migration-from-blog-v3.zh-CN.md)。
 
 CLI 会询问站点元数据与偏好的包管理器。每个提示都会显示可编辑的默认值，
 直接按 Enter 即可接受：
@@ -59,6 +66,35 @@ pnpm dev
 4. 自定义 UI 默认值、组件与样式——见[自定义](../guides/customization.zh-CN.md)。
 
 完整 CLI 参数（包括 `--yes`、`--help` 与 `--no-install`）见 [`create-clarity-theme/README.md`](../../create-clarity-theme/README.md)。
+
+## 上游示例内容
+
+Clarity 从 blog-v3 提取，Layer 中有意保留了上游作者的少量公开示例——与上游
+作者自己的 `init-project` 初始化脚本保留的内容一致，可作为配置参考。创建完成
+后 CLI 会输出 `Upstream example content` 提醒并逐项列出；简表如下：
+
+| 内容 | 出现位置 | 修改方式 |
+| --- | --- | --- |
+| CommGroup 交流群 widget（QQ 群 `169994096`、群头像、`纸网接入点`） | 文章 frontmatter 设置 `aside: [comm-group]` 时 | 在项目中创建 `app/components/widget/CommGroup.vue` 覆盖 |
+| BlogLog 更新日志 widget（上游站点历史，含 `zhilu.site` / `zhilu.cyou`） | 非文章页 / 404 页侧栏 | 创建 `app/components/widget/BlogLog.vue` 写入自己的历史 |
+
+未使用的 `zi:zhilu` 图标资源、内部反镜像黑名单以及 Atom feed 中指向 blog-v3
+的 `generator` 署名无需处理——它们不会作为站点内容渲染。
+
+## 更新 Theme
+
+生成的 `package.json` 声明的是 caret range（例如 `^0.1.3`）。按 npm
+node-semver 规则，它表示 `>=0.1.3 <0.2.0`：可以接受后续 `0.1.x` patch 版本，
+不能接受 `0.2.0`，且 caret range 并不是锁死版本。lockfile 记录的是实际解析
+安装的 resolved version，在你主动更新之前可能一直停留在 range 内较旧的
+patch 版本上 —— 仅运行 `pnpm install` 不会刷新它：
+
+```bash
+pnpm update clarity-theme          # 在已声明范围内刷新 resolved version
+pnpm add clarity-theme@<version>   # 显式修改依赖声明本身
+```
+
+永远不要手工编辑 `pnpm-lock.yaml`。
 
 ## 部署
 

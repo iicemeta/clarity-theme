@@ -12,6 +12,10 @@ supported as a compatibility path.
 
 ### Added
 
+- Release-contract drift gate: `pnpm release:check` now requires the creator
+  template's `clarity-theme` dependency to be exactly the caret range of the
+  Theme release being cut, and the creator publish workflow verifies that the
+  template range resolves on npm before shipping.
 - `pnpm test:upstream-parity` regression gate with
   `tests/upstream-parity.manifest.json`, recording `identical` / `mechanical` /
   `boundary` / `bugfix` difference classes per synced file (reports
@@ -34,6 +38,21 @@ supported as a compatibility path.
   `app/utils/**`; the migration, compatibility, consumer, and purity suites
   encode upstream behavior (Twikoo container, upstream app-config shape,
   upstream anti-mirror contract, tab-preserving code blocks).
+- Upstream-attribution policy: release/purity gates no longer block the public
+  upstream example content retained by the parity gate (community group, site
+  log, `zhilu` icon, anti-mirror blacklist, Atom generator attribution — the
+  same content upstream's own `init-project` script leaves as a reference);
+  upstream-private site data (analytics IDs, tokens, private service
+  endpoints) remains blocked, and `create-clarity-theme` now lists the
+  retained examples after every successful creation.
+- Migration and new-project documentation (EN/ZH) and the
+  `migrate-blog-v3-to-clarity` Skill now state the project-initialization and
+  dependency-update contracts: new blogs must use `create-clarity-theme`
+  (never a hand-written `package.json`), existing blog-v3 projects keep their
+  own `package.json` and update dependencies only through package-manager
+  commands, a caret range such as `^0.1.3` means `>=0.1.3 <0.2.0` (not a pin),
+  the lockfile records the resolved version, and lockfiles are never edited by
+  hand.
 
 ### Fixed
 

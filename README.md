@@ -41,7 +41,7 @@ For an Agent-assisted migration, ask your agent to use the `migrate-blog-v3-to-c
 ## Quick start
 
 ```bash
-pnpm create clarity-theme@beta my-blog
+pnpm create clarity-theme my-blog
 cd my-blog
 pnpm dev
 ```
@@ -49,7 +49,7 @@ pnpm dev
 The creator shows editable defaults for site identity and detects your system
 timezone; generated projects include the `pnpm new-blog` authoring command.
 
-The creator package is published separately as `create-clarity-theme`; the `@beta` dist-tag is used while its initial prerelease is the published channel. See [`create-clarity-theme/README.md`](./create-clarity-theme/README.md) for all options. The manual path is four files:
+The creator package is published separately as `create-clarity-theme` on the npm `latest` dist-tag. See [`create-clarity-theme/README.md`](./create-clarity-theme/README.md) for all options. The manual path is four files:
 
 ```ts
 // nuxt.config.ts

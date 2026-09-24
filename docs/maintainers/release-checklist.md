@@ -14,7 +14,7 @@ Version-agnostic template for cutting a release. Copy it into the release PR/iss
 ## Package metadata
 
 - [ ] `version` bumped in `package.json` (and `create-clarity-theme/package.json` for creator releases).
-- [ ] `create-clarity-theme/templates/default/package.json` Theme range updated when the generated consumer should consume the new release.
+- [ ] `create-clarity-theme/templates/default/package.json` declares exactly `^<version>` for the Theme release being cut (drift enforced by `pnpm release:check`).
 - [ ] Exports / files / engines / peerDependencies contract unchanged or intentionally updated with tests.
 
 ## CHANGELOG
@@ -41,7 +41,7 @@ Version-agnostic template for cutting a release. Copy it into the release PR/iss
 ## Release gate
 
 - [ ] `pnpm release:check --allow-untagged` passes on the release commit (before tagging).
-- [ ] `pnpm pack --dry-run` boundary inspected; no content/, dev assets, site config, secrets, or upstream-private identifiers.
+- [ ] `pnpm pack --dry-run` boundary inspected; no content/, dev assets, site config, secrets, or upstream-private site data (public upstream example content retained by the parity gate is allowed and surfaced by the creator notice).
 
 ## Tag and GitHub Release
 

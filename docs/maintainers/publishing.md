@@ -27,7 +27,7 @@ The permanent release process for Clarity Theme. This is a runbook, not a releas
 
 1. Bump `version` in `package.json` (and `create-clarity-theme/package.json` only for a creator release).
 2. Add the changelog entry described above.
-3. Update `create-clarity-theme/templates/default/package.json` if the generated consumer should depend on the new Theme release range.
+3. Update `create-clarity-theme/templates/default/package.json` so its `clarity-theme` dependency is exactly `^<version>` (caret range on the Theme release being cut). `pnpm release:check` fails on drift — for example a template left at `^<previous-version>` while releasing `<version>`.
 4. Run the ordered suite; use `pnpm release:check --allow-untagged` locally before tagging.
 5. Commit the release metadata.
 
@@ -111,7 +111,7 @@ pnpm test:registry-consumer
 
 The creator package has no runtime dependencies and is released independently:
 
-1. Keep `clarity-theme` in `templates/default/package.json` pointed at a real published registry range.
+1. Keep `clarity-theme` in `templates/default/package.json` as the caret range of a real published Theme release. The publish workflow validates that the range resolves on npm, so publish the Theme release before shipping a creator whose template range was bumped; the creator package version itself stays independent of the Theme version.
 2. Bump only `create-clarity-theme/package.json` and add its own `CHANGELOG.md` entry.
 3. Run `pnpm test:create`, `pnpm test:create:e2e`, and `pnpm test:create:tarball` serially on the exact release commit.
 4. Ensure the npm Trusted Publisher for workflow `publish-create.yml` is configured once.

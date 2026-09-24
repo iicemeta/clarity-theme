@@ -26,6 +26,31 @@ consumer, and do not rewrite consumer `app/**` paths during migration.
 
 - blog-v3 is the source of truth for UI, layout, and interaction: do not redesign, reformat, or generalize upstream-derived code during migration; upstream files in the Theme stay byte-identical except for the mechanical import rewrites recorded in `tests/upstream-parity.manifest.json` (enforced by `pnpm test:upstream-parity`).
 
+### Project initialization rule
+
+- **Creating a brand-new Clarity blog:** never hand-write `package.json`, guess
+  Nuxt/Vue/Nuxt Content versions, assemble a Nuxt skeleton by hand, or copy the
+  Clarity repository as a site. Always use the official creator:
+  `pnpm create clarity-theme <project>` (or `npx create-clarity-theme@latest
+  <project>`; prefer the command from the current documentation when the
+  channel changes). The creator is the source of truth for the new-project
+  skeleton, `package.json`, and the tested direct-dependency contract.
+
+- **Migrating an existing blog-v3 project:** never run the creator over it or
+  replace its files with the creator template. Keep the consumer's own
+  `package.json`; change dependencies only through package-manager commands.
+
+### Dependency update rule
+
+- A `package.json` **range is not the installed version**. Under npm
+  node-semver, `^0.1.3` means `>=0.1.3 <0.2.0`: it accepts later `0.1.x`
+  patches but never `0.2.0` — a caret range is not an exact pin.
+- `pnpm-lock.yaml` records the **resolved version** actually installed. With
+  `^0.1.3` declared, the lockfile may legitimately stay on an older in-range
+  patch until an update is requested.
+- `pnpm update clarity-theme` refreshes the resolved version within the
+  declared range; `pnpm add clarity-theme@<version>` explicitly changes the
+  declared dependency range. Never hand-edit `pnpm-lock.yaml`.
 
 1. Work serially in one Git working tree. Do not start concurrent dev, build, generate, or test processes.
 2. Start with `git status --short --branch` and record the branch and HEAD.

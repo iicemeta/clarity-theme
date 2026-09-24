@@ -3,10 +3,11 @@
  * Clarity Theme 提纯验证（sync:verify 的一部分）
  *
  * 边界原则（2026-09 upstream parity reset 后）：
- * 1. 上游同步面（identical / mechanical / bugfix，见 tests/upstream-parity.manifest.json
- *    与 pnpm test:upstream-parity）中的上游作者硬编码内容（交流群、更新日志、
- *    反镜像黑名单等）由 parity 门禁保证与上游一致，不在本脚本重复检查；
- * 2. Theme 自有边界文件（boundary：config / modules / 兼容层）不得出现上游个人信息；
+ * 1. 上游作者的公开示例内容（zhilu 域名、交流群、更新日志、zhilu.svg、
+ *    反镜像黑名单、Atom generator 署名）随 parity 保留并作为用户配置示例分发，
+ *    由 create-clarity-theme 在创建完成后列出并提醒用户自查，本脚本不再拦截；
+ * 2. Theme 自有边界文件（boundary：config / modules / 兼容层）与任何文件都
+ *    不得出现上游站点的私密数据（统计 ID、Token、评论服务、头像服务、备案号）；
  * 3. 站点内容文件（content/、feeds 数据、redirects 等）与根目录消费项目文件不得进入仓库；
  * 4. Theme 基础设施（src/config、clarity-config / clarity-source-layout 模块）不得
  *    直接引用消费项目路径（~~/blog.config 等），必须经由别名与适配层。
@@ -53,9 +54,7 @@ const forbiddenFiles = [
 ]
 
 const forbiddenPatterns = [
-	[/zhilu\.(site|cyou)/, '上游作者域名'],
-	[/L33Z22L11/, '上游作者账号'],
-	[/169994096/, '上游交流群号'],
+	// 仅拦截私密站点数据；公开示例（域名/交流群/更新日志等）按上方边界原则放行。
 	[/a1997c81-a42b-46f6-8d1d-8fbd67a8ef41/, '上游统计 ID'],
 	[/97a4fe32ed8240ac8284e9bffaf03962/, '上游 Insights Token'],
 	[/weavatar\.com/, '上游头像服务'],
@@ -113,7 +112,7 @@ if (errors.length) {
 	}
 	process.exit(1)
 }
-console.log('✔ clarity-theme 提纯验证通过：边界文件无作者信息泄漏、无站点文件、Theme 基础设施无跨项目路径引用')
+console.log('✔ clarity-theme 提纯验证通过：无上游私密站点数据、无站点文件泄漏、Theme 基础设施无跨项目路径引用')
 
 function walk(dir) {
 	for (const entry of readdirSync(dir)) {

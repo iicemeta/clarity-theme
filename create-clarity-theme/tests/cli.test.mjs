@@ -13,6 +13,8 @@ import { detectTimezone, FALLBACK_TIMEZONE } from '../src/timezone.mjs'
 const packageRoot = fileURLToPath(new URL('..', import.meta.url))
 const cliPath = join(packageRoot, 'src', 'cli.mjs')
 const cliPackage = JSON.parse(readFileSync(join(packageRoot, 'package.json'), 'utf8'))
+const templatePackage = JSON.parse(readFileSync(join(packageRoot, 'templates', 'default', 'package.json'), 'utf8'))
+const templateThemeRange = templatePackage.dependencies['clarity-theme']
 
 it('cLI prints help', () => {
 	const result = runCli(['--help'])
@@ -72,6 +74,10 @@ it('cLI creates a project in an empty directory with --yes', () => {
 			timezone: detectTimezone(),
 		})
 		assert.match(result.stdout, /Dependency installation skipped/)
+		assert.match(result.stdout, /Upstream example content/)
+		assert.match(result.stdout, /169994096/)
+		assert.match(result.stdout, /app\/components\/widget\/CommGroup\.vue/)
+		assert.match(result.stdout, /app\/components\/widget\/BlogLog\.vue/)
 	})
 })
 
@@ -327,7 +333,8 @@ function assertGeneratedProject(project, expected) {
 	const pkg = JSON.parse(readFileSync(join(project, 'package.json'), 'utf8'))
 	assert.equal(pkg.name, expected.name)
 	assert.equal(pkg.private, true)
-	assert.equal(pkg.dependencies['clarity-theme'], '^0.1.2')
+	assert.match(templateThemeRange, /^\^\d+\.\d+\.\d+$/, 'template must declare a caret Theme range')
+	assert.equal(pkg.dependencies['clarity-theme'], templateThemeRange)
 	assert.equal(pkg.scripts['new-blog'], 'node scripts/new-blog.mjs')
 	assert.equal(pkg.scripts.new, 'node scripts/new-blog.mjs')
 	assert.equal(pkg.scripts['dev:host'], 'nuxt dev --host')

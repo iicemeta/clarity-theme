@@ -4,7 +4,10 @@ All notable changes to `create-clarity-theme` are documented here. The format
 follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the
 package uses [Semantic Versioning](https://semver.org/).
 
-## Unreleased
+## 0.1.1 - 2026-09-24
+
+First stable release of the creator, promoted from the prerelease channel to
+the npm `latest` dist-tag.
 
 ### Added
 
@@ -21,12 +24,34 @@ package uses [Semantic Versioning](https://semver.org/).
   delivery of `new-blog`.
 - A creation-date `site.established` value so OPML/sitemap outputs work with
   already-published Theme versions.
+- An `Upstream example content` notice after every successful creation,
+  listing the public blog-v3 examples retained by the Theme Layer (CommGroup
+  QQ group widget, BlogLog site history, and inert extras), where they
+  render, and how to override them with consumer components; the same table
+  is copied into the generated project's `README.md`.
 
 ### Changed
 
 - Generated consumer scripts now include `dev:host` while remaining limited to
   consumer development and authoring; upstream maintenance scripts are not
   copied into generated projects.
+- The generated consumer's `clarity-theme` dependency now tracks the Theme
+  release being prepared through a caret range, and `pnpm release:check` fails
+  on drift between the template range and the Theme version; the creator
+  publish workflow additionally verifies the range resolves on npm before
+  publishing (the creator version itself stays independent of the Theme
+  version).
+- Documentation and CLI examples use the stable `latest` channel
+  (`pnpm create clarity-theme`, `npx create-clarity-theme@latest`), repairing
+  the stale `latest` dist-tag left on the first beta.
+
+### Fixed
+
+- Generated-consumer E2E dependency assertions are now contract-based (declared
+  caret range, lockfile resolution satisfying the range, no `file:`/`link:`
+  dependency) instead of hard-coded historical versions; while the targeted
+  Theme release is not yet on npm, the E2E validates the packed release
+  candidate tarball and defers registry verification to post-publish CI.
 
 ## 0.1.0-beta.3 - 2026-09-23
 

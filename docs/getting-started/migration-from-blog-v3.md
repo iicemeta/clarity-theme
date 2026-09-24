@@ -6,6 +6,37 @@ This guide migrates an existing Nuxt 4 `blog-v3` project to the Clarity Theme La
 
 For an Agent-assisted migration, ask your agent to use the `migrate-blog-v3-to-clarity` skill. The skill encodes the same inventory → classification → plan → apply → validation workflow with stricter non-interactive guardrails.
 
+## New project vs existing project
+
+Creating a blog from scratch and migrating an existing site are two different
+contracts. Do not mix them:
+
+| Situation | Required path | Never |
+| --- | --- | --- |
+| New Clarity blog | [`create-clarity-theme`](./new-project.md) — `pnpm create clarity-theme <project>` or `npx create-clarity-theme@latest <project>` | Hand-write `package.json`, guess Nuxt/Vue/Nuxt Content versions, assemble a Nuxt skeleton by hand, or copy this repository as a site |
+| Existing `blog-v3` | This guide and the `migrate-blog-v3-to-clarity` skill | Re-run the creator over the project, replace consumer files with the creator template, or delete content, `public/`, redirects, patches, or custom code |
+
+The creator is the source of truth for new-project skeletons, `package.json`,
+and the minimum tested direct dependencies. Migration keeps the consumer's own
+`package.json` and changes dependencies only through package-manager commands.
+Agents asked to "create a Clarity blog" must use the creator and must not
+hand-write `package.json`.
+
+### Theme updates after migration
+
+A `package.json` range is not the installed version. Under npm node-semver,
+`^0.1.3` means `>=0.1.3 <0.2.0`: it accepts later `0.1.x` patch releases but
+not `0.2.0` — a caret range is not an exact pin. `pnpm-lock.yaml` records the
+resolved version actually installed, which may stay on an older in-range patch
+until you request an update; `pnpm install` alone does not refresh it.
+
+```bash
+pnpm update clarity-theme          # refresh the resolved version within the declared range
+pnpm add clarity-theme@<version>   # explicitly change the declared dependency range
+```
+
+Never hand-edit `pnpm-lock.yaml`.
+
 ## 1. Scope
 
 Migration does **not** move `content/` into the Theme, convert frontmatter, or delete your old project. Clarity is a Layer; your repository remains the site and data owner. Every unrecognized local change must be reviewed rather than blindly overwritten. If the source project is not blog-v3, or its baseline is materially different and cannot be reconciled with the mappings below, stop and explain the gap.
@@ -61,6 +92,8 @@ pnpm add clarity-theme
 ```
 
 For unreleased commits or debugging a specific change, fall back to a pinned Git dependency (`pnpm add github:iicemeta/clarity-theme#<commit>`); released sites should use the npm package.
+When an explicit version or range change is intended, use
+`pnpm add clarity-theme@<version>` instead of editing `package.json` by hand.
 
 ### 3.2 Replace the application entry in `nuxt.config.ts`
 

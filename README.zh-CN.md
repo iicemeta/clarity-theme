@@ -41,7 +41,7 @@ Clarity 取代传统的 sync fork 工作流。你不需要把上游数千行代�
 ## 快速开始
 
 ```bash
-pnpm create clarity-theme@beta my-blog
+pnpm create clarity-theme my-blog
 cd my-blog
 pnpm dev
 ```
@@ -49,7 +49,7 @@ pnpm dev
 创建器会显示可编辑的站点默认值并自动检测系统时区；生成的项目自带
 `pnpm new-blog` 写作命令。
 
-创建包以独立的 `create-clarity-theme` npm 包分发；当前初始预发布位于 `@beta` dist-tag。完整参数见 [`create-clarity-theme/README.md`](./create-clarity-theme/README.md)。手动接入只需四个文件：
+创建包以独立的 `create-clarity-theme` npm 包分发，稳定版位于 `latest` dist-tag。完整参数见 [`create-clarity-theme/README.md`](./create-clarity-theme/README.md)。手动接入只需四个文件：
 
 ```ts
 // nuxt.config.ts

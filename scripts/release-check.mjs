@@ -6,9 +6,12 @@
  *  1. package.json 存在且 name/version 合法（SemVer）
  *  2. 当前 Git tag 与 package.version 一致（v${version}；不一致直接非零退出）
  *  3. README / CHANGELOG 含当前 release 信息
- *  4. exports / files / engines / peerDependencies 契约完整
- *  5. pnpm pack 成功，tarball 边界与 test-consumer 的发布白名单一致
- *  6. 不包含内容目录 / 开发资产 / 站点配置 / secrets / 上游私密标识
+ *  4. creator template 的 clarity-theme range 与当前 Theme 版本一致（caret range 漂移门禁）
+ *  5. exports / files / engines / peerDependencies 契约完整
+ *  6. pnpm pack 成功，tarball 边界与 test-consumer 的发布白名单一致
+ *  7. 不包含内容目录 / 开发资产 / 站点配置 / secrets / 上游私密站点数据
+ *     （parity 保留的上游公开示例——交流群、更新日志、图标、反镜像黑名单、
+ *     Atom generator 署名——随包分发，由 creator 在创建后提醒用户自查）
  *
  * 用法：
  *   node scripts/release-check.mjs                    # 发布 tag 检出（要求 tag 匹配）
@@ -103,9 +106,10 @@ const forbiddenPathRules = [
 ]
 
 const forbiddenContentRules = [
-	[/zhilu\.(site|cyou)/, '上游作者域名'],
-	[/L33Z22L11/, '上游作者账号'],
-	[/169994096/, '上游交流群号'],
+	// 仅拦截上游站点的私密数据（init-project 会清除、不应随 npm 包分发的内容）。
+	// 上游作者的公开示例（zhilu 域名、QQ 群、更新日志、zhilu.svg、反镜像黑名单、
+	// Atom generator URI）由 upstream parity 保留并随包分发，作为用户配置示例；
+	// create-clarity-theme 在创建完成后会列出这些残留并提示用户按需覆盖。
 	[/a1997c81-a42b-46f6-8d1d-8fbd67a8ef41/, '上游统计 ID'],
 	[/97a4fe32ed8240ac8284e9bffaf03962/, '上游 Insights Token'],
 	[/twikoo\.zhilu\.site/, '上游评论服务'],
@@ -120,7 +124,7 @@ console.log('▶ Release Check（npm 发布门禁）\n')
 // ---------------------------------------------------------------------------
 // [1] package.json 基础契约
 // ---------------------------------------------------------------------------
-console.log('[1/6] package.json 契约')
+console.log('[1/7] package.json 契约')
 check('package.json 存在', existsSync(pkgPath))
 const pkg = JSON.parse(readFileSync(pkgPath, 'utf8'))
 check('npm package name 非空', typeof pkg.name === 'string' && pkg.name.length > 0, pkg.name)
@@ -142,7 +146,7 @@ check('packageManager 已声明（pnpm）', /^pnpm@\d/.test(pkg.packageManager ?
 // ---------------------------------------------------------------------------
 // [2] Git tag / version 契约（tag/version mismatch 直接拒绝）
 // ---------------------------------------------------------------------------
-console.log('[2/6] Git tag / version 契约')
+console.log('[2/7] Git tag / version 契约')
 const expectedTag = `v${pkg.version}`
 const headTags = git(['tag', '--points-at', 'HEAD']).split('\n').filter(Boolean)
 if (headTags.length > 0) {
@@ -163,7 +167,7 @@ else {
 // ---------------------------------------------------------------------------
 // [3] README / CHANGELOG release 信息
 // ---------------------------------------------------------------------------
-console.log('[3/6] Release 文档')
+console.log('[3/7] Release 文档')
 const changelogPath = join(themeDir, 'CHANGELOG.md')
 check('CHANGELOG.md 存在', existsSync(changelogPath))
 if (existsSync(changelogPath)) {
@@ -181,9 +185,44 @@ if (existsSync(readmePath)) {
 }
 
 // ---------------------------------------------------------------------------
-// [4] exports / files 契约（工作区层面）
+// [4] creator template 版本契约（drift gate）
 // ---------------------------------------------------------------------------
-console.log('[4/6] exports / files 契约')
+// create-clarity-theme 是独立版本包，不要求与 Theme 版本相同；但它生成的新
+// consumer 必须消费当前正在发布的 Theme release。发布 Theme X.Y.Z 时，模板中
+// 的 clarity-theme range 必须是 ^X.Y.Z（caret，允许 0.x 内后续 patch，不允许
+// 跨 minor；禁止 exact pin、>= 范围或 file:/link: 依赖）。
+// ---------------------------------------------------------------------------
+console.log('[4/7] creator template 版本契约')
+const creatorTemplatePath = join(themeDir, 'create-clarity-theme', 'templates', 'default', 'package.json')
+check('creator template package.json 存在', existsSync(creatorTemplatePath))
+if (existsSync(creatorTemplatePath)) {
+	const creatorTemplate = JSON.parse(readFileSync(creatorTemplatePath, 'utf8'))
+	const templateRange = creatorTemplate.dependencies?.['clarity-theme']
+	const stableVersion = String(pkg.version).split('-')[0]
+	const expectedRange = `^${stableVersion}`
+	check(
+		'creator template 声明 clarity-theme 依赖',
+		typeof templateRange === 'string' && templateRange.length > 0,
+		templateRange,
+	)
+	if (typeof templateRange === 'string') {
+		check(
+			'creator template 使用 caret range（非 exact pin / >= / file / link）',
+			/^\^\d+\.\d+\.\d+$/.test(templateRange),
+			templateRange,
+		)
+		check(
+			`creator template range 与 Theme 版本一致（${expectedRange}）`,
+			templateRange === expectedRange,
+			`template: ${templateRange} / theme: ${pkg.version}`,
+		)
+	}
+}
+
+// ---------------------------------------------------------------------------
+// [5] exports / files 契约（工作区层面）
+// ---------------------------------------------------------------------------
+console.log('[5/7] exports / files 契约')
 const expectedExports = ['.', './config', './content', './img', './schema']
 check('exports 五个入口齐全', expectedExports.every(key => key in (pkg.exports ?? {})), expectedExports.join(' '))
 for (const [key, entry] of Object.entries(pkg.exports ?? {})) {
@@ -199,9 +238,9 @@ for (const file of pkg.files ?? []) {
 }
 
 // ---------------------------------------------------------------------------
-// [5] pnpm pack + [6] tarball 审计
+// [6] pnpm pack + [7] tarball 审计
 // ---------------------------------------------------------------------------
-console.log('[5/6] pnpm pack')
+console.log('[6/7] pnpm pack')
 const workDir = join(tmpdir(), `clarity-release-check-${Date.now()}`)
 mkdirSync(workDir, { recursive: true })
 try {
@@ -209,7 +248,7 @@ try {
 	const packed = packTo(workDir)
 	check('pnpm pack 生成 tarball', Boolean(packed), packed)
 
-	console.log('[6/6] tarball 审计')
+	console.log('[7/7] tarball 审计')
 	const packageDir = join(workDir, 'package')
 	execSync(`tar -xzf ${JSON.stringify(join(workDir, packed))} -C ${JSON.stringify(workDir)}`, { stdio: 'ignore' })
 	const files = listFiles(packageDir).map(file => file.replaceAll('\\', '/')).sort()

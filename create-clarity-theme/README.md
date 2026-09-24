@@ -3,11 +3,10 @@
 Create an independent Nuxt 4 blog that consumes the published
 [Clarity Theme](https://www.npmjs.com/package/clarity-theme) Layer.
 
-The current initial prerelease is `0.1.0-beta.3` and is distributed through
-the npm `beta` dist-tag:
+The stable creator is distributed through the npm `latest` dist-tag:
 
 ```bash
-npx create-clarity-theme@beta my-blog
+npx create-clarity-theme@latest my-blog
 ```
 
 ## Create a new blog
@@ -21,7 +20,7 @@ pnpm create clarity-theme my-blog
 ### npm
 
 ```bash
-npx create-clarity-theme@beta my-blog
+npx create-clarity-theme@latest my-blog
 ```
 
 Then:
@@ -107,6 +106,24 @@ The generated project depends directly on `clarity-theme`, Nuxt, Vue,
 vue-router, TypeScript, vue-tsc, Nuxt Content, and Zod. Other Clarity runtime
 dependencies remain Theme dependencies. The template contains no upstream
 articles, friend links, analytics IDs, deployment settings, domains, or tokens.
+
+## Upstream example content
+
+Clarity is extracted from blog-v3 and intentionally keeps a few public
+examples from the upstream author in the Layer — the same content the upstream
+author's own `init-project` script leaves in place as a reference. After every
+successful creation the CLI prints an `Upstream example content` notice that
+lists them in detail:
+
+| Content | Where it appears | How to change it |
+| --- | --- | --- |
+| CommGroup widget (QQ group `169994096`, group avatar, `纸网接入点`) | Articles whose frontmatter sets `aside: [comm-group]` | Create `app/components/widget/CommGroup.vue` in the generated project |
+| BlogLog widget (upstream site history, incl. `zhilu.site` / `zhilu.cyou`) | Sidebar of non-article / 404 pages | Create `app/components/widget/BlogLog.vue` with your own history |
+
+The unused `zi:zhilu` icon asset, the internal anti-mirror blacklist, and the
+Atom feed `generator` URI that credits blog-v3 need no action — they are not
+rendered as site content. The same table is copied into the generated
+project's `README.md`.
 
 ## Write articles with new-blog
 

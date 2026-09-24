@@ -17,7 +17,12 @@ Current source of truth: `sync-manifest.json`, `scripts/sync-upstream.mjs`, `tes
 | Recorded sync time | 2026-09-21T16:40:00+08:00 |
 | Current drift | Run `pnpm sync:check`; the weekly workflow reports drift as an Issue |
 
-The exact Git URL is not repeated throughout docs because Theme purity verification deliberately restricts where upstream identity strings may appear. README and the manifest are the authoritative display/reference locations.
+The exact Git URL is not repeated throughout docs to keep README and the
+manifest as the authoritative display/reference locations. Theme purity
+verification no longer blocks the public upstream example content retained by
+the parity gate (community group, site log, icons, anti-mirror blacklist, Atom
+generator attribution); it still blocks upstream-private site data such as
+analytics IDs, tokens, and private service endpoints.
 
 ## Manifest Categories
 

@@ -139,7 +139,7 @@ function sync() {
 }
 
 function verify() {
-	console.log('▶ 提纯验证（作者信息 / 站点文件 / 跨项目路径）')
+	console.log('▶ 提纯验证（上游私密数据 / 站点文件 / 跨项目路径）')
 	verifyTheme()
 
 	console.log('▶ manifest 基线状态')

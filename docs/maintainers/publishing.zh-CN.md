@@ -27,7 +27,7 @@ Clarity Theme 的永久发布流程。这是 runbook，不是发布记录：使�
 
 1. 提升 `package.json` 的 `version`（创建器发布时才提升 `create-clarity-theme/package.json`）。
 2. 添加上述 changelog 条目。
-3. 若生成的消费者应依赖新的 Theme 发布范围，更新 `create-clarity-theme/templates/default/package.json`。
+3. 更新 `create-clarity-theme/templates/default/package.json`，使 `clarity-theme` 依赖恰为 `^<version>`（指向本次发布的 Theme 版本的 caret range）。`pnpm release:check` 会对漂移直接失败——例如发布 `<version>` 时模板仍停留在 `^<previous-version>`。
 4. 运行有序套件；打 tag 前本地可用 `pnpm release:check --allow-untagged`。
 5. 提交发布元数据。
 
@@ -111,7 +111,7 @@ pnpm test:registry-consumer
 
 创建包没有运行时依赖，独立发布：
 
-1. 保持 `templates/default/package.json` 中的 `clarity-theme` 指向真实已发布的 registry 范围。
+1. 保持 `templates/default/package.json` 中的 `clarity-theme` 为某个真实已发布 Theme 版本的 caret range。发布工作流会验证该范围能从 npm 解析；因此模板范围提升后，要先发布对应 Theme 版本，再发布创建器。创建器包自身的版本始终与 Theme 版本相互独立。
 2. 只提升 `create-clarity-theme/package.json`，并在它自己的 `CHANGELOG.md` 添加条目。
 3. 在精确发布 commit 上串行运行 `pnpm test:create`、`pnpm test:create:e2e` 与 `pnpm test:create:tarball`。
 4. 确保已为 `publish-create.yml` 一次性配置 npm Trusted Publisher。

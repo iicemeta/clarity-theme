@@ -69,6 +69,20 @@ jobs:
           test -f create-clarity-theme/templates/default/content/posts/welcome.md
           grep -F "## $(jq -r '.version' create-clarity-theme/package.json)" create-clarity-theme/CHANGELOG.md >/dev/null
 
+          # Creator 是新项目依赖契约的 source of truth：生成的 consumer 必须能从
+          # npm registry 解析到 clarity-theme。range 必须是 caret range，且发布
+          # creator 时该 range 至少要有一个已发布的 Theme 版本可满足（Theme 版本
+          # 与 creator 版本本身相互独立，不做相等校验）。
+          template_range="$(jq -r '.dependencies["clarity-theme"] // empty' create-clarity-theme/templates/default/package.json)"
+          if [[ ! "${template_range}" =~ ^\^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::error::creator template clarity-theme range must be a caret range (^X.Y.Z), got: ${template_range}"
+            exit 1
+          fi
+          if ! npm view "clarity-theme@${template_range}" version --json | grep -q .; then
+            echo "::error::No published clarity-theme version satisfies ${template_range}; publish the Theme release first"
+            exit 1
+          fi
+
       - name: Resolve Node version from engines.node
         id: node
         run: |

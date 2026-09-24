@@ -231,11 +231,11 @@ const forbiddenPathRules = [
 	[/^(pnpm-lock\.yaml|pnpm-workspace\.yaml)$/, 'Theme 开发环境文件'],
 ]
 
-/** 上游作者私密标识（与 scripts/verify-theme.mjs 保持同一口径） */
+/**
+ * 上游站点私密数据（与 scripts/verify-theme.mjs 保持同一口径）；
+ * parity 保留的上游公开示例（域名/交流群/更新日志等）允许随包分发
+ */
 const forbiddenContentRules = [
-	[/zhilu\.(site|cyou)/, '上游作者域名'],
-	[/L33Z22L11/, '上游作者账号'],
-	[/169994096/, '上游交流群号'],
 	[/a1997c81-a42b-46f6-8d1d-8fbd67a8ef41/, '上游统计 ID'],
 	[/97a4fe32ed8240ac8284e9bffaf03962/, '上游 Insights Token'],
 	[/twikoo\.zhilu\.site/, '上游评论服务'],

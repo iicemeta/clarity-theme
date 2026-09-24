@@ -6,6 +6,35 @@
 
 如需 Agent 协助迁移，直接让你的 Agent 使用 `migrate-blog-v3-to-clarity` Skill。该 Skill 封装了同样的「清单 → 分类 → 计划 → 应用 → 验证」流程，并为非交互执行提供更严格的安全约束。
 
+## 新建项目与既有项目的区别
+
+从零创建博客和迁移既有站点是两个不同的契约，不要混用：
+
+| 场景 | 必须使用的路径 | 绝对禁止 |
+| --- | --- | --- |
+| 全新 Clarity 博客 | [`create-clarity-theme`](./new-project.zh-CN.md) —— `pnpm create clarity-theme <project>` 或 `npx create-clarity-theme@latest <project>` | 手写 `package.json`、自行猜测 Nuxt/Vue/Nuxt Content 版本、手工拼接 Nuxt 骨架、把本仓库整个复制为站点 |
+| 既有 `blog-v3` | 本指南与 `migrate-blog-v3-to-clarity` Skill | 对项目重新运行创建器、用创建器模板替换消费方文件、删除 content、`public/`、重定向、补丁或自定义代码 |
+
+创建器是新项目骨架、`package.json` 与最小已测试直接依赖的 source of
+truth。迁移则保留消费方自己的 `package.json`，只通过包管理器命令修改依赖。
+如果 Agent 被要求「创建一个 Clarity 博客」，必须使用官方创建器，不得手写
+`package.json`。
+
+### 迁移后的 Theme 更新
+
+`package.json` 中的 range 不等于实际安装的版本。按 npm node-semver 规则，
+`^0.1.3` 表示 `>=0.1.3 <0.2.0`：可以接受后续 `0.1.x` patch 版本，但不能接受
+`0.2.0` —— caret range 不是锁死版本。`pnpm-lock.yaml` 记录的是实际解析安装的
+resolved version，在你主动更新之前，它可能一直停留在 range 内较旧的 patch
+版本上；仅运行 `pnpm install` 不会刷新它。
+
+```bash
+pnpm update clarity-theme          # 在已声明范围内刷新 resolved version
+pnpm add clarity-theme@<version>   # 显式修改依赖声明本身
+```
+
+永远不要手工编辑 `pnpm-lock.yaml`。
+
 ## 1. 范围
 
 迁移**不会**把 `content/` 移入 Theme、转换 frontmatter 或删除旧项目。Clarity 是 Layer；你的仓库始终是站点与数据的所有者。任何未识别的本地改动都必须经过审查，而不是盲目覆盖。如果源项目不是 blog-v3，或其基线与下述映射差异过大且无法对齐，请停止并说明差距。
@@ -61,6 +90,8 @@ pnpm add clarity-theme
 ```
 
 如需使用未发布的 commit 或调试某个具体变更，可回退到固定 Git 依赖（`pnpm add github:iicemeta/clarity-theme#<commit>`）；正式站点应使用 npm 包。
+需要显式指定版本或修改 range 时，使用 `pnpm add clarity-theme@<version>`，
+而不是手工编辑 `package.json`。
 
 ### 3.2 替换 `nuxt.config.ts` 应用入口
 

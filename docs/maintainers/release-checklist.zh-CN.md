@@ -14,7 +14,7 @@
 ## 包元数据
 
 - [ ] `package.json` 的 `version` 已提升（创建器发布时也提升 `create-clarity-theme/package.json`）。
-- [ ] 当生成的消费者应使用新版本时，已更新 `create-clarity-theme/templates/default/package.json` 的 Theme 范围。
+- [ ] `create-clarity-theme/templates/default/package.json` 的 Theme 依赖恰为本次发布版本的 `^<version>`（漂移由 `pnpm release:check` 强制拦截）。
 - [ ] exports / files / engines / peerDependencies 契约未变，或已有意更新并带测试。
 
 ## CHANGELOG
@@ -41,7 +41,7 @@
 ## 发布门禁
 
 - [ ] 在发布 commit 上通过 `pnpm release:check --allow-untagged`（打 tag 前）。
-- [ ] 检查 `pnpm pack --dry-run` 边界；不含 content/、开发资产、站点配置、密钥或上游私有标识。
+- [ ] 检查 `pnpm pack --dry-run` 边界；不含 content/、开发资产、站点配置、密钥或上游私密站点数据（parity 保留的上游公开示例内容允许分发，由 creator 提醒用户自查）。
 
 ## Tag 与 GitHub Release
 

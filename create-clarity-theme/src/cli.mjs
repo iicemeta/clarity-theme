@@ -207,6 +207,7 @@ async function createProjectWithPrompts(options, prompts) {
 	}
 
 	printNextSteps(target, packageManager, options.install)
+	printUpstreamContentNotice()
 	prompts?.outro('Project ready')
 }
 
@@ -543,4 +544,30 @@ function printNextSteps(target, packageManager, installed) {
 		console.log(`  ${packageManager} install`)
 	}
 	console.log(`  ${packageManager === 'pnpm' ? 'pnpm dev' : `${packageManager} run dev`}\n`)
+}
+
+function printUpstreamContentNotice() {
+	console.log([
+		'Upstream example content',
+		'───────────────────────',
+		'Clarity is extracted from blog-v3 and intentionally keeps a few public',
+		'examples from the upstream author in the Layer (the same content the',
+		'upstream author\'s own init-project script leaves as a reference). Review',
+		'them and replace whatever does not belong to your site:',
+		'',
+		'1. CommGroup widget — QQ group 169994096, its group avatar, and the',
+		'   "纸网接入点" label. It renders when an article sets `aside:',
+		'   [comm-group]` in frontmatter. Override it by creating',
+		'   app/components/widget/CommGroup.vue in your project.',
+		'',
+		'2. BlogLog widget — the upstream site history (framework migrations and',
+		'   the zhilu.site / zhilu.cyou domains). It renders in the sidebar of',
+		'   non-article / 404 pages. Override it by creating',
+		'   app/components/widget/BlogLog.vue with your own history.',
+		'',
+		'3. No action needed: the unused zi:zhilu icon asset, the internal',
+		'   anti-mirror blacklist, and the Atom feed generator URI that credits',
+		'   blog-v3 are not rendered as your site content.',
+		'',
+	].join('\n'))
 }
