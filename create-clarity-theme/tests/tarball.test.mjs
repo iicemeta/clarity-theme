@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
-import { execFileSync } from 'node:child_process'
+import { execFileSync, spawnSync } from 'node:child_process'
 /* eslint-disable no-console -- command progress is useful during long E2E runs */
-import { mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import process from 'node:process'
 // The packed-tarball E2E intentionally uses Node's built-in runner.
@@ -29,6 +29,7 @@ it('packed create-clarity-theme tarball runs through its installed binary and ge
 		const createTarballPath = findTarball(createTarballDir, /^create-clarity-theme-.*\.tgz$/)
 		const createTarballFiles = execFileSync('tar', ['-tzf', createTarballPath], { encoding: 'utf8' })
 		assert.match(createTarballFiles, /package\/templates\/default\/scripts\/new-blog\.mjs/)
+		assert.match(createTarballFiles, /package\/templates\/default\/gitignore/)
 
 		mkdirEmpty(harness)
 		writeFileSync(join(harness, 'package.json'), `${JSON.stringify({
@@ -74,6 +75,56 @@ it('packed create-clarity-theme tarball runs through its installed binary and ge
 		})
 
 		console.log('\n✔ Create CLI tarball E2E passed')
+	}
+	finally {
+		if (process.exitCode !== 1) {
+			rmSync(workDir, { recursive: true, force: true })
+		}
+		else {
+			console.error(`  Debug directory retained: ${workDir}`)
+		}
+	}
+})
+
+it('creator installed through npm (the npx link) still generates .gitignore', { timeout: 5 * 60 * 1000 }, () => {
+	const workDir = createWorkDirectory('create-clarity-npm-')
+	console.log(`  Work directory: ${workDir}`)
+
+	try {
+		// Regression for npm rewriting packaged `.gitignore` files to
+		// `.npmignore` during installation: templates ship the dotless name
+		// and the CLI renames it while generating the project.
+		run('pnpm', ['--dir', createPackageRoot, 'pack', '--pack-destination', workDir], repositoryRoot)
+		const createTarballPath = findTarball(workDir, /^create-clarity-theme-.*\.tgz$/)
+		const harness = join(workDir, 'harness')
+		mkdirEmpty(harness)
+		writeFileSync(join(harness, 'package.json'), `${JSON.stringify({
+			name: 'create-clarity-npm-harness',
+			private: true,
+			type: 'module',
+			dependencies: {
+				'create-clarity-theme': `file:${createTarballPath.replaceAll('\\', '/')}`,
+			},
+		}, null, 2)}\n`, { flag: 'wx' })
+		run('npm', ['install', '--no-audit', '--no-fund'], harness)
+
+		const installedCli = join(harness, 'node_modules', 'create-clarity-theme', 'src', 'cli.mjs')
+		const generated = spawnSync(process.execPath, [installedCli, 'npm-blog', '--yes', '--no-install'], {
+			cwd: workDir,
+			encoding: 'utf8',
+			env: { ...process.env, NO_COLOR: '1' },
+		})
+		assert.equal(generated.status, 0, generated.stderr)
+		const consumer = join(workDir, 'npm-blog')
+		assert.equal(existsSync(join(consumer, '.gitignore')), true, 'generated project must contain .gitignore')
+		assert.equal(existsSync(join(consumer, 'gitignore')), false, 'unrenamed gitignore template leaked into the consumer')
+		assert.equal(
+			existsSync(join(harness, 'node_modules', 'create-clarity-theme', 'templates', 'default', 'gitignore')),
+			true,
+			'npm-installed package must retain the dotless gitignore template',
+		)
+
+		console.log('\n✔ npm-installed creator gitignore regression passed')
 	}
 	finally {
 		if (process.exitCode !== 1) {

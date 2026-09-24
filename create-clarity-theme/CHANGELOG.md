@@ -4,6 +4,22 @@ All notable changes to `create-clarity-theme` are documented here. The format
 follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the
 package uses [Semantic Versioning](https://semver.org/).
 
+## 0.1.2 - 2026-09-24
+
+Patch release fixing new-project creation through `npx`/npm.
+
+### Fixed
+
+- Generated projects again include `.gitignore` when the creator is installed
+  through npm: npm rewrites packaged `.gitignore` files to `.npmignore` during
+  installation, which previously made `npx create-clarity-theme` abort with
+  "Generated project is incomplete; missing .gitignore". The template now
+  ships the dotless `gitignore` file (the create-vite pattern) and the CLI
+  renames it while generating the project.
+- Added an npm-install regression test (the packed-creator E2E previously
+  installed through pnpm only, which does not perform the rewrite) plus a
+  publish-workflow tarball assertion for the dotless template file.
+
 ## 0.1.1 - 2026-09-24
 
 First stable release of the creator, promoted from the prerelease channel to

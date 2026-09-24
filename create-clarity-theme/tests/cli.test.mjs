@@ -329,6 +329,7 @@ function assertGeneratedProject(project, expected) {
 	for (const file of requiredFiles) {
 		assert.equal(existsSync(join(project, file)), true, `missing ${file}`)
 	}
+	assert.equal(existsSync(join(project, 'gitignore')), false, 'unrenamed gitignore template leaked into the consumer')
 
 	const pkg = JSON.parse(readFileSync(join(project, 'package.json'), 'utf8'))
 	assert.equal(pkg.name, expected.name)

@@ -145,6 +145,13 @@ jobs:
           echo '```' >> "$GITHUB_STEP_SUMMARY"
           sha256sum "$tarball" | tee -a "$GITHUB_STEP_SUMMARY"
 
+          # npm 安装时会把包内 .gitignore 重命名为 .npmignore，模板必须以无点号
+          # 的 gitignore 文件名分发，由 CLI 在生成项目时重命名。
+          if ! tar -tzf "$tarball" | grep -q '^package/templates/default/gitignore$'; then
+            echo "::error::creator tarball is missing templates/default/gitignore (dotless; .gitignore would be rewritten by npm install)"
+            exit 1
+          fi
+
       - name: npm publish dry run
         run: npm publish ./artifacts/create/create-clarity-theme-${{ steps.version.outputs.version }}.tgz --access public --provenance --tag ${{ steps.version.outputs.dist-tag }} --dry-run
 

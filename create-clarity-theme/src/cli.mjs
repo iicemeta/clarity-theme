@@ -11,6 +11,13 @@ const packageRoot = fileURLToPath(new URL('..', import.meta.url))
 const templateRoot = join(packageRoot, 'templates', 'default')
 const ownPackage = JSON.parse(readFileSync(join(packageRoot, 'package.json'), 'utf8'))
 
+// npm rewrites `.gitignore` to `.npmignore` when it installs a package, so
+// templates must ship the file without the leading dot (the create-vite
+// pattern) and the CLI renames it while generating the project.
+const renamedTemplateFiles = new Map([
+	['gitignore', '.gitignore'],
+])
+
 const valueOptions = new Map([
 	['--title', 'title'],
 	['--description', 'description'],
@@ -380,9 +387,10 @@ function copyTemplate(target, values) {
 	mkdirSync(target, { recursive: true })
 	for (const relativePath of listTemplateFiles()) {
 		const source = join(templateRoot, relativePath)
-		const destination = join(target, relativePath)
+		const destinationPath = renamedTemplateFiles.get(relativePath) ?? relativePath
+		const destination = join(target, destinationPath)
 		if (existsSync(destination)) {
-			throw new Error(`Refusing to overwrite existing file: ${relativePath}`)
+			throw new Error(`Refusing to overwrite existing file: ${destinationPath}`)
 		}
 		mkdirSync(dirname(destination), { recursive: true })
 

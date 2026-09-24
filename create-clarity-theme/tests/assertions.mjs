@@ -20,6 +20,7 @@ export function assertGeneratedFiles(consumer) {
 	for (const file of required) {
 		assert.equal(existsSync(join(consumer, file)), true, `missing ${file}`)
 	}
+	assert.equal(existsSync(join(consumer, 'gitignore')), false, 'unrenamed gitignore template leaked into the consumer')
 
 	const clarityConfig = readFileSync(join(consumer, 'clarity.config.ts'), 'utf8')
 	assert.doesNotMatch(clarityConfig, /\{\{[A-Z0-9_]+\}\}/)
