@@ -90,7 +90,8 @@ async function main() {
 		// ============================================================
 		step(2, 10, 'tarball file audit')
 		const packageDir = join(workDir, 'package')
-		run('tar', workDir, ['-xzf', tarballPath, '-C', workDir])
+		// Windows 下 GNU tar 会把绝对路径中的 `C:` 解析为远程主机，需 --force-local
+		run('tar', workDir, process.platform === 'win32' ? ['--force-local', '-xzf', tarballPath, '-C', workDir] : ['-xzf', tarballPath, '-C', workDir])
 		const files = listFiles(packageDir)
 			.map(file => file.replaceAll('\\', '/'))
 			.sort()
@@ -159,7 +160,14 @@ async function main() {
 	}
 	finally {
 		if (!keep && process.exitCode !== 1) {
-			rmSync(workDir, { recursive: true, force: true })
+			try {
+				rmSync(workDir, { recursive: true, force: true })
+			}
+			catch {
+				// Windows 下杀毒/索引器常短暂占用临时目录（EPERM/EBUSY），
+				// 清理失败不影响验收结论，保留目录留给系统回收
+				console.warn(`清理临时目录失败（已忽略）：${workDir}`)
+			}
 		}
 	}
 }
@@ -367,10 +375,14 @@ function auditRelativeImports(packageDir) {
 			for (const match of content.matchAll(pattern)) {
 				const specifier = match[1]
 				const resolvedFile = resolveRelative(packageDir, dirname(file), specifier)
-				if (!resolvedFile) {
+				// src/generated/** 是 clarity-config 在 consumer 构建期写入的数据模块
+				// （package.json files 显式排除，防止打包开发机的站点数据），
+				// tarball 中按设计缺席，不视为悬空引用。
+				const isBuildTimeGenerated = specifier.includes('/generated/')
+				if (!resolvedFile && !isBuildTimeGenerated) {
 					broken.push(`${file} → ${specifier}`)
 				}
-				else if (!visited.has(resolvedFile) && auditableSourceExtensions.has(extensionOf(resolvedFile))) {
+				else if (resolvedFile && !visited.has(resolvedFile) && auditableSourceExtensions.has(extensionOf(resolvedFile))) {
 					queue.push(resolvedFile)
 				}
 			}
@@ -412,7 +424,10 @@ function writeConsumerProject(dir, tarballPath) {
 	writeFiles(dir, {
 		'package.json': JSON.stringify({
 			name: 'clarity-consumer-acceptance',
-			version: '0.0.0',
+			// 刻意省略 version：0.1.4 曾因 consumer package.json 缺 version 在
+			// 生产 client 构建触发 MISSING_EXPORT（BlogTech 的 ~~/package.json
+			// 命名导入被 ~~/ 前缀别名抢解析到真实 JSON）。真实 consumer 测试
+			// 必须持续覆盖无 version 场景（clarity-config 重定向契约回归）。
 			packageManager: 'pnpm@12.4.1',
 			private: true,
 			type: 'module',
@@ -610,12 +625,21 @@ const rawConfig = {
 const config = defineClarityConfig(rawConfig)
 check('config defineClarityConfig 运行时可用', typeof defineClarityConfig === 'function')
 check('config 默认值填充', config.article.defaultCategory === '未分类' && config.features.atom === true)
+// 0.1.x 兼容契约（repair phase 1）：已移除的 legacy 键警告 + 忽略（不 fatal），
+// 注册表之外的未知键仍被 strict schema 拒绝。
 try {
-	defineClarityConfig({ ...rawConfig, article: { useRandomPermalink: true } })
-	check('config useRandomPermalink 已移除（strict schema 拒绝未知字段）', false)
+	const legacyParsed = defineClarityConfig({ ...rawConfig, article: { useRandomPermalink: true } })
+	check('config legacy 键 useRandomPermalink 警告后忽略（0.1.x 兼容）', legacyParsed.article.hidePostPrefix === true)
 }
 catch {
-	check('config useRandomPermalink 已移除（strict schema 拒绝未知字段）', true)
+	check('config legacy 键 useRandomPermalink 警告后忽略（0.1.x 兼容）', false)
+}
+try {
+	defineClarityConfig({ ...rawConfig, unknowKey: true })
+	check('config 未知键仍被 strict schema 拒绝', false)
+}
+catch {
+	check('config 未知键仍被 strict schema 拒绝', true)
 }
 
 // 3. clarity-theme/schema

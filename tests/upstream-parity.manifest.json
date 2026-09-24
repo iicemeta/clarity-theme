@@ -147,7 +147,7 @@
     "src/modules/clarity-config/index.ts": {
       "class": "boundary",
       "reason": "Theme 基础设施：读取 clarity.config.ts 并注入上游形状的扁平 AppConfig / ~~/blog.config 别名 / SEO 与路由规则",
-      "hash": "8dd9b64ab5d26d9bea2e6111c188ea66d87984bb64cf5af0055f899a79df2e5b"
+      "hash": "d4e7750f82747702229a597d7630f55527e6820c698ae2ea72ee76b796faad40"
     },
     "src/modules/clarity-source-layout/index.ts": {
       "class": "boundary",

@@ -153,6 +153,12 @@ jobs:
       - name: Upstream parity gate（同步面 byte 对比；无本地 upstream 时 depth-1 fetch manifest commit）
         run: pnpm test:upstream-parity
 
+      - name: Transform parity gate（nuxt.config 派生面：head.link / modules / css / optimizeDeps）
+        run: pnpm test:transform-parity
+
+      - name: Config schema regression（legacy 键兼容 / strict 拼写保护）
+        run: pnpm test:config
+
       - name: Sync tool regression（manifest / apply / rollback）
         run: pnpm test:sync
 

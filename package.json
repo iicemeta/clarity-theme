@@ -37,6 +37,7 @@
   },
   "main": "./nuxt.config.ts",
   "files": [
+    "!src/generated",
     "LICENSE",
     "README.md",
     "nuxt.config.ts",
@@ -56,6 +57,8 @@
     "docs:check": "node scripts/check-docs.mjs",
     "verify": "node scripts/verify-theme.mjs",
     "test:sync": "node --test tests/sync-upstream.test.mjs",
+    "test:config": "node --test tests/config-schema.test.mjs",
+    "test:transform-parity": "node --test tests/transform-parity.test.mjs",
     "test:migration": "node --test tests/migration-skill.test.mjs",
     "test:contract": "node scripts/test-compatibility.mjs --contract-only",
     "test:release": "pnpm verify && pnpm test:consumer && pnpm test:compatibility",

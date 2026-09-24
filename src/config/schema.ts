@@ -127,3 +127,52 @@ export type ClarityFeaturesConfig = z.output<typeof clarityFeaturesSchema>
 export type ClarityChangelogEntry = z.output<typeof clarityChangelogEntrySchema>
 export type ClarityConfig = z.output<typeof clarityConfigSchema>
 export type ClarityConfigInput = z.input<typeof clarityConfigSchema>
+
+/**
+ * 0.1.x 曾接受、现已移除的配置键（点路径）。
+ * strictObject 会把它们当作未知键致命报错；0.1.x consumer 兼容要求
+ * 「警告 + 忽略」而非 fatal。注册表之外的未知键仍然致命（拼写保护）。
+ * 兼容层计划 0.2.0 整体移除（届时本表连同剥离逻辑一起删除）。
+ */
+export const legacyConfigKeys: Readonly<Record<string, string>> = {
+	'article.useRandomPermalink': '随机固定链接生成属消费项目构建脚手架，主题不再提供',
+}
+
+/** 检测并剥离 legacy 键：返回剥离后的浅拷贝配置与命中的 legacy 键路径 */
+export function stripLegacyConfigKeys(raw: unknown): { config: unknown, legacyKeys: string[] } {
+	if (!raw || typeof raw !== 'object') {
+		return { config: raw, legacyKeys: [] }
+	}
+	const legacyKeys = Object.keys(legacyConfigKeys).filter(keyPath => hasKeyPath(raw, keyPath))
+	if (!legacyKeys.length) {
+		return { config: raw, legacyKeys: [] }
+	}
+	const config = structuredClone(raw)
+	for (const keyPath of legacyKeys) {
+		deleteKeyPath(config, keyPath)
+	}
+	return { config, legacyKeys }
+}
+
+function hasKeyPath(value: unknown, keyPath: string): boolean {
+	let node = value
+	for (const segment of keyPath.split('.')) {
+		if (!node || typeof node !== 'object' || !(segment in (node as Record<string, unknown>))) {
+			return false
+		}
+		node = (node as Record<string, unknown>)[segment]
+	}
+	return true
+}
+
+function deleteKeyPath(value: unknown, keyPath: string): void {
+	const segments = keyPath.split('.')
+	let node = value as Record<string, unknown> | undefined
+	for (const segment of segments.slice(0, -1)) {
+		node = node?.[segment] as Record<string, unknown> | undefined
+		if (!node || typeof node !== 'object') {
+			return
+		}
+	}
+	delete node?.[segments[segments.length - 1] as string]
+}

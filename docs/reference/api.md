@@ -145,10 +145,12 @@ The following auto-imported helpers are supported because consumer components ma
 
 | Helper | Returns |
 | --- | --- |
-| `useClarityConfig()` | Client-visible public configuration subset plus UI configuration |
-| `useClaritySite()` | Client-visible site section (without `author.email`) |
-| `useClarityArticle()` | Client-visible article subset (`categories`, `order`) |
-| `useClaritySiteFeedEntry()` | Feed entry derived from site configuration |
+| `useClarityConfig()` — **deprecated** | Client-visible public configuration subset plus UI configuration |
+| `useClaritySite()` — **deprecated** | Client-visible site section (without `author.email`) |
+| `useClarityArticle()` — **deprecated** | Client-visible article subset (`categories`, `order`) |
+| `useClaritySiteFeedEntry()` — **deprecated** | Feed entry derived from site configuration |
+
+They read the injected `clarity` app-config key, a 0.1.x compatibility surface. The supported reading path is the upstream-shaped flat app config (`useAppConfig()` — `title`, `nav`, `component.*`, …), which all Theme components use. The `clarity` key and these helpers are scheduled for removal in **0.2.0**; migrate custom components to `useAppConfig()`.
 
 They require a Nuxt app context and are not standalone package subpath exports.
 
