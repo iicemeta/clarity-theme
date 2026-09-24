@@ -7,7 +7,9 @@
 ## 环境要求
 
 - 满足主题 engine 范围的 Node.js（`^22.19 || ^24.11 || >=26`）
-- pnpm、npm 或其他兼容的包管理器
+- [pnpm](https://pnpm.io/installation/) —— 生成的项目自带 pnpm
+  `patchedDependencies` 与 `packageManager` 声明，因此即使通过 `npx`
+  启动创建器，依赖也始终用 pnpm 安装
 
 ## pnpm
 
@@ -30,8 +32,8 @@ Content 版本或手工拼接 Nuxt 骨架 —— 如果 Agent 被要求创建 Cl
 运行官方创建器。迁移既有 `blog-v3` 站点是另一条工作流，见
 [blog-v3 迁移指南](./migration-from-blog-v3.zh-CN.md)。
 
-CLI 会询问站点元数据与偏好的包管理器。每个提示都会显示可编辑的默认值，
-直接按 Enter 即可接受：
+CLI 会询问站点元数据，以及是否立即用 pnpm 安装依赖。每个提示都会显示
+可编辑的默认值，直接按 Enter 即可接受：
 
 | 提示 | 默认值 |
 | --- | --- |

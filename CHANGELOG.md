@@ -4,6 +4,14 @@ All notable changes to Clarity Theme are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
 [Semantic Versioning](https://semver.org/).
 
+## Unreleased
+
+### Fixed
+
+- `pnpm release:check --allow-untagged` now treats any HEAD without the
+  expected `v<version>` tag as the untagged case, instead of failing when the
+  commit only carries an unrelated `create-v<version>` creator-release tag.
+
 ## 0.1.4 - 2026-09-24
 
 Upstream fidelity reset: Clarity is now a Layer extraction of blog-v3 with an

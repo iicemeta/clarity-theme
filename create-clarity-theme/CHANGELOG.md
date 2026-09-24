@@ -4,6 +4,29 @@ All notable changes to `create-clarity-theme` are documented here. The format
 follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the
 package uses [Semantic Versioning](https://semver.org/).
 
+## 0.1.3 - 2026-09-24
+
+Patch release making dependency installation explicit and pnpm-only.
+
+### Changed
+
+- The CLI no longer installs dependencies silently. Interactive runs now ask
+  "Install dependencies with pnpm now?" (default yes); `--no-install` skips
+  entirely, `--install` installs without asking, and non-interactive `--yes`
+  runs generate without installing.
+- Dependency installation always uses pnpm: generated projects ship
+  `pnpm-workspace.yaml` `patchedDependencies` and a pnpm `packageManager`
+  field, so an npm/yarn install would skip every patch. `--package-manager`
+  now only accepts `pnpm`; npm/yarn are rejected with guidance instead of
+  producing an unpatched project. If pnpm is not on `PATH`, installation is
+  skipped with `corepack enable` / pnpm.io setup guidance.
+
+### Fixed
+
+- Windows `npm`/`pnpm` child processes no longer emit Node `DEP0190`:
+  installation spawns one fixed command string instead of combining an args
+  array with `shell: true`.
+
 ## 0.1.2 - 2026-09-24
 
 Patch release fixing new-project creation through `npx`/npm.

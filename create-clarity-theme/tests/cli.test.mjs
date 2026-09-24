@@ -187,17 +187,39 @@ it('cLI creates nested projects from Windows-style paths', () => {
 	})
 })
 
-it('cLI selects a safe package manager and validates explicit values', () => {
+it('cLI only accepts pnpm as the package manager', () => {
 	withTemporaryDirectory((workDir) => {
-		const result = runCli(['my-blog', '--yes', '--no-install', '--package-manager', 'npm'], { cwd: workDir })
+		const result = runCli(['my-blog', '--yes', '--no-install', '--package-manager', 'pnpm'], { cwd: workDir })
 
 		assert.equal(result.status, 0, result.stderr)
-		assert.match(result.stdout, /npm install/)
-		assert.match(result.stdout, /npm run dev/)
+		assert.match(result.stdout, /pnpm install/)
+		assert.match(result.stdout, /pnpm dev/)
 
-		const invalid = runCli(['invalid-package-manager', '--yes', '--no-install', '--pm', 'shell-injection'], { cwd: workDir })
+		const invalid = runCli(['invalid-package-manager', '--yes', '--no-install', '--pm', 'npm'], { cwd: workDir })
 		assert.notEqual(invalid.status, 0)
-		assert.match(invalid.stderr, /Package manager must be pnpm, npm, or yarn\./)
+		assert.match(invalid.stderr, /pnpm only/)
+	})
+})
+
+it('cLI asks whether to install dependencies and skips when declined', () => {
+	withTemporaryDirectory((workDir) => {
+		const result = runCli([], {
+			cwd: workDir,
+			input: `${['my-blog', '', '', '', '', '', '', 'n'].join('\n')}\n`,
+		})
+
+		assert.equal(result.status, 0, result.stderr)
+		assert.match(result.stdout, /Install dependencies with pnpm/)
+		assert.match(result.stdout, /Dependency installation skipped/)
+		assert.match(result.stdout, /pnpm install/)
+		assertGeneratedProject(join(workDir, 'my-blog'), {
+			name: 'my-blog',
+			title: 'My Blog',
+			url: 'https://example.com/',
+			author: 'Your Name',
+			language: 'zh-CN',
+			timezone: detectTimezone(),
+		})
 	})
 })
 

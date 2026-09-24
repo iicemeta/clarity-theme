@@ -30,6 +30,15 @@ cd my-blog
 pnpm dev
 ```
 
+The generated project is pnpm-based: it ships a `pnpm-workspace.yaml` with
+`patchedDependencies` and declares `packageManager: pnpm`. Dependencies are
+therefore always installed with **pnpm**, regardless of whether the creator
+was launched through `pnpm create` or `npx`. After generating the files, the
+CLI asks whether to install dependencies now; declining (or `--no-install`)
+leaves a ready project where you run `pnpm install` yourself. If pnpm is not
+found, the CLI skips installation and prints setup guidance
+(`corepack enable` or https://pnpm.io/installation).
+
 The CLI asks only for the project name, site identity, URL, author, language,
 and timezone. Every prompt displays its editable default value, and pressing
 Enter accepts it. Real terminals use the `@clack/prompts` interface; piped or
@@ -68,8 +77,9 @@ usable system timezone.
 | `--author <name>` | Author name |
 | `--language <tag>` | BCP 47-style language tag |
 | `--timezone <zone>` | IANA timezone |
-| `--package-manager <name>` | Use `pnpm`, `npm`, or `yarn` |
-| `--no-install` | Generate files without installing dependencies |
+| `--package-manager <name>` | Must be `pnpm` (generated projects are pnpm-based) |
+| `--no-install` | Skip dependency installation entirely |
+| `--install` | Install dependencies without asking |
 | `--yes`, `-y` | Use defaults for remaining prompts |
 | `--version`, `-v` | Print the CLI version |
 | `--help`, `-h` | Show all options |
@@ -80,9 +90,8 @@ For example, a fully non-interactive setup:
 pnpm create clarity-theme my-blog --yes --timezone Asia/Tokyo
 ```
 
-The installer is inferred from `npm_config_user_agent`, so `pnpm create` uses
-`pnpm install` and `npx` uses `npm install`. Windows paths are supported and
-installation commands never interpolate project metadata into a shell command.
+Installation always runs `pnpm install` (a fixed command; project metadata is
+never interpolated into a shell command). Windows paths are supported.
 
 ## Generated project
 

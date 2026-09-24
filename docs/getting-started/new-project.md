@@ -7,7 +7,9 @@ The fastest way to start is the official creator package. It is published separa
 ## Requirements
 
 - Node.js satisfying the Theme engine range (`^22.19 || ^24.11 || >=26`)
-- pnpm, npm, or another compatible package manager
+- [pnpm](https://pnpm.io/installation) — generated projects ship pnpm
+  `patchedDependencies` and a `packageManager` field, so dependencies are
+  always installed with pnpm even when the creator is launched through `npx`
 
 ## pnpm
 
@@ -32,8 +34,9 @@ versions, or assemble a Nuxt skeleton by hand — Agents asked to create a
 Clarity blog must run the creator instead. Migrating an existing `blog-v3`
 site is a different workflow; see [migration from blog-v3](./migration-from-blog-v3.md).
 
-The CLI asks for site metadata and your preferred package manager. Every prompt
-shows its editable default value, and pressing Enter accepts it:
+The CLI asks for site metadata and whether to install dependencies with pnpm
+now. Every prompt shows its editable default value, and pressing Enter accepts
+it:
 
 | Prompt | Default |
 | --- | --- |

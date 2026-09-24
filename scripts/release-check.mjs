@@ -149,19 +149,15 @@ check('packageManager 已声明（pnpm）', /^pnpm@\d/.test(pkg.packageManager ?
 console.log('[2/7] Git tag / version 契约')
 const expectedTag = `v${pkg.version}`
 const headTags = git(['tag', '--points-at', 'HEAD']).split('\n').filter(Boolean)
-if (headTags.length > 0) {
-	check(
-		`HEAD tag 与 package.version 一致（${expectedTag}）`,
-		headTags.includes(expectedTag),
-		`HEAD tags: ${headTags.join(', ')}`,
-	)
+if (headTags.includes(expectedTag)) {
+	console.log(`  ✓ HEAD tag 与 package.version 一致（${expectedTag}）`)
 }
 else if (allowUntagged) {
-	notes.push(`HEAD 未打 tag：以 --allow-untagged 运行，正式发布前必须在发布 commit 上打 ${expectedTag}`)
-	console.log(`  ⚠ HEAD 未打 tag（--allow-untagged 已放行；发布前必须为该 commit 打 ${expectedTag}）`)
+	notes.push(`HEAD 未打 ${expectedTag}：以 --allow-untagged 运行，正式发布前必须在发布 commit 上打 ${expectedTag}`)
+	console.log(`  ⚠ HEAD 未打 ${expectedTag}（--allow-untagged 已放行；HEAD 其他 tag：${headTags.join(', ') || '无'}）`)
 }
 else {
-	check(`HEAD 已打 ${expectedTag}`, false, '当前 commit 没有 tag（发布前验证可使用 --allow-untagged）')
+	check(`HEAD 已打 ${expectedTag}`, false, `当前 HEAD tag：${headTags.join(', ') || '无'}（发布前验证可使用 --allow-untagged）`)
 }
 
 // ---------------------------------------------------------------------------

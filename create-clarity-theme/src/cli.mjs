@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { spawn } from 'node:child_process'
+import { spawn, spawnSync } from 'node:child_process'
 import { existsSync, lstatSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs'
 import { basename, dirname, isAbsolute, join, relative, resolve } from 'node:path'
 import process from 'node:process'
@@ -43,8 +43,9 @@ Options:
   --author <name>             Author name
   --language <tag>            Site language, for example zh-CN
   --timezone <zone>           IANA timezone, for example Asia/Tokyo
-  --package-manager <name>    pnpm, npm, or yarn (also --pm)
-  --no-install                Create files without installing dependencies
+  --package-manager <name>    Must be pnpm (also --pm); generated projects are pnpm-based
+  --no-install                Skip dependency installation entirely
+  --install                   Install dependencies without asking
   --yes, -y                   Accept defaults; still refuses non-empty directories
   --version, -v               Print the CLI version
   --help, -h                  Show this help
@@ -87,7 +88,7 @@ function parseArguments(argv) {
 		help: false,
 		version: false,
 		yes: false,
-		install: true,
+		install: undefined,
 	}
 
 	for (let index = 0; index < argv.length; index++) {
@@ -183,7 +184,7 @@ async function createProjectWithPrompts(options, prompts) {
 	const author = await askOptionOrPrompt(options, prompts, 'author', 'Author name', defaults.author, validateText)
 	const language = await askOptionOrPrompt(options, prompts, 'language', 'Language', defaults.language, validateLanguage)
 	const timezone = await askOptionOrPrompt(options, prompts, 'timezone', 'Timezone', defaults.timezone, validateTimezone, 'Detected from your system')
-	const packageManager = resolvePackageManager(options.packageManager)
+	resolvePackageManager(options.packageManager)
 
 	const values = {
 		PROJECT_NAME: createPackageName(basename(target)),
@@ -204,16 +205,27 @@ async function createProjectWithPrompts(options, prompts) {
 	console.log('✔ Writing configuration')
 	console.log('✔ Generating welcome article')
 
-	if (options.install) {
-		console.log('◆ Installing dependencies...')
-		await installDependencies(packageManager, target)
-		console.log('✔ Installing dependencies')
-	}
-	else {
-		console.log('· Dependency installation skipped (--no-install)')
+	if (options.install === undefined && prompts) {
+		options.install = await prompts.confirm({ message: 'Install dependencies with pnpm now?', initialValue: true })
 	}
 
-	printNextSteps(target, packageManager, options.install)
+	if (options.install) {
+		if (isPnpmAvailable()) {
+			console.log('◆ Installing dependencies...')
+			await installDependencies(target)
+			console.log('✔ Installing dependencies')
+		}
+		else {
+			console.log('· pnpm was not found; dependency installation skipped.')
+			console.log('  Enable it with `corepack enable` (bundled with Node.js) or install it from https://pnpm.io/installation, then run `pnpm install`.')
+			options.install = false
+		}
+	}
+	else {
+		console.log(`· Dependency installation skipped${options.install === false ? ' (--no-install)' : ''}`)
+	}
+
+	printNextSteps(target, options.install)
 	printUpstreamContentNotice()
 	prompts?.outro('Project ready')
 }
@@ -517,41 +529,48 @@ function createPackageName(value) {
 }
 
 function resolvePackageManager(requested) {
-	const packageManager = requested ?? detectPackageManager()
-	if (!['pnpm', 'npm', 'yarn'].includes(packageManager)) {
-		throw new Error('Package manager must be pnpm, npm, or yarn.')
+	// The generated project ships pnpm-workspace.yaml patchedDependencies and
+	// a pnpm packageManager field; npm/yarn would skip the patches entirely.
+	const packageManager = requested ?? 'pnpm'
+	if (packageManager !== 'pnpm') {
+		throw new Error('Generated Clarity projects install with pnpm only (the template registers pnpm patchedDependencies). Pass --no-install to skip installation.')
 	}
 	return packageManager
 }
 
-function detectPackageManager() {
-	const agent = process.env.npm_config_user_agent?.split('/')[0]
-	return agent === 'pnpm' || agent === 'yarn' ? agent : 'npm'
+function isPnpmAvailable() {
+	const result = spawnSync('pnpm --version', {
+		encoding: 'utf8',
+		shell: true,
+		env: { ...process.env, NO_COLOR: process.env.NO_COLOR ?? '1' },
+	})
+	return result.status === 0
 }
 
-function installDependencies(packageManager, target) {
-	const command = packageManager
-	const args = ['install']
+function installDependencies(target) {
+	// Single fixed command string: an args array combined with `shell: true`
+	// triggers Node DEP0190, and this command has no dynamic parts.
+	const command = 'pnpm install'
 	return new Promise((resolvePromise, rejectPromise) => {
-		const child = spawn(command, args, {
+		const child = spawn(command, {
 			cwd: target,
 			stdio: 'inherit',
 			env: { ...process.env, NUXT_TELEMETRY_DISABLED: '1', NO_COLOR: process.env.NO_COLOR ?? '1' },
-			shell: process.platform === 'win32',
+			shell: true,
 		})
 		child.once('error', rejectPromise)
-		child.once('exit', code => (code === 0 ? resolvePromise() : rejectPromise(new Error(`${packageManager} install failed with exit code ${code}.`))))
+		child.once('exit', code => (code === 0 ? resolvePromise() : rejectPromise(new Error(`pnpm install failed with exit code ${code}.`))))
 	})
 }
 
-function printNextSteps(target, packageManager, installed) {
+function printNextSteps(target, installed) {
 	const displayedPath = relative(process.cwd(), target) || '.'
 	console.log('\nDone!\n\nNext steps:\n')
 	console.log(`  cd ${displayedPath.replaceAll('\\', '/')}`)
 	if (!installed) {
-		console.log(`  ${packageManager} install`)
+		console.log('  pnpm install')
 	}
-	console.log(`  ${packageManager === 'pnpm' ? 'pnpm dev' : `${packageManager} run dev`}\n`)
+	console.log('  pnpm dev\n')
 }
 
 function printUpstreamContentNotice() {
