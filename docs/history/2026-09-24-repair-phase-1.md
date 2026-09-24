@@ -1,7 +1,7 @@
 # Repair Phase 1 报告（边界修复 + 最小防回归）
 
 > 冻结记录：本文是 2026-09-24 Repair Phase 0 + Phase 1 的验收报告。
-> 决策上下文见 `docs/reconstruction-decision.md`（DECISION: REPAIR）。
+> 决策上下文见 `docs/history/2026-09-24-reconstruction-decision.md`（DECISION: REPAIR）。
 
 ## 1. Baseline
 
@@ -12,7 +12,7 @@
 | 修复分支 | `repair/phase-1-boundary`（自 master 新建） |
 | 基线 tag | `repair-baseline-0.1.4` |
 | 起点 parity | identical 103 / mechanical 16 / boundary 10 / bugfix 1（include 120） |
-| 未提交工作区 | 仅有前次审计遗留的未跟踪文档 `docs/reconstruction-audit.md`、`docs/reconstruction-decision.md`（保留未动） |
+| 未提交工作区 | 仅有前次审计遗留的未跟踪文档 `reconstruction-audit.md` / `reconstruction-decision.md`（位于 docs/ 根目录；Phase 1 期间保留未动，验收后随归档提交移入 docs/history/，见 §7） |
 
 ## 2. Issue A：DOUYIN 字体未随 Layer 下发
 
@@ -169,9 +169,11 @@ test:config ✔（6/6）、test:transform-parity ✔（6/6）、test:consumer �
 
 1. **Issue D 未关闭**（见 §5）：`file:` + generate 在本机当前状态一切正常，但审计症状
    的根因未定位；按任务边界未做任何修复。
-2. **审计遗留未跟踪文档** `docs/reconstruction-audit.md` / `reconstruction-decision.md`
-   使 `docs:check` 保持 4 项失败（版本污染 + 缺双语配对）；需文档负责人决定归档
-   （建议移入 docs/history 并补配对）。
+2. **审计遗留未跟踪文档**（Phase 1 验收时位于 docs/ 根目录，使 `docs:check` 保持 4 项
+   失败：版本污染 + 缺双语配对）——**验收后已解决**：两份文档作为冻结记录归档至
+   `docs/history/2026-09-24-reconstruction-audit.md` /
+   `docs/history/2026-09-24-reconstruction-decision.md`（内容未改动，仅移动与互链路径
+   修正），docs:check 恢复全绿。
 3. **parity-lab/clarity-consumer 被残留进程锁库**（`database is locked`）：
    需清理该 node 进程后该 lab consumer 才能复用。
 4. **consumer-b 复现目录的 `#modals` 解析失败**（parity-lab 同版本工具链下不复现）：
