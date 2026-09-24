@@ -16,7 +16,7 @@
  */
 import { execFileSync } from 'node:child_process'
 import { createHash } from 'node:crypto'
-import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
 import process from 'node:process'
@@ -213,20 +213,43 @@ function report(total) {
 }
 
 function resolveUpstreamDir() {
-	const candidates = [
-		process.env.CLARITY_UPSTREAM_DIR,
-		resolve(themeDir, '../blog-v3-upstream'),
-	].filter(Boolean)
+	// 上游内容解析顺序：CLARITY_UPSTREAM_DIR 覆盖 → 仓库同级 blog-v3-upstream
+	// checkout（本地开发便捷路径）→ 克隆 manifest commit 到临时目录。
+	// CLARITY_PARITY_FORCE_CLONE=1 跳过本地候选，用于在仓库独立内容
+	// （CI / 发布包）环境中验证克隆路径。
+	const forceClone = process.env.CLARITY_PARITY_FORCE_CLONE === '1'
+	const candidates = forceClone
+		? []
+		: [
+				process.env.CLARITY_UPSTREAM_DIR,
+				resolve(themeDir, '../blog-v3-upstream'),
+			].filter(Boolean)
 	for (const dir of candidates) {
 		if (existsSync(dir) && hasCommit(dir)) {
 			return dir
 		}
 	}
 	const tempDir = mkdtempSync(join(tmpdir(), 'clarity-parity-'))
-	console.log(`未找到本地 upstream 仓库，克隆 ${manifest.upstream.repo}@${commit.slice(0, 7)} 到临时目录……`)
-	execFileSync('git', ['clone', '--filter=blob:none', '--no-checkout', manifest.upstream.repo, tempDir], { stdio: 'inherit' })
-	if (!hasCommit(tempDir)) {
-		execFileSync('git', ['fetch', 'origin', commit], { cwd: tempDir, stdio: 'inherit' })
+	// 诊断信息与子进程进度一律走 stderr：--list-json 模式下 stdout 是纯 JSON 通道
+	console.error(`未找到本地 upstream 仓库，拉取 ${manifest.upstream.repo}@${commit.slice(0, 7)} 到临时目录……`)
+	let available = false
+	try {
+		// 单 commit depth-1 fetch：一次请求拿到该 commit 的完整 snapshot
+		// （commit/tree/blob），后续逐文件读取全部本地命中；
+		// blobless clone 会让每个 git show 都触发一次网络懒加载（120 次请求）。
+		execFileSync('git', ['init', '--quiet', tempDir])
+		execFileSync('git', ['remote', 'add', 'origin', manifest.upstream.repo], { cwd: tempDir })
+		execFileSync('git', ['fetch', '--quiet', '--depth', '1', 'origin', commit], { cwd: tempDir, stdio: ['ignore', 2, 2] })
+		available = hasCommit(tempDir)
+	}
+	catch {
+		available = false
+	}
+	if (!available) {
+		// 回退：服务端拒绝按 SHA fetch 时使用 blobless 全历史 clone
+		rmSync(tempDir, { recursive: true, force: true })
+		mkdirSync(tempDir, { recursive: true })
+		execFileSync('git', ['clone', '--filter=blob:none', '--no-checkout', manifest.upstream.repo, tempDir], { stdio: ['ignore', 2, 2] })
 	}
 	if (!hasCommit(tempDir)) {
 		rmSync(tempDir, { recursive: true, force: true })

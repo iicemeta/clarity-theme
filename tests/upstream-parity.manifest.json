@@ -221,7 +221,7 @@
     },
     "src/types/upstream-compat.d.ts": {
       "class": "boundary",
-      "hash": "cacd1d6014a697cc971d27c526b9c45abaf9287e37550497795969f61785c63e",
+      "hash": "79e71ae9171cb8a9e99531194b56eeac9a2fcc43922b0c2d3eef504eae105c47",
       "reason": "上游类型兼容垫片：atom.xml 读取 post.author（上游 schema 未声明的可选 frontmatter 字段），通过模块增强补充类型，保持上游文件 byte-identical"
     },
     "src/types/yaml-modules.d.ts": {

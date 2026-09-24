@@ -125,6 +125,8 @@ Any changed path not matched above. Unknown changes block apply so the baseline 
 - `boundary`: SHA-256 hashed with a written reason (Layer infra, package boundary, config bridge, type-compat shim).
 - `bugfix`: hashed with an upstream-problem justification (for example the async `minify` misuse in `modules/anti-mirror`).
 
+Upstream content resolution order: `CLARITY_UPSTREAM_DIR` override → sibling `blog-v3-upstream` checkout (local convenience) → shallow depth-1 fetch of the manifest commit into a temp directory (CI / standalone-repo path; set `CLARITY_PARITY_FORCE_CLONE=1` to skip local candidates). Diagnostics go to stderr so `--list-json` keeps stdout as pure JSON.
+
 Undeclared Theme-side extras inside the sync surface fail the gate. Refresh hashes only after reviewing the diff: `node scripts/test-upstream-parity.mjs --update-hashes`. The gate output reports upstream/Theme baselines plus identical, mechanical, boundary, and bugfix counts.
 
 ## Apply and Conflict Semantics

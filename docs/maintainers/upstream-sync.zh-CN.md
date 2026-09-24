@@ -122,6 +122,8 @@ manifest 中所有 glob 与 `upstream` 块描述的都是**上游**（blog-v3）
 - `boundary`：SHA-256 哈希锁定并附书面理由（Layer 基础设施、包边界、配置桥接、类型兼容垫片）。
 - `bugfix`：哈希锁定并附上游问题说明（例如 `modules/anti-mirror` 中对异步 `minify` 的误用）。
 
+上游内容解析顺序：`CLARITY_UPSTREAM_DIR` 覆盖 → 仓库同级 `blog-v3-upstream` checkout（本地便捷路径）→ 向临时目录 depth-1 fetch manifest commit（CI / 独立仓库路径；`CLARITY_PARITY_FORCE_CLONE=1` 可跳过本地候选）。诊断信息一律走 stderr，保证 `--list-json` 的 stdout 是纯 JSON。
+
 同步面内任何未登记的 Theme 侧额外文件都会让门禁失败。仅在审查差异后刷新哈希：`node scripts/test-upstream-parity.mjs --update-hashes`。门禁输出包含上游/Theme 基线与 identical、mechanical、boundary、bugfix 计数。
 
 ## Apply 与冲突语义

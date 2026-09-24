@@ -19,11 +19,29 @@ import { fileURLToPath } from 'node:url'
 
 const themeDir = fileURLToPath(new URL('..', import.meta.url))
 
-const parityClasses = JSON.parse(execFileSync(
-	process.execPath,
-	[join(themeDir, 'scripts/test-upstream-parity.mjs'), '--list-json'],
-	{ encoding: 'utf8', maxBuffer: 1024 * 1024 * 16 },
-))
+// upstream parity 分类清单：子进程 stdout 必须是纯 JSON。
+// stderr（克隆进度、诊断）直接继承，不进入 JSON 解析。
+function loadParityClasses() {
+	let stdout
+	try {
+		stdout = execFileSync(
+			process.execPath,
+			[join(themeDir, 'scripts/test-upstream-parity.mjs'), '--list-json'],
+			{ encoding: 'utf8', maxBuffer: 1024 * 1024 * 16, stdio: ['ignore', 'pipe', 'inherit'] },
+		)
+	}
+	catch (error) {
+		throw new Error(`upstream parity --list-json 执行失败（子进程 stderr 见上方输出）：${error.message}`)
+	}
+	try {
+		return JSON.parse(stdout)
+	}
+	catch {
+		const firstLine = stdout.split('\n', 1)[0]
+		throw new Error(`upstream parity --list-json 输出不是纯 JSON（首行：${firstLine}）；诊断信息必须写入 stderr`)
+	}
+}
+const parityClasses = loadParityClasses()
 
 const forbiddenFiles = [
 	'content',
