@@ -15,10 +15,12 @@ This Skill never edits theme implementation, components, config, or dependencies
 2. Map its structure: headings, sections, lists, code, quotes, warnings, steps, resources.
 3. Read [`references/_index.md`](./references/_index.md) — nothing else first.
 4. Decide which capabilities have genuine semantic value for this article. Most articles need zero to three.
-5. Open only the referenced `docs/mdc/…` pages for those capabilities. No bulk reading.
+5. Open only the referenced files under `references/` (`components/`, `plugins/`, `syntax.md`). No bulk reading.
 6. Edit the article. Preserve the author's wording, facts, links, and conclusions.
 7. Re-check: meaning preserved, syntax valid, restraint respected.
 8. Report what you changed, why, and what you deliberately left as plain Markdown.
+
+The reference pages are bundled copies of the Theme repository's `docs/mdc/` wiki, so this Skill is self-contained after `npx skills add`. Repository copies are authoritative; do not treat the bundles as the source of truth when both are present.
 
 ## Restraint rules
 

@@ -104,7 +104,7 @@ Theme 侧比对对象：`src/components/content/**`、`src/remark-plugins/**`、
 2. **找真实用法** —— 在上游 `content/**/*.md` 搜索 `::name`、`:name{`、`:name[`、YAML 块、`#slot` 行与围栏语言；展示文章是 `content/previews/example.md`。
 3. **比对 Theme** —— `src/components/content/<Name>.vue`（或 `src/remark-plugins/`）、`nuxt.config.ts` 中的注册，以及任何消费者边界（数据、页面、补丁、远程资源）。
 4. **分类** —— `supported` / `conditional` / `upstream-only` / `do-not-use`，并附证据；绝不只凭存在推断支持。
-5. **更新** —— 此处表格、计数、`docs/mdc/components/` 或 `docs/mdc/plugins/` 下的逐项 reference、`skills/article-beautifier/references/_index.md` 机器索引，以及——当能力稳定且通用时——`playground/content/compatibility/` 加 `scripts/compatibility-cases.mjs` 中的基准。
+5. **更新** —— 此处表格、计数、`docs/mdc/components/` 或 `docs/mdc/plugins/` 下的逐项 reference、`skills/article-beautifier/references/_index.md` 机器索引**以及 `skills/article-beautifier/references/` 下的捆绑副本**（Skill 携带这些页面的自包含副本，使 `npx skills add` 无需整个仓库即可工作），以及——当能力稳定且通用时——`playground/content/compatibility/` 加 `scripts/compatibility-cases.mjs` 中的基准。
 
 ## 维护者问题的答案
 

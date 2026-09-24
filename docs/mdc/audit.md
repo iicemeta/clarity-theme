@@ -104,7 +104,7 @@ When upstream blog-v3 adds or changes an article capability:
 2. **Find real usage** — search upstream `content/**/*.md` for `::name`, `:name{`, `:name[`, YAML blocks, `#slot` lines, and fence languages; the showcase article is `content/previews/example.md`.
 3. **Compare the Theme** — `src/components/content/<Name>.vue` (or `src/remark-plugins/`), registration in `nuxt.config.ts`, and any consumer boundary (data, pages, patches, remote assets).
 4. **Classify** — `supported` / `conditional` / `upstream-only` / `do-not-use`, with evidence; never infer support from existence alone.
-5. **Update** — the row here, the counts, the per-capability reference under `docs/mdc/components/` or `docs/mdc/plugins/`, the machine index in `skills/article-beautifier/references/_index.md`, and — when the capability is stable and generic — a fixture in `playground/content/compatibility/` plus `scripts/compatibility-cases.mjs`.
+5. **Update** — the row here, the counts, the per-capability reference under `docs/mdc/components/` or `docs/mdc/plugins/`, the machine index in `skills/article-beautifier/references/_index.md` **plus the bundled copies under `skills/article-beautifier/references/`** (the Skill ships self-contained duplicates of these pages so `npx skills add` works without the repository), and — when the capability is stable and generic — a fixture in `playground/content/compatibility/` plus `scripts/compatibility-cases.mjs`.
 
 ## Answers to the maintainer questions
 
