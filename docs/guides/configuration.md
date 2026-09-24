@@ -21,6 +21,10 @@ Configuration entry points:
 | `feeds.ts` | Friend data (`FeedGroup[]`) | TypeScript |
 | `runtimeConfig` | Environment and secrets; secrets are only valid in the server-only section | Nuxt |
 
+## Strictness and 0.1.x compatibility
+
+The schema rejects unknown keys with a fatal validation error (typo protection). One narrow exception: keys that 0.1.x accepted and later removed — currently `article.useRandomPermalink` — produce a deprecation **warning** and are ignored, so old consumer configs keep building. This compatibility layer (registry: `legacyConfigKeys` in `src/config/schema.ts`) will be removed in **0.2.0**; delete the key from your config before upgrading. Any other unknown key remains fatal.
+
 ## Complete example
 
 The example shows every top-level group. Field-level constraints follow; when migrating from blog-v3, use the mapping tables in [migration](../getting-started/migration-from-blog-v3.md).

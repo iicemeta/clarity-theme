@@ -145,10 +145,12 @@ categories/tags/type/draft 的默认值来自解析后的配置与 Content schem
 
 | 辅助函数 | 返回值 |
 | --- | --- |
-| `useClarityConfig()` | 客户端可见的公共配置子集加上 UI 配置 |
-| `useClaritySite()` | 客户端可见的 site 分区（不含 `author.email`） |
-| `useClarityArticle()` | 客户端可见的 article 子集（`categories`、`order`） |
-| `useClaritySiteFeedEntry()` | 由站点配置派生的 feed 条目 |
+| `useClarityConfig()` — **已废弃** | 客户端可见的公共配置子集加上 UI 配置 |
+| `useClaritySite()` — **已废弃** | 客户端可见的 site 分区（不含 `author.email`） |
+| `useClarityArticle()` — **已废弃** | 客户端可见的 article 子集（`categories`、`order`） |
+| `useClaritySiteFeedEntry()` — **已废弃** | 由站点配置派生的 feed 条目 |
+
+它们读取注入的 `clarity` app-config 键，属 0.1.x 兼容面。受支持的读取方式是上游形状的扁平 app config（`useAppConfig()`——`title`、`nav`、`component.*` 等），全部 Theme 组件均使用该路径。`clarity` 键与这些助手计划在 **0.2.0** 移除，自定义组件请迁移到 `useAppConfig()`。
 
 它们需要 Nuxt 应用上下文，不是独立的包子路径导出。
 

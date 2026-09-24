@@ -3,6 +3,7 @@ import type { ClarityConfig } from '../../config/schema'
 import type { ClarityServerConfig } from '../../config/server'
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { dirname, join, relative, resolve } from 'node:path'
+import { platform } from 'node:process'
 import { fileURLToPath } from 'node:url'
 import { createJiti } from 'jiti'
 import {
@@ -15,13 +16,15 @@ import {
 import { parse as parseYaml } from 'yaml'
 import { fallbackPnpmWorkspace } from '../../config/pnpm-workspace'
 import { toPublicClarityConfig } from '../../config/public'
-import { clarityConfigSchema } from '../../config/schema'
+import { clarityConfigSchema, legacyConfigKeys, stripLegacyConfigKeys } from '../../config/schema'
 import { toServerClarityConfig } from '../../config/server'
 import uiDefaults from '../../config/ui'
 
 const moduleDir = dirname(fileURLToPath(import.meta.url))
 /** Theme 运行时源码根（src/）：模块位于 src/modules/clarity-config */
 const themeSrcDir = resolve(moduleDir, '../..')
+/** Windows 路径比较需要大小写不敏感（vite 解析产物盘符大小写不定） */
+const IS_WINDOWS = platform === 'win32'
 
 /** app/app.config.ts 中允许作为 UI 覆盖的顶层键（站点级字段属于 clarity.config.ts） */
 const uiConfigKeys = new Set(['component', 'footer', 'header', 'link', 'nav', 'pagination', 'themes'])
@@ -29,6 +32,15 @@ const uiConfigKeys = new Set(['component', 'footer', 'header', 'link', 'nav', 'p
 export interface ModuleOptions {
 	/** 消费项目中 clarity 配置文件路径（相对 rootDir） */
 	configFile?: string
+}
+
+/** 构建数据重定向插件的最小结构化形状（vite resolveId 子集） */
+interface RedirectPlugin {
+	name: string
+	resolveId: {
+		order: 'pre'
+		handler: (source: string) => { id: string } | undefined
+	}
 }
 
 export default defineNuxtModule<ModuleOptions>({
@@ -125,7 +137,7 @@ export default defineNuxtModule<ModuleOptions>({
 		// ---- 读取并校验站点配置（错误在构建开始前暴露） ----
 		const jiti = createJiti(import.meta.url, { moduleCache: false, interopDefault: true })
 		const configModule = await importConfigFile(jiti, configPath)
-		const config = parseClarityConfig((configModule as { default?: unknown })?.default ?? configModule, configPath)
+		const config = parseClarityConfig((configModule as { default?: unknown })?.default ?? configModule, configPath, logger)
 		const { site, article, integrations, features } = config
 
 		// ---- 上游构建期数据模块：~~/package.json 与 ~~/pnpm-workspace.yaml ----
@@ -134,6 +146,13 @@ export default defineNuxtModule<ModuleOptions>({
 		// 以 ESM 导入 JSON/YAML），导致含 BlogTech 的页面（首页）在预渲染时崩溃。
 		// 因此在 buildDir 生成等价 ES 模块，运行时别名与 TS 声明都指向生成物。
 		const consumerPkg = (await loadJson(resolve(rootDir, 'package.json'), jiti)) ?? {}
+		const missingPkgFields = ['name', 'version'].filter(field => !consumerPkg[field])
+		if (missingPkgFields.length) {
+			logger.warn(
+				`package.json 缺少 [${missingPkgFields.join(', ')}] 字段，BlogTech 等组件将显示空值`
+				+ '（数据经生成模块归一化，构建不会因此失败）。',
+			)
+		}
 		const pnpmWorkspace = loadPnpmWorkspace(rootDir)
 		// 写入 Theme 包内的固定路径：prepare / build / prerenderer 等多个
 		// Nuxt 实例可能使用不同 buildDir，包内路径在所有上下文中一致可用。
@@ -227,6 +246,41 @@ export default defineNuxtModule<ModuleOptions>({
 			nitroConfig.typescript.tsConfig.compilerOptions.paths ??= {}
 			nitroConfig.typescript.tsConfig.compilerOptions.paths['~~/package.json'] = [withLeadingDot(packageJsonDecl.filename)]
 			nitroConfig.typescript.tsConfig.compilerOptions.paths['~~/pnpm-workspace.yaml'] = [withLeadingDot(yamlDecl.filename)]
+		})
+
+		// ---- Vite 打包上下文的重定向契约 ----
+		// 上方为 `~~/package.json` / `~~/pnpm-workspace.yaml` 设置的精确别名，
+		// 在 dev（JS 版 alias 插件，首个匹配生效）中按预期指向生成模块；
+		// 但生产构建的 bundled 环境使用 rolldown 原生 alias 插件，其匹配
+		// 语义让更短的 `~~` → rootDir 前缀别名抢先，导入被改写为消费项目的
+		// 真实文件路径（consumer package.json 缺 version 时即 MISSING_EXPORT）。
+		// 消费项目的真实文件是数据源而非打包目标，这里以显式 resolveId 契约
+		// 把两个绝对路径重定向到生成模块：client / SSR 打包语义一致，且不再
+		// 依赖跨上下文的隐式别名匹配顺序。
+		const rootPackageJsonId = resolve(rootDir, 'package.json').replaceAll('\\', '/')
+		const rootWorkspaceYamlId = resolve(rootDir, 'pnpm-workspace.yaml').replaceAll('\\', '/')
+		const idEquals = (a: string, b: string) => IS_WINDOWS
+			? a.toLowerCase() === b.toLowerCase()
+			: a === b
+		nuxt.hook('vite:extendConfig', (config) => {
+			// InlineConfig.plugins 是 readonly 声明，但 hook 语义允许就地追加；
+			// 插件形状用本地结构化类型，避免对 vite 类型的直接依赖
+			const plugins = (config as { plugins: Array<RedirectPlugin> }).plugins ??= []
+			plugins.unshift({
+				name: 'clarity:build-data-redirect',
+				resolveId: {
+					order: 'pre',
+					handler(source) {
+						if (idEquals(source, rootPackageJsonId)) {
+							return { id: packageJsonModulePath }
+						}
+						if (idEquals(source, rootWorkspaceYamlId)) {
+							return { id: pnpmWorkspaceModulePath }
+						}
+						return undefined
+					},
+				},
+			})
 		})
 
 		// ---- 消费项目 app/app.config.ts：读取 0.1.x `clarity` 键的 UI 覆盖 ----
@@ -389,8 +443,18 @@ async function importConfigFile(jiti: ReturnType<typeof createJiti>, configPath:
 	}
 }
 
-function parseClarityConfig(raw: unknown, configPath: string): ClarityConfig {
-	const result = clarityConfigSchema.safeParse(raw)
+function parseClarityConfig(raw: unknown, configPath: string, logger: ReturnType<typeof useLogger>): ClarityConfig {
+	// 0.1.x 兼容：已移除的 legacy 键（如 article.useRandomPermalink）警告后忽略，
+	// 不让 strictObject 直接 fatal。defineClarityConfig 已剥离过时此处为空操作，
+	// 覆盖裸对象导出（未经过 defineClarityConfig）的配置文件。
+	const { config: stripped, legacyKeys } = stripLegacyConfigKeys(raw)
+	for (const key of legacyKeys) {
+		logger.warn(
+			`${configPath} 的 ${key} 已废弃（${legacyConfigKeys[key]}），已忽略。`
+			+ '该 0.1.x 兼容将在 0.2.0 移除，请从配置中删除此键。',
+		)
+	}
+	const result = clarityConfigSchema.safeParse(stripped)
 	if (!result.success) {
 		const issues = result.error.issues
 			.map(issue => `  - ${issue.path.join('.') || '(根对象)'}: ${issue.message}`)

@@ -24,6 +24,10 @@
 | `feeds.ts` | 友链数据（`FeedGroup[]`） | TypeScript |
 | `runtimeConfig` | 环境与密钥；密钥仅允许 server-only 区 | Nuxt |
 
+## 严格性与 0.1.x 兼容
+
+schema 对未知键直接致命报错（拼写保护）。唯一窄口径例外：0.1.x 曾接受、后来移除的键——目前只有 `article.useRandomPermalink`——会输出废弃**警告**并被忽略，使旧 consumer 配置可以继续构建。该兼容层（注册表：`src/config/schema.ts` 的 `legacyConfigKeys`）将在 **0.2.0** 移除，升级前请从配置中删除该键。其余未知键仍然致命。
+
 ## 完整示例
 
 以下示例展示配置面的全部顶层分组。字段级约束见后续章节；迁移 blog-v3 时请优先对照[迁移指南](../getting-started/migration-from-blog-v3.zh-CN.md)的映射表。
