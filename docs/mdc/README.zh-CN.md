@@ -40,5 +40,5 @@
 
 1. 先读 [`skills/article-beautifier/references/_index.md`](../../skills/article-beautifier/references/_index.md)——机器可读的能力索引。
 2. 只挑选与文章语义匹配的 reference 文件。
-3. 打开 `docs/mdc/components/` 或 `docs/mdc/plugins/` 下对应的页面。
+3. 打开 `docs/mdc/components/` 或 `docs/mdc/plugins/` 下对应的页面。当 Skill 通过 `npx skills add` 独立安装时，改用 `skills/article-beautifier/references/` 下的捆绑副本——它们是这些页面的同步副本。
 4. 绝不猜测 prop、slot 或 variant；文档没有写的内容就不要使用。

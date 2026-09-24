@@ -40,5 +40,5 @@ Zero `upstream-only` component gaps means every article component of the audited
 
 1. Read [`skills/article-beautifier/references/_index.md`](../../skills/article-beautifier/references/_index.md) — the machine-readable capability index.
 2. Select only the reference files that match the article's semantics.
-3. Open the matching page under `docs/mdc/components/` or `docs/mdc/plugins/`.
+3. Open the matching page under `docs/mdc/components/` or `docs/mdc/plugins/`. When the Skill is installed standalone via `npx skills add`, use its bundled copies under `skills/article-beautifier/references/` instead — they are synced duplicates of these pages.
 4. Never guess a prop, slot, or variant; if it is not documented there, do not use it.
