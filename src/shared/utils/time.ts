@@ -1,9 +1,10 @@
 import { Temporal } from 'temporal-polyfill'
+import blogConfig from '~~/blog.config'
 
-export function isSameUnit(date1: string, date2: string, unit: 'year' | 'month' | 'week' | 'day' | 'hour' | 'minute' | 'second', timeZone = 'UTC') {
+export function isSameUnit(date1: string, date2: string, unit: Temporal.DateTimeUnit) {
 	try {
-		const p1 = toZonedTemporal(date1, timeZone).toPlainDateTime()
-		const p2 = toZonedTemporal(date2, timeZone).toPlainDateTime()
+		const p1 = toZonedTemporal(date1).toPlainDateTime()
+		const p2 = toZonedTemporal(date2).toPlainDateTime()
 		return p1.until(p2, {
 			largestUnit: unit,
 			smallestUnit: unit,
@@ -19,7 +20,6 @@ export function isSameUnit(date1: string, date2: string, unit: 'year' | 'month' 
 export function isTimeDiffSignificant(
 	date1?: string,
 	date2?: string,
-	timeZone = 'UTC',
 	/** 对于时间差的敏感程度，0~1 之间，1:不同则认为显著，>1:始终认为显著 */
 	threshold = 0.6,
 ) {
@@ -29,8 +29,8 @@ export function isTimeDiffSignificant(
 		return true
 	try {
 		const now = Temporal.Now.instant().epochMilliseconds
-		const diff1 = now - toZonedTemporal(date1, timeZone).epochMilliseconds
-		const diff2 = now - toZonedTemporal(date2, timeZone).epochMilliseconds
+		const diff1 = now - toZonedTemporal(date1).epochMilliseconds
+		const diff2 = now - toZonedTemporal(date2).epochMilliseconds
 		return diff1 / diff2 < threshold || diff2 / diff1 < threshold
 	}
 	catch {
@@ -63,25 +63,20 @@ export function timeElapse(date: string | Temporal.PlainDateTime, maxDepth = 2) 
 	return timeString || '刚刚'
 }
 
-export function toInstantString(date: string | Temporal.ZonedDateTime, timeZone = 'UTC') {
-	return (typeof date === 'string' ? toZonedTemporal(date, timeZone) : date).toInstant().toString()
+export function toInstantString(date: string | Temporal.ZonedDateTime) {
+	return (typeof date === 'string' ? toZonedTemporal(date) : date).toInstant().toString()
 }
 
-/**
- * 将日期字符串解析为带时区的 Temporal 对象
- * @param date 日期字符串
- * @param timeZone 无时区信息时使用的默认时区（来自站点配置）
- */
-export function toZonedTemporal(date: string, timeZone = 'UTC') {
+export function toZonedTemporal(date: string) {
 	try {
 		return Temporal.ZonedDateTime.from(date)
 	}
 	catch {
 		try {
-			return Temporal.Instant.from(date).toZonedDateTimeISO(timeZone)
+			return Temporal.Instant.from(date).toZonedDateTimeISO(blogConfig.timeZone)
 		}
 		catch {
-			return Temporal.PlainDateTime.from(date).toZonedDateTime(timeZone)
+			return Temporal.PlainDateTime.from(date).toZonedDateTime(blogConfig.timeZone)
 		}
 	}
 }
@@ -110,7 +105,7 @@ export const dateTimeFormat = {
 
 export type dateTimeFormatOptions = keyof typeof dateTimeFormat | Intl.DateTimeFormatOptions
 
-export function toZdtLocaleString(date: string | Temporal.ZonedDateTime, format: dateTimeFormatOptions = 'full', timeZone = 'UTC') {
-	return (typeof date === 'string' ? toZonedTemporal(date, timeZone) : date)
+export function toZdtLocaleString(date: string | Temporal.ZonedDateTime, format: dateTimeFormatOptions = 'full') {
+	return (typeof date === 'string' ? toZonedTemporal(date) : date)
 		.toLocaleString(undefined, typeof format === 'string' ? dateTimeFormat[format] : format)
 }

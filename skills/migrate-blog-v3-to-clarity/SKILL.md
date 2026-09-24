@@ -24,6 +24,9 @@ consumer, and do not rewrite consumer `app/**` paths during migration.
 
 ## Operating rules
 
+- blog-v3 is the source of truth for UI, layout, and interaction: do not redesign, reformat, or generalize upstream-derived code during migration; upstream files in the Theme stay byte-identical except for the mechanical import rewrites recorded in `tests/upstream-parity.manifest.json` (enforced by `pnpm test:upstream-parity`).
+
+
 1. Work serially in one Git working tree. Do not start concurrent dev, build, generate, or test processes.
 2. Start with `git status --short --branch` and record the branch and HEAD.
 3. If user modifications are already uncommitted, do not overwrite them. Produce an inventory and migration report instead.

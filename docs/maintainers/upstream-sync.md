@@ -116,6 +116,19 @@ Any changed path not matched above. Unknown changes block apply so the baseline 
 | `pnpm sync:apply` | Require a clean Theme tree, apply safe include operations transactionally, verify purity, then update the baseline |
 | `pnpm sync:verify` | Run Theme purity verification and require the manifest baseline to equal remote head |
 
+## Upstream Parity Gate
+
+`pnpm test:upstream-parity` compares every `include` file at the manifest commit through `pathMap` and enforces one recorded difference class per Theme file:
+
+- `identical` (default): byte-identical after EOL normalization.
+- `mechanical`: upstream content after explicit replacements (Layer-relative import paths) equals the Theme file.
+- `boundary`: SHA-256 hashed with a written reason (Layer infra, package boundary, config bridge, type-compat shim).
+- `bugfix`: hashed with an upstream-problem justification (for example the async `minify` misuse in `modules/anti-mirror`).
+
+Upstream content resolution order: `CLARITY_UPSTREAM_DIR` override → sibling `blog-v3-upstream` checkout (local convenience) → shallow depth-1 fetch of the manifest commit into a temp directory (CI / standalone-repo path; set `CLARITY_PARITY_FORCE_CLONE=1` to skip local candidates). Diagnostics go to stderr so `--list-json` keeps stdout as pure JSON.
+
+Undeclared Theme-side extras inside the sync surface fail the gate. Refresh hashes only after reviewing the diff: `node scripts/test-upstream-parity.mjs --update-hashes`. The gate output reports upstream/Theme baselines plus identical, mechanical, boundary, and bugfix counts.
+
 ## Apply and Conflict Semantics
 
 For an include change:
@@ -160,13 +173,8 @@ The Theme package carries no package-manager patches. The differential blog cons
 
 ## Current Boundary Gaps
 
-The manifest does not explicitly classify:
+The manifest now classifies `app/stores/**`, `app/types/**`, and `app/utils/**` as `include`, and the parity gate additionally records every Theme-only file inside the sync surface (documentation, CI, scripts, and tests outside `src/` remain Theme-owned by construction).
 
-- `app/stores/**`
-- `app/types/**`
-- `app/utils/**`
-- Theme-only documentation, CI, scripts, and tests
-
-Some of those files are unchanged upstream files, while `app/types/article.ts` and `app/types/feed.ts` have been adapted. Future upstream changes to unlisted paths will become `unknown` and block apply. This is intentional protection but makes the manifest an incomplete map of Theme-owned versus upstream-derived paths.
+Future upstream changes to still-unlisted paths become `unknown` and block apply; that protection remains intentional. Any new file inside the sync surface must be registered in `tests/upstream-parity.manifest.json` with a difference class and reason.
 
 No new synchronization mechanism is designed or implemented by this documentation task.

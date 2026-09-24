@@ -6,7 +6,7 @@ import { Temporal } from 'temporal-polyfill'
 
 const props = defineProps<FeedEntry>()
 
-const clarity = useClarityConfig()
+const appConfig = useAppConfig()
 const route = useRoute()
 const isInspect = computed(() => import.meta.dev && route.query.inspect !== undefined)
 
@@ -50,7 +50,7 @@ function getInspectStyle(src: string): CSSProperties {
 			</ClientOnly>
 
 			<NuxtImg v-else class="round-cobblestone" :src="avatar" :alt="author" loading="lazy" />
-			<Icon v-if="clarity.link.remindNoFeed && !feed" class="no-feed" name="tabler:bell-off" />
+			<Icon v-if="appConfig.link.remindNoFeed && !feed" class="no-feed" name="tabler:bell-off" />
 		</div>
 
 		<span class="author">{{ author }}</span>

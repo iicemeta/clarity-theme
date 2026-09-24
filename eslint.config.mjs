@@ -20,6 +20,18 @@ export default antfu({
 		'yaml/indent': ['error', 2],
 	},
 }, {
+	// 上游 f6ea97d 中这两个文件的 import 顺序本身不符合 perfectionist 排序（上游 lint 同样报错）。
+	// 为保持与上游 byte-identical，不在文件内追加 disable 注释，改在此处豁免；
+	// 上游修正后可通过 sync 同步移除。
+	// @keep-sorted
+	files: [
+		'src/components/util/Img.vue',
+		'src/components/widget/BlogTech.vue',
+	],
+	rules: {
+		'perfectionist/sort-imports': 'off',
+	},
+}, {
 	files: ['src/pages/**/*.vue', 'playground/app/**/*.vue'],
 	rules: {
 		'vue/valid-v-slot': 'off',

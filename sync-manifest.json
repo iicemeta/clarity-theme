@@ -17,22 +17,25 @@
     "shared/": "src/shared/"
   },
   "include": [
+    "app/app.vue",
     "app/assets/**",
     "app/components/**",
     "app/composables/**",
+    "app/error.vue",
     "app/layouts/**",
     "app/middleware/**",
     "app/pages/**",
     "app/plugins/**",
     "app/shiki.config.ts",
-    "app/app.vue",
-    "app/error.vue",
+    "app/stores/**",
+    "app/types/**",
+    "app/utils/**",
     "modules/**",
+    "public/assets/**",
+    "public/fonts/**",
     "remark-plugins/**",
     "server/**",
-    "shared/**",
-    "public/assets/**",
-    "public/fonts/**"
+    "shared/**"
   ],
   "exclude": [
     "app/feeds.ts",

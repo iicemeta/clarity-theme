@@ -44,8 +44,8 @@ const [scroll, toggleScroll] = useToggle(true)
 
 	> thead {
 		position: sticky;
-		top: 0;
 		z-index: 1; // ProseA 图标会透到表头上方
+		top: 0;
 	}
 
 	th {

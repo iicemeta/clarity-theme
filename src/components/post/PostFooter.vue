@@ -8,7 +8,7 @@ const [DefineTemplate, ReuseTemplate] = createReusableTemplate<{
 	title: string
 }>({ inheritAttrs: false })
 
-const clarity = useClarityConfig()
+const appConfig = useAppConfig()
 </script>
 
 <template>
@@ -38,10 +38,9 @@ const clarity = useClarityConfig()
 	<ReuseTemplate :title="meta?.slots?.copyright?.props?.title as string || '许可协议'">
 		<ContentRenderer v-if="meta?.slots?.copyright" :value="meta?.slots?.copyright" />
 		<p v-else>
-			本文采用 <ProseA v-if="clarity.site.copyright?.url" :href="clarity.site.copyright.url">
-				{{ clarity.site.copyright.name }}
+			本文采用 <ProseA :href="appConfig.copyright.url">
+				{{ appConfig.copyright.name }}
 			</ProseA>
-			<span v-else-if="clarity.site.copyright?.name">{{ clarity.site.copyright.name }}</span>
 			许可协议，转载请注明出处。
 		</p>
 	</ReuseTemplate>

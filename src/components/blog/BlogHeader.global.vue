@@ -4,14 +4,14 @@ withDefaults(defineProps<{
 }>(), {
 	tag: 'div',
 })
-const clarity = useClarityConfig()
+const appConfig = useAppConfig()
 </script>
 
 <template>
 <UtilLink class="blog-header">
-	<div v-if="clarity.header.emojiTail" class="emoji-tail">
+	<div v-if="appConfig.header.emojiTail" class="emoji-tail">
 		<span
-			v-for="(emoji, emojiIndex) in clarity.header.emojiTail"
+			v-for="(emoji, emojiIndex) in appConfig.header.emojiTail"
 			:key="emojiIndex"
 			class="split-char"
 			:style="getFixedDelay(emojiIndex * .6 - 3)"
@@ -20,16 +20,16 @@ const clarity = useClarityConfig()
 	</div>
 
 	<NuxtImg
-		:src="clarity.header.logo"
+		:src="appConfig.header.logo"
 		class="blog-logo round-cobblestone"
-		:class="{ circle: clarity.header.showTitle }"
-		:alt="clarity.site.title"
+		:class="{ circle: appConfig.header.showTitle }"
+		:alt="appConfig.title"
 	/>
 
-	<div v-if="clarity.header.showTitle" class="blog-text">
+	<div v-if="appConfig.header.showTitle" class="blog-text">
 		<component :is="tag" class="header-title">
 			<span
-				v-for="(char, charIndex) in clarity.site.title"
+				v-for="(char, charIndex) in appConfig.title"
 				:key="charIndex"
 				class="split-char"
 				:style="getFixedDelay((charIndex + 1) * .1)"
@@ -38,7 +38,7 @@ const clarity = useClarityConfig()
 		</component>
 
 		<div class="header-subtitle">
-			{{ clarity.header.subtitle }}
+			{{ appConfig.header.subtitle }}
 		</div>
 	</div>
 </UtilLink>

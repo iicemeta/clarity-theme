@@ -1,7 +1,9 @@
 {
   "name": "{{PROJECT_NAME}}",
   "type": "module",
+  "version": "0.0.0",
   "private": true,
+  "packageManager": "pnpm@12.4.1",
   "scripts": {
     "dev": "nuxt dev",
     "dev:host": "nuxt dev --host",

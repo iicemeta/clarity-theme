@@ -6,8 +6,8 @@ import { WheelGesturesPlugin } from 'embla-carousel-wheel-gestures'
 
 defineProps<{ list: ArticleProps[] }>()
 
-const clarity = useClarityConfig()
-const compConf = computed(() => clarity.component.slide)
+const appConfig = useAppConfig()
+const compConf = computed(() => appConfig.component.slide)
 
 // @keep-sorted
 const [carouselEl, carouselApi] = emblaCarouselVue({

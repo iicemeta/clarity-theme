@@ -1,0 +1,13 @@
+diff --git a/index.d.ts b/index.d.ts
+index 626e9c1..14db0b1 100644
+--- a/index.d.ts
++++ b/index.d.ts
+@@ -87,6 +87,8 @@ export namespace Temporal {
+   }
+
+   type DateUnit = 'year' | 'month' | 'week' | 'day'
++  /** [clarity-theme] alias used by upstream blog-v3 (upstream repo does not run typecheck) */
++  type DateTimeUnit = DateUnit | TimeUnit
+   type TimeUnit =
+     | 'hour'
+     | 'minute'

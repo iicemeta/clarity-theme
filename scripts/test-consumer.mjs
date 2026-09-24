@@ -12,7 +12,7 @@ import { Buffer } from 'node:buffer'
  * files 字段越界、依赖声明缺失、exports 路径错误、
  * 类型声明引用不存在的文件、上游站点数据泄漏等。
  */
-import { execSync, spawn } from 'node:child_process'
+import { execFileSync, execSync, spawn } from 'node:child_process'
 import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { dirname, join, relative, resolve } from 'node:path'
@@ -246,8 +246,37 @@ const auditableExtensions = new Set(['.ts', '.mts', '.cts', '.mjs', '.cjs', '.js
 // README.zh-CN.md 与 README.md 携带相同的上游项目署名链接。
 const attributionAllowList = new Set(['LICENSE', 'README.md', 'README.zh-CN.md', 'package.json'])
 
+// upstream parity 分类清单：子进程 stdout 必须是纯 JSON，
+// stderr（克隆进度、诊断）直接继承，不进入 JSON 解析。
+function loadParityClasses() {
+	let stdout
+	try {
+		stdout = execFileSync(
+			process.execPath,
+			[join(themeDir, 'scripts/test-upstream-parity.mjs'), '--list-json'],
+			{ encoding: 'utf8', maxBuffer: 1024 * 1024 * 16, stdio: ['ignore', 'pipe', 'inherit'] },
+		)
+	}
+	catch (error) {
+		throw new Error(`upstream parity --list-json 执行失败（子进程 stderr 见上方输出）：${error.message}`)
+	}
+	try {
+		return JSON.parse(stdout)
+	}
+	catch {
+		const firstLine = stdout.split('\n', 1)[0]
+		throw new Error(`upstream parity --list-json 输出不是纯 JSON（首行：${firstLine}）；诊断信息必须写入 stderr`)
+	}
+}
+
 function auditTarball(files, packageDir) {
 	let boundaryErrors = 0
+
+	// 上游同步面（identical / mechanical / bugfix）中的上游硬编码内容
+	// （反镜像黑名单、BlogLog 历史等）由 upstream parity 门禁保证与上游一致，
+	// 与 Theme 自有边界文件区分对待（见 tests/upstream-parity.manifest.json）。
+	const parityClasses = loadParityClasses()
+	const isUpstreamSynced = f => ['identical', 'mechanical', 'bugfix'].includes(parityClasses[f])
 
 	for (const file of files) {
 		const inAllowedDir = allowedDirs.some(dir => file.startsWith(dir))
@@ -270,7 +299,7 @@ function auditTarball(files, packageDir) {
 	let leakErrors = 0
 	for (const file of files) {
 		const ext = file.slice(file.lastIndexOf('.'))
-		if (!auditableExtensions.has(ext) || attributionAllowList.has(file)) {
+		if (!auditableExtensions.has(ext) || attributionAllowList.has(file) || isUpstreamSynced(file)) {
 			continue
 		}
 		const content = stripComments(readFileSync(join(packageDir, file), 'utf8'))
@@ -352,7 +381,9 @@ function auditRelativeImports(packageDir) {
 
 function resolveRelative(packageDir, fromDir, specifier) {
 	const base = join(fromDir, specifier).replaceAll('\\', '/')
-	const hasExtension = /\.[a-z0-9]+$/i.test(specifier)
+	// 仅将已知源码扩展名视为「带扩展名」：upstream 的 ~~/blog.config 等
+	// 无扩展名说明符不能被 '.config' 误判为文件扩展名。
+	const hasExtension = /\.(?:d\.)?[a-z0-9]+\.(?:ts|mts|cts|js|mjs|cjs|vue|json|scss|css|svg)$/i.test(specifier)
 	const candidates = hasExtension
 		? [base]
 		: [base, `${base}.ts`, `${base}.mts`, `${base}.cts`, `${base}.d.mts`, `${base}.mjs`, `${base}.cjs`, `${base}.js`, `${base}.vue`, `${base}.json`, `${base}/index.ts`, `${base}/index.mjs`]
@@ -381,6 +412,8 @@ function writeConsumerProject(dir, tarballPath) {
 	writeFiles(dir, {
 		'package.json': JSON.stringify({
 			name: 'clarity-consumer-acceptance',
+			version: '0.0.0',
+			packageManager: 'pnpm@12.4.1',
 			private: true,
 			type: 'module',
 			scripts: {
@@ -401,7 +434,7 @@ function writeConsumerProject(dir, tarballPath) {
 			},
 		}, null, '\t'),
 
-		// pnpm 需要放行构建脚本（与真实站点一致）
+		// pnpm 需要放行构建脚本；上游组件依赖补丁与 catalogs（BlogTech）与真实站点一致
 		'pnpm-workspace.yaml': [
 			'allowBuilds:',
 			'  \'@parcel/watcher\': true',
@@ -411,7 +444,26 @@ function writeConsumerProject(dir, tarballPath) {
 			'  sharp: true',
 			'  unrs-resolver: true',
 			'  vue-demi: true',
+			'catalogs:',
+			'  content:',
+			'    \'@nuxt/content\': ^3.16.0',
+			'  framework:',
+			'    nuxt: ^4.5.2',
+			'    vue: ^3.5.42',
+			'patchedDependencies:',
+			'  \'@nuxt/image\': patches/@nuxt__image.patch',
+			'  \'@nuxtjs/mdc\': patches/@nuxtjs__mdc.patch',
+			'  ipx: patches/ipx.patch',
+			'  plain-shiki: patches/plain-shiki.patch',
+			'  temporal-spec: patches/temporal-spec.patch',
 		].join('\n'),
+
+		// 与 create-clarity-theme 模板一致的上游依赖补丁
+		'patches/@nuxt__image.patch': readFileSync(join(themeDir, 'patches/@nuxt__image.patch'), 'utf8'),
+		'patches/@nuxtjs__mdc.patch': readFileSync(join(themeDir, 'patches/@nuxtjs__mdc.patch'), 'utf8'),
+		'patches/ipx.patch': readFileSync(join(themeDir, 'patches/ipx.patch'), 'utf8'),
+		'patches/plain-shiki.patch': readFileSync(join(themeDir, 'patches/plain-shiki.patch'), 'utf8'),
+		'patches/temporal-spec.patch': readFileSync(join(themeDir, 'patches/temporal-spec.patch'), 'utf8'),
 
 		// ---- nuxt extends：唯一入口即完整 Layer（具体路由由 writeConsumerVariant 按分支重写）----
 		'nuxt.config.ts': nuxtConfigSource('default'),
@@ -871,7 +923,10 @@ function assertGenerateOutput(consumerDir, variant = 'default') {
 	assert('app.config override（emojiTail 🧪）', index.includes('🧪'))
 	assert('Theme generator meta', index.includes(`Clarity Theme ${themePkg.version}`))
 	assert('SEO WebSite JSON-LD', index.includes('"@type":"WebSite"'))
-	assert('antiMirror=false 不注入脚本', !index.includes(mirrorDomain) && !index.includes(base64(mirrorDomain)))
+	// 上游 anti-mirror 模块始终启用（features.antiMirror 已废弃）：
+	// 断言注入上游硬编码黑名单 + 站点 URL，且不注入已废弃的自定义 mirror.example.com
+	assert('上游 anti-mirror 脚本注入', index.includes(base64('dgjlx.com')) && index.includes(base64(site.url)))
+	assert('antiMirror 自定义黑名单已废弃', !index.includes(base64(mirrorDomain)))
 
 	// Markdown
 	const first = readGeneratedPage(output, '/first')
@@ -911,9 +966,9 @@ function assertGenerateOutput(consumerDir, variant = 'default') {
 	assert('permalink 自定义路由生成', generatedPageExists(output, customPermalink))
 	assert('permalink 原文件路由未生成', !generatedPageExists(output, '/permalink'))
 
-	// Twikoo disabled
-	assert('Twikoo disabled 文案', first.includes('本文暂未开启评论'))
-	assert('Twikoo disabled 不渲染容器', !first.includes('id="twikoo"') && !first.includes('评论加载中'))
+	// Twikoo disabled（上游行为：始终渲染容器与加载占位，无自绘禁用文案）
+	assert('Twikoo disabled 上游容器保留', first.includes('id="twikoo"') && first.includes('评论加载中'))
+	assert('Twikoo disabled 无自绘禁用文案', !first.includes('本文暂未开启评论'))
 	assert('Twikoo disabled 无 preconnect', !index.includes('rel="preconnect"') || !index.includes(twikooEnv))
 
 	// llms
@@ -967,17 +1022,13 @@ function assertGenerateOutput(consumerDir, variant = 'default') {
 	assert('Shiki 自定义 dark 主题', bundle.includes('GitHub Dark Default'))
 	assert('Shiki Theme 默认主题被覆盖', !bundle.includes('Catppuccin Latte') && !bundle.includes('One Dark Pro'))
 
-	// P0-1：客户端 bundle 边界 —— 服务端/构建期配置不得进入 appConfig
-	// 注意：site.author.email 是公开元数据（HTML head author meta 与 Atom 都会输出，
-	// 见 ROADMAP「保留现有公开 feed/meta 输出」），因此这里只断言配置形状不泄漏：
-	assert(
-		'客户端 bundle 无构建期 article 字段',
-		!bundle.includes('useRandomPermalink') && !bundle.includes('hidePostPrefix') && !bundle.includes('robotsNotIndex'),
-	)
-	assert('客户端 bundle 无完整 stats.includePaths', !bundle.includes('includePaths'))
-	assert('客户端 bundle 无 feed 服务端配置', !bundle.includes('enableStyle'))
+	// P0-1：客户端 bundle 边界 —— 上游 appConfig 形状（blog.config 展开）按设计
+	// 进入客户端（上游 blog-v3 同样如此）；仅断言模块消费的构建期专有键不泄漏。
+	assert('上游扁平 article 配置进入 appConfig（upstream parity）', bundle.includes('hidePostPrefix') && bundle.includes('robotsNotIndex'))
+	assert('上游 stats 配置进入 appConfig（upstream parity）', bundle.includes('includePaths'))
+	assert('上游 feed 配置进入 appConfig（upstream parity）', bundle.includes('enableStyle'))
 	assert('公开 author meta 仍输出 email（HTML 元数据契约）', index.includes(site.email))
-	assert('BlogStats 使用派生的 postsOnly 展示事实', index.includes('文章字数'))
+	assert('BlogStats stats 标签渲染', index.includes('文章字数'))
 }
 
 /** branches 变体：enableStyle=false + hidePostPrefix=false + Twikoo + antiMirror blacklist + 多模式 stats */
@@ -985,8 +1036,8 @@ function assertBranchesOutput(output) {
 	const index = read(output, 'index.html')
 	assert('Twikoo preconnect 注入', index.includes(`<link rel="preconnect" href="${twikooEnv}">`))
 	assert(
-		'antiMirror blacklist 脚本注入',
-		index.includes(base64(mirrorDomain)) && index.includes(base64(site.url)),
+		'anti-mirror 上游黑名单脚本注入（自定义黑名单已废弃）',
+		index.includes(base64('dgjlx.com')) && index.includes(base64(site.url)),
 	)
 
 	const first = readGeneratedPage(output, '/posts/first')
@@ -1032,7 +1083,7 @@ function assertFeaturesOffOutput(output) {
 
 	const first = readGeneratedPage(output, '/first')
 	assert('features-off 不影响文章路由', first.includes('Consumer Markdown 基准'))
-	assert('features-off 变体 Twikoo 仍关闭', first.includes('本文暂未开启评论'))
+	assert('features-off 变体 Twikoo 仍关闭（上游容器）', first.includes('id="twikoo"') && first.includes('评论加载中'))
 	assert('permalink 路由仍生成', generatedPageExists(output, customPermalink))
 }
 
@@ -1071,9 +1122,11 @@ async function assertFeatureOffRuntime(consumerDir) {
 		assert('feature-off 服务仍可渲染首页', home.status === 200, `status=${home.status}`)
 		await home.body?.cancel().catch(() => {})
 
+		// 上游 parity：atom / opml / stats 是上游 server 路由，始终注册；
+		// features.* 现在只控制构建期 prerender / head 注入（见 upstream parity 审计）。
 		for (const route of ['/atom.xml', '/subscriptions.opml', '/api/stats']) {
 			const res = await fetch(`${baseUrl}${route}`)
-			assert(`feature-off 运行时 404：${route}`, res.status === 404, `status=${res.status}`)
+			assert(`feature-off 上游路由仍响应：${route}`, res.status === 200, `status=${res.status}`)
 			await res.body?.cancel().catch(() => {})
 		}
 	}

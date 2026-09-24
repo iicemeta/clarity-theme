@@ -68,9 +68,9 @@
 | stats=false | consumer 分支配置 features.stats=false | routeRules 关闭预渲染（产物无 api/stats），dev/SSR 运行时返回 404 | `pnpm test:consumer` | ✅ Automated<br>`consumer:generate-features-off` |
 | atom=false | consumer 分支配置 features.atom=false | routeRules 关闭预渲染（产物无 atom.xml），head 无 alternate 声明，dev/SSR 运行时返回 404 | `pnpm test:consumer` | ✅ Automated<br>`consumer:generate-features-off` |
 | opml=false | consumer 分支配置 features.opml=false | routeRules 关闭预渲染，generate 产物中无 subscriptions.opml，dev/SSR 运行时返回 404 | `pnpm test:consumer` | ✅ Automated<br>`consumer:generate-features-off` |
-| antiMirror=false | 默认配置（playground 与 consumer 默认变体） | 不注入任何反镜像脚本与黑名单数据 | `pnpm test:compatibility && pnpm test:consumer` | ✅ Automated<br>`compat:F-site-shell`<br>`consumer:generate-default` |
-| antiMirror=true + blacklist | features.antiMirror={ blacklist: ['mirror.example.com'] } | 页面内联反镜像脚本，黑名单与站点 URL 以 base64 注入 | `pnpm test:consumer` | ✅ Automated<br>`consumer:generate-branches` |
-| antiMirror navigation (runtime) | dev 服务经镜像主机（127.0.0.1，黑名单命中）访问，site.url 指向 localhost 同端口 | 注入脚本在真实浏览器中把页面导航回规范主机，canonical 链接同步指向规范主机 | `pnpm test:compatibility` | ✅ Automated<br>`compat:anti-mirror-navigation` |
+| antiMirror upstream (always-on) | 默认配置（playground 与 consumer 默认变体） | 上游 anti-mirror 模块始终注入硬编码黑名单与站点 URL（base64） | `pnpm test:compatibility && pnpm test:consumer` | ✅ Automated<br>`compat:F-site-shell`<br>`consumer:generate-default` |
+| antiMirror deprecated custom blacklist | features.antiMirror={ blacklist: ['mirror.example.com'] }（已废弃配置） | 自定义黑名单不再注入；上游硬编码黑名单与站点 URL 仍然注入 | `pnpm test:consumer` | ✅ Automated<br>`consumer:generate-branches` |
+| antiMirror injection contract | dev 服务（CLARITY_COMPAT_SITE_URL 注入站点 URL） | dev SSR 输出包含上游黑名单与站点 URL 的 btoa 编码，且不含废弃的自定义黑名单 | `pnpm test:compatibility` | ✅ Automated<br>`compat:anti-mirror-injection` |
 | stats.includePaths multi-pattern | consumer 分支配置 stats.includePaths = ['posts/%', 'notes/%'] | 统计取两类内容的并集（posts 与 notes 都计入），非匹配页面仍排除 | `pnpm test:consumer` | ✅ Automated<br>`consumer:generate-branches` |
 | client config boundary | site.author.email / feed.* / 完整 stats.includePaths / 构建期 article 字段 | 以上字段不进入客户端 bundle；Atom 等服务端输出仍使用完整配置（email 保留在服务端） | `pnpm test:consumer` | ✅ Automated<br>`consumer:generate-default` |
 | Twikoo enabled | integrations.twikoo={ envId: 'https://twikoo.consumer.example' } | head 输出 preconnect，文章页渲染 #twikoo 容器 | `pnpm test:consumer` | ✅ Automated<br>`consumer:generate-branches` |

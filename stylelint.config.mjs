@@ -33,7 +33,18 @@ export default zin({
 		'@stylistic/indentation': 'tab',
 		'media-feature-range-notation': 'prefix',
 	},
+	// 上游 f6ea97d 中这两个文件的属性顺序不符合 order/properties-order（上游自身的
+	// stylelint 因未对 .vue 启用 postcss-html 语法而未报错）。为保持 byte-identical，
+	// 不改写文件，改在此处豁免；上游修正后可通过 sync 移除。
+	// @keep-sorted
 	overrides: [
+		{
+			files: ['src/components/content/Mermaid.vue', 'src/components/content/ProseTable.vue'],
+			rules: {
+				'order/properties-order': null,
+			},
+		},
+
 		{
 			files: ['**/*.vue'],
 			customSyntax: 'postcss-html',

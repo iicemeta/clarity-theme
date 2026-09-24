@@ -21,6 +21,13 @@ Clarity replaces the traditional sync-fork workflow. Instead of merging thousand
 - **Integrations stay yours**: Twikoo, head scripts, and anti-mirror are driven by consumer configuration.
 - **Override without forking**: UI app-config overrides, same-path component overrides, custom Shiki themes, and consumer CSS.
 
+## Core principles
+
+- **Clarity is a Layer extraction of blog-v3**, not a reimplemented theme. Upstream UI, layout, and interaction are the source of truth by default and stay byte-identical except for explicit mechanical path rewrites recorded in `tests/upstream-parity.manifest.json`.
+- **Upstream hard-coded behavior is preserved first.** Generalization, configuration coverage, and cleanup are future work, not this parity line.
+- **Personal site data stays with the consumer**, following the boundary that upstream `init-project` resets.
+- **Drift is a bug.** `pnpm test:upstream-parity` fails on any undeclared difference inside the sync surface.
+
 ## Choose your path
 
 | Starting point | Documentation |

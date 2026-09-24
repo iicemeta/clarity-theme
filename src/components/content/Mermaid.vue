@@ -126,8 +126,8 @@ const diagram = computedAsync<{ svg?: string, width?: number, error?: string }>(
 	}
 
 	pre {
-		overflow-wrap: anywhere;
 		white-space: pre-wrap;
+		overflow-wrap: anywhere;
 	}
 }
 </style>

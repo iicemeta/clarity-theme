@@ -4,13 +4,13 @@ import type { ArticleProps } from '../../types/article'
 defineOptions({ inheritAttrs: false })
 const props = defineProps<ArticleProps>()
 
-const clarity = useClarityConfig()
+const appConfig = useAppConfig()
 
 const coverFilter = computed(() => props.meta?.coverFilter || (props.meta?.coverDim && 'brightness(0.75)') || undefined)
 
-const shareText = `【${clarity.site.title}】${props.title}\n\n${
+const shareText = `【${appConfig.title}】${props.title}\n\n${
 	props.description ? `${props.description}\n\n` : ''}${
-	new URL(props.path!, clarity.site.url).href}`
+	new URL(props.path!, appConfig.url).href}`
 
 const { copy, copied } = useCopy(shareText)
 </script>
@@ -38,7 +38,7 @@ const { copy, copied } = useCopy(shareText)
 			/>
 
 			<UtilDate
-				v-if="updated && isTimeDiffSignificant(date, updated, undefined, 1)"
+				v-if="updated && isTimeDiffSignificant(date, updated, 1)"
 				v-tip
 				:tip-transform="d => `修改于${d}`"
 				:date="updated"

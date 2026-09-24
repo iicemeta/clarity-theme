@@ -150,6 +150,9 @@ jobs:
       - name: Verify（提纯静态审计：作者信息泄漏 / 站点文件 / 跨项目路径引用）
         run: pnpm verify
 
+      - name: Upstream parity gate（同步面 byte 对比；无本地 upstream 时 depth-1 fetch manifest commit）
+        run: pnpm test:upstream-parity
+
       - name: Sync tool regression（manifest / apply / rollback）
         run: pnpm test:sync
 

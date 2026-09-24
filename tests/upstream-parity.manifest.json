@@ -1,0 +1,233 @@
+{
+  "records": {
+    "src/app.config.ts": {
+      "class": "boundary",
+      "upstream": "app/app.config.ts",
+      "reason": "上游 app.config.ts 属于消费项目文件（init-project 会重置）；Layer 版仅作占位，UI 默认值集中在 src/config/ui.ts + clarity-config 模块注入",
+      "hash": "0f240fc246a152d6981f2859a1944fac81cfbe1355d3ad16ff10fc3d3cb08139"
+    },
+    "src/components/content/FeedCard.vue": {
+      "class": "mechanical",
+      "replacements": [
+        [
+          "from '~/types/feed'",
+          "from '../../types/feed'"
+        ]
+      ],
+      "reason": "Layer 内部类型引用不能使用消费项目的 ~ 别名，改为相对路径"
+    },
+    "src/components/content/FeedGroup.vue": {
+      "class": "mechanical",
+      "replacements": [
+        [
+          "from '~/types/feed'",
+          "from '../../types/feed'"
+        ]
+      ],
+      "reason": "Layer 内部类型引用不能使用消费项目的 ~ 别名，改为相对路径"
+    },
+    "src/components/partial/IconNavList.vue": {
+      "class": "mechanical",
+      "replacements": [
+        [
+          "from '~/types/nav'",
+          "from '../../types/nav'"
+        ]
+      ],
+      "reason": "Layer 内部类型引用不能使用消费项目的 ~ 别名，改为相对路径"
+    },
+    "src/components/post/Archive.vue": {
+      "class": "mechanical",
+      "replacements": [
+        [
+          "from '~/types/article'",
+          "from '../../types/article'"
+        ]
+      ],
+      "reason": "Layer 内部类型引用不能使用消费项目的 ~ 别名，改为相对路径"
+    },
+    "src/components/post/Article.vue": {
+      "class": "mechanical",
+      "replacements": [
+        [
+          "from '~/types/article'",
+          "from '../../types/article'"
+        ]
+      ],
+      "reason": "Layer 内部类型引用不能使用消费项目的 ~ 别名，改为相对路径"
+    },
+    "src/components/post/OrderToggle.vue": {
+      "class": "mechanical",
+      "replacements": [
+        [
+          "from '~/types/article'",
+          "from '../../types/article'"
+        ]
+      ],
+      "reason": "Layer 内部类型引用不能使用消费项目的 ~ 别名，改为相对路径"
+    },
+    "src/components/post/PostFooter.vue": {
+      "class": "mechanical",
+      "replacements": [
+        [
+          "from '~/types/article'",
+          "from '../../types/article'"
+        ]
+      ],
+      "reason": "Layer 内部类型引用不能使用消费项目的 ~ 别名，改为相对路径"
+    },
+    "src/components/post/PostHeader.vue": {
+      "class": "mechanical",
+      "replacements": [
+        [
+          "from '~/types/article'",
+          "from '../../types/article'"
+        ]
+      ],
+      "reason": "Layer 内部类型引用不能使用消费项目的 ~ 别名，改为相对路径"
+    },
+    "src/components/post/PostSurround.vue": {
+      "class": "mechanical",
+      "replacements": [
+        [
+          "from '~/types/article'",
+          "from '../../types/article'"
+        ]
+      ],
+      "reason": "Layer 内部类型引用不能使用消费项目的 ~ 别名，改为相对路径"
+    },
+    "src/composables/useArticle.ts": {
+      "class": "mechanical",
+      "replacements": [
+        [
+          "from '~/types/article'",
+          "from '../types/article'"
+        ],
+        [
+          "from '~~/remark-plugins/rehype-meta-slots'",
+          "from '../remark-plugins/rehype-meta-slots'"
+        ]
+      ],
+      "reason": "Layer 内部类型引用不能使用消费项目的 ~ / ~~ 别名，改为相对路径"
+    },
+    "src/pages/archive.vue": {
+      "class": "mechanical",
+      "replacements": [
+        [
+          "from '~/types/article'",
+          "from '../types/article'"
+        ]
+      ],
+      "reason": "Layer 内部类型引用不能使用消费项目的 ~ 别名，改为相对路径"
+    },
+    "src/types/article.ts": {
+      "class": "mechanical",
+      "replacements": [
+        [
+          "from '~~/content.config'",
+          "from '../config/content'"
+        ],
+        [
+          "from '~~/remark-plugins/rehype-meta-slots'",
+          "from '../remark-plugins/rehype-meta-slots'"
+        ]
+      ],
+      "reason": "消费项目 content.config.ts 由 clarity-theme/content 生成，无法直接导出 ArticleSchema 类型；改为引用 Theme 内部 schema"
+    },
+    "src/server/routes/subscriptions.opml.get.ts": {
+      "class": "mechanical",
+      "replacements": [
+        [
+          "from '~/types/feed'",
+          "from '../../types/feed'"
+        ]
+      ],
+      "reason": "Layer 内部类型引用不能使用消费项目的 ~ 别名，改为相对路径"
+    },
+    "src/modules/clarity-config/index.ts": {
+      "class": "boundary",
+      "reason": "Theme 基础设施：读取 clarity.config.ts 并注入上游形状的扁平 AppConfig / ~~/blog.config 别名 / SEO 与路由规则",
+      "hash": "8dd9b64ab5d26d9bea2e6111c188ea66d87984bb64cf5af0055f899a79df2e5b"
+    },
+    "src/modules/clarity-source-layout/index.ts": {
+      "class": "boundary",
+      "reason": "Theme 基础设施：将 Layer 的 src/ 目录布局注册到 Nuxt（避免 srcDir 泄漏到消费项目）",
+      "hash": "f9d8daaa7e36c8a5e37ad2773ceb24c43b731cb4b74bf0df2d4827875771280e"
+    },
+    "src/shared/utils/clarity.ts": {
+      "class": "boundary",
+      "reason": "0.1.x 公开 API 兼容（useClarityConfig / useClaritySite 等读取 clarity 键）；上游组件已恢复直接使用 useAppConfig()",
+      "hash": "32a19bf9e61def511e7c2d1749f94492479f6fb1f36e8cf6d525cfd760c860a7"
+    },
+    "src/server/utils/clarity.ts": {
+      "class": "boundary",
+      "reason": "0.1.x 公开 API 兼容（useClarityServerConfig）；上游 server 路由已恢复直接读取 ~~/blog.config",
+      "hash": "1081d9f80aa6ed1afba0d8a21711267800fde148a606d94fb3fc11bfaea875bf"
+    },
+    "src/remark-plugins/rehype-meta-slots.mjs": {
+      "class": "boundary",
+      "reason": "npm 包边界：@nuxt/content 以 Node 原生方式加载 node_modules 内插件，需要 .mjs 构建产物（与同名 .ts 源文件对应）",
+      "hash": "e31f15f448399caeb739d360ee14c44c5e65d19e8f45497130ad09a9d52d9536"
+    },
+    "src/remark-plugins/rehype-meta-slots.d.mts": {
+      "class": "boundary",
+      "reason": "npm 包边界：.mjs 构建产物的类型声明",
+      "hash": "564451011aa6c0ce5f9ca63f0604922c76d583a8cead81701e19b37583a7c987"
+    },
+    "src/remark-plugins/remark-code-component.mjs": {
+      "class": "boundary",
+      "reason": "npm 包边界：@nuxt/content 以 Node 原生方式加载 node_modules 内插件，需要 .mjs 构建产物（与同名 .ts 源文件对应）",
+      "hash": "fb72e54e0cf98f18208c521f1db8f1095eeb4615fa52c5df48e8d311e14d7d34"
+    },
+    "src/remark-plugins/remark-code-component.d.mts": {
+      "class": "boundary",
+      "reason": "npm 包边界：.mjs 构建产物的类型声明",
+      "hash": "ebb5924debc4ee8808c85c88fdc5e9c74a021e7861b75e75f36d4dfb84b4694e"
+    },
+    "src/components/post/Slide.vue": {
+      "class": "mechanical",
+      "replacements": [
+        [
+          "from '~/types/article'",
+          "from '../../types/article'"
+        ]
+      ],
+      "reason": "Layer 内部类型引用不能使用消费项目的 ~ 别名，改为相对路径"
+    },
+    "src/server/api/stats.get.ts": {
+      "class": "mechanical",
+      "replacements": [
+        [
+          "import blogConfig from '~~/blog.config'",
+          "import { queryCollection } from '@nuxt/content/server'\nimport blogConfig from '~~/blog.config'"
+        ]
+      ],
+      "reason": "App 类型工程（nitro-routes.d.ts 依赖链）中全局 queryCollection 解析为客户端 1 参签名；显式导入服务端版本（与 Nitro 自动导入同一函数，运行时行为不变）"
+    },
+    "src/server/routes/atom.xml.get.ts": {
+      "class": "mechanical",
+      "replacements": [
+        [
+          "import type { ContentCollectionItem } from '@nuxt/content'",
+          "import type { ContentCollectionItem } from '@nuxt/content'\nimport { queryCollection } from '@nuxt/content/server'"
+        ]
+      ],
+      "reason": "App 类型工程（nitro-routes.d.ts 依赖链）中全局 queryCollection 解析为客户端 1 参签名；显式导入服务端版本（与 Nitro 自动导入同一函数，运行时行为不变）"
+    },
+    "src/modules/anti-mirror/index.ts": {
+      "class": "bugfix",
+      "hash": "f39d7ce32e44fbb1ac6e36563ace3315b7de21630b50afbb3301f9071193125a",
+      "reason": "上游 bug：oxc-minify 0.148 的 minify() 返回 Promise，上游同步读取 .code 得到 undefined，反镜像脚本实际不会注入。改用同包 minifySync()（唯一改动），可向上游提交 PR。"
+    },
+    "src/types/upstream-compat.d.ts": {
+      "class": "boundary",
+      "hash": "79e71ae9171cb8a9e99531194b56eeac9a2fcc43922b0c2d3eef504eae105c47",
+      "reason": "上游类型兼容垫片：atom.xml 读取 post.author（上游 schema 未声明的可选 frontmatter 字段），通过模块增强补充类型，保持上游文件 byte-identical"
+    },
+    "src/types/yaml-modules.d.ts": {
+      "class": "boundary",
+      "hash": "2df8e709242388e24c50697ee7f1ba0c603515317d8bc71a74d0bcfb78ba8c86",
+      "reason": "unplugin-yaml 的通配符模块声明（Theme 直接注册 vite 插件，避免其 nuxt 模块向消费项目注入无法解析的 compilerOptions.types 条目）"
+    }
+  }
+}

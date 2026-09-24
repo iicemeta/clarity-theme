@@ -1,12 +1,12 @@
 <script setup lang="ts">
-const clarity = useClarityConfig()
+const appConfig = useAppConfig()
 const colorMode = useColorMode()
 </script>
 
 <template>
 <div class="theme-toggle">
 	<button
-		v-for="(themeData, themeName) in clarity.themes"
+		v-for="(themeData, themeName) in appConfig.themes"
 		:key="themeName"
 		v-tip="themeData.tip"
 		:aria-label="themeData.tip"
