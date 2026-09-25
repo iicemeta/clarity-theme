@@ -422,7 +422,10 @@ async function buildUpstreamConsumer(fresh) {
 	writeFileSync(join(dir, 'app/feeds.ts'), renderUpstreamFeeds())
 	copyFixtureOverlay(dir)
 
-	run('pnpm install --no-frozen-lockfile', dir)
+	// 上游 pnpm-workspace 设 engineStrict: true，全新解析可能抓到 engines
+	// 高于当前 Node 的传递 devDep（如 lint 工具链）；与构建运行无关，这里
+	// 仅对 parity 安装关闭 engine-strict（不改变上游仓库本身）。
+	run('pnpm install --no-frozen-lockfile --config.engine-strict=false', dir)
 	run('pnpm generate', dir)
 	writeFileSync(buildStamp, `${computeStamp()}\n`)
 	console.log('    upstream consumer 就绪')
@@ -489,7 +492,8 @@ async function buildClarityConsumer(fresh) {
 	writeFileSync(join(dir, 'feeds.ts'), renderClarityFeeds())
 	copyFixtureOverlay(dir)
 
-	run('pnpm install --no-frozen-lockfile', dir)
+	// 同 upstream 侧：consumer 全新解析的 devDep engines 不受 Node 版本治理约束
+	run('pnpm install --no-frozen-lockfile --config.engine-strict=false', dir)
 	run('pnpm generate', dir)
 	writeFileSync(buildStamp, `${computeStamp()}\n`)
 	console.log('    clarity consumer 就绪')
