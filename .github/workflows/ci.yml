@@ -222,6 +222,9 @@ jobs:
       - name: Real consumer test（pack → 独立安装 → exports/type → 3 组配置分支 generate + 产物断言）
         run: pnpm test:consumer
 
+      - name: 'File-install static generation（file: 目录安装 → generate → 页面级断言；repair phase 2 回归）'
+        run: pnpm test:file-generate
+
       - name: Compatibility regression（契约 → SSR + 客户端渲染 + hydration）
         run: pnpm test:compatibility
 
@@ -230,3 +233,32 @@ jobs:
 
       - name: Packed create-CLI tarball E2E（独立安装 bin → consumer 构建）
         run: pnpm test:create:tarball
+
+  # ============================================================
+  # Layer 3b · file: install static generation（repair phase 2 回归）
+  # 双 OS 矩阵：Windows 与 Linux 的真实 file: 目录安装必须同样产出页面级 HTML。
+  # ============================================================
+  file-generate:
+    name: 'Layer 3b · file: install generate (${{ matrix.os }})'
+    needs: [resolve, playground]
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ needs.resolve.outputs.node-primary }}
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: 'File-install static generation（file: → generate → 页面断言 + 包边界）'
+        run: pnpm test:file-generate

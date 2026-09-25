@@ -31,6 +31,8 @@ export default defineNuxtConfig({
 
 请把你自己的 `routeRules`、重定向、`runtimeConfig`、自定义模块、插件与部署设置留在这个文件里。Layer 已经提供其模块、Markdown 管线、样式、颜色模式、SEO 默认值与功能路由规则；重复配置会产生不稳定的合并。
 
+同时保留 Nuxt 标准项目文件，尤其是引用 `.nuxt/tsconfig.*` 生成工程的根 `tsconfig.json`（`create-clarity-theme` 脚手架自带）。Vite/oxc 通过根 tsconfig 的 paths 解析模块别名（如 Theme 组件内的 `#modals`）；缺失它的手工 consumer 会在生产构建的 Vue SFC 类型解析处失败。
+
 ## 3. 定义站点配置
 
 ```ts

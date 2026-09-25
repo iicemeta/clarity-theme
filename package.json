@@ -63,6 +63,7 @@
     "test:contract": "node scripts/test-compatibility.mjs --contract-only",
     "test:release": "pnpm verify && pnpm test:consumer && pnpm test:compatibility",
     "test:consumer": "node scripts/test-consumer.mjs",
+    "test:file-generate": "node scripts/test-file-generate.mjs",
     "test:compatibility": "node scripts/test-compatibility.mjs",
     "test:create": "pnpm --dir create-clarity-theme test",
     "test:create:e2e": "pnpm --dir create-clarity-theme test:e2e",

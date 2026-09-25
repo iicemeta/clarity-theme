@@ -147,7 +147,7 @@
     "src/modules/clarity-config/index.ts": {
       "class": "boundary",
       "reason": "Theme 基础设施：读取 clarity.config.ts 并注入上游形状的扁平 AppConfig / ~~/blog.config 别名 / SEO 与路由规则",
-      "hash": "d4e7750f82747702229a597d7630f55527e6820c698ae2ea72ee76b796faad40"
+      "hash": "d9cbb96f29333f3ee61e41d6f9317f5bdeebb611c5c78ba7b5ef662ea1ae66ef"
     },
     "src/modules/clarity-source-layout/index.ts": {
       "class": "boundary",
@@ -216,7 +216,7 @@
     },
     "src/modules/anti-mirror/index.ts": {
       "class": "bugfix",
-      "hash": "f39d7ce32e44fbb1ac6e36563ace3315b7de21630b50afbb3301f9071193125a",
+      "hash": "622a370a3df32acb6a6c2a8b565176023670e9335d2a191ca262a155ab630c70",
       "reason": "上游 bug：oxc-minify 0.148 的 minify() 返回 Promise，上游同步读取 .code 得到 undefined，反镜像脚本实际不会注入。改用同包 minifySync()（唯一改动），可向上游提交 PR。"
     },
     "src/types/upstream-compat.d.ts": {

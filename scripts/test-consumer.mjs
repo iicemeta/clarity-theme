@@ -375,14 +375,10 @@ function auditRelativeImports(packageDir) {
 			for (const match of content.matchAll(pattern)) {
 				const specifier = match[1]
 				const resolvedFile = resolveRelative(packageDir, dirname(file), specifier)
-				// src/generated/** 是 clarity-config 在 consumer 构建期写入的数据模块
-				// （package.json files 显式排除，防止打包开发机的站点数据），
-				// tarball 中按设计缺席，不视为悬空引用。
-				const isBuildTimeGenerated = specifier.includes('/generated/')
-				if (!resolvedFile && !isBuildTimeGenerated) {
+				if (!resolvedFile) {
 					broken.push(`${file} → ${specifier}`)
 				}
-				else if (resolvedFile && !visited.has(resolvedFile) && auditableSourceExtensions.has(extensionOf(resolvedFile))) {
+				else if (!visited.has(resolvedFile) && auditableSourceExtensions.has(extensionOf(resolvedFile))) {
 					queue.push(resolvedFile)
 				}
 			}

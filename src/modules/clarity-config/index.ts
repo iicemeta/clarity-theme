@@ -154,41 +154,51 @@ export default defineNuxtModule<ModuleOptions>({
 			)
 		}
 		const pnpmWorkspace = loadPnpmWorkspace(rootDir)
-		// 写入 Theme 包内的固定路径：prepare / build / prerenderer 等多个
-		// Nuxt 实例可能使用不同 buildDir，包内路径在所有上下文中一致可用。
-		const buildInfoDir = resolve(themeSrcDir, 'generated')
-		mkdirSync(buildInfoDir, { recursive: true })
+		// 写入消费项目 buildDir（<buildDir>/clarity/）：生成物是 consumer 私有
+		// 构建数据，写入安装包内部（src/generated）会穿透 pnpm 硬链接污染
+		// store——并发构建共享同一 store 条目时互相覆盖、读取方拿到半写状态
+		// （repair phase 2 定位的静默故障源）。写入必须幂等重入：模块 setup 时
+		// 写一次（供 prepare / jiti 加载的 Layer 模块读取），并在 build:before
+		// 再写一次——Nuxt build 会在模块运行后清理 buildDir，把 setup 阶段的
+		// 生成物删掉，vite 打包前必须重写。
+		const buildInfoDir = resolve(nuxt.options.buildDir, 'clarity')
 		const packageJsonModulePath = join(buildInfoDir, 'package-json.mjs').replaceAll('\\', '/')
-		writeFileSync(packageJsonModulePath, [
-			`const packageJson = ${JSON.stringify({
-				name: String(consumerPkg.name ?? ''),
-				version: String(consumerPkg.version ?? ''),
-				packageManager: String(consumerPkg.packageManager ?? ''),
-			})}`,
-			'export default packageJson',
-			`export const packageManager = ${JSON.stringify(String(consumerPkg.packageManager ?? ''))}`,
-			`export const version = ${JSON.stringify(String(consumerPkg.version ?? ''))}`,
-			'',
-		].join('\n'))
 		const pnpmWorkspaceModulePath = join(buildInfoDir, 'pnpm-workspace.mjs').replaceAll('\\', '/')
-		writeFileSync(pnpmWorkspaceModulePath, `export default ${JSON.stringify(pnpmWorkspace)}\n`)
+		const blogConfigData = toUpstreamBlogConfig(config)
+		const blogConfigModulePath = join(buildInfoDir, 'blog.config.mjs').replaceAll('\\', '/')
+		const writeBuildInfoModules = () => {
+			mkdirSync(buildInfoDir, { recursive: true })
+			writeFileSync(packageJsonModulePath, [
+				`const packageJson = ${JSON.stringify({
+					name: String(consumerPkg.name ?? ''),
+					version: String(consumerPkg.version ?? ''),
+					packageManager: String(consumerPkg.packageManager ?? ''),
+				})}`,
+				'export default packageJson',
+				`export const packageManager = ${JSON.stringify(String(consumerPkg.packageManager ?? ''))}`,
+				`export const version = ${JSON.stringify(String(consumerPkg.version ?? ''))}`,
+				'',
+			].join('\n'))
+			writeFileSync(pnpmWorkspaceModulePath, `export default ${JSON.stringify(pnpmWorkspace)}\n`)
+			writeFileSync(blogConfigModulePath, [
+				`const blogConfig = ${JSON.stringify(blogConfigData)}`,
+				'export default blogConfig',
+				`export const myFeed = ${JSON.stringify(toMyFeedEntry(blogConfigData))}`,
+				'',
+			].join('\n'))
+		}
+		writeBuildInfoModules()
+		nuxt.hook('build:before', writeBuildInfoModules)
 		nuxt.options.alias = {
 			'~~/package.json': packageJsonModulePath,
 			'~~/pnpm-workspace.yaml': pnpmWorkspaceModulePath,
 			...nuxt.options.alias,
 		}
 
-		// 上游形状的 blog.config 数据模块：anti-mirror 等 Layer 模块由 Nuxt 以
-		// jiti 加载，无法解析 #clarity/* 别名（src/blog.config.ts 运行时适配层
-		// 仅适用于 App / Nitro 构建上下文），因此这里把映射结果内联成真实模块。
-		const blogConfigData = toUpstreamBlogConfig(config)
-		const blogConfigModulePath = join(buildInfoDir, 'blog.config.mjs').replaceAll('\\', '/')
-		writeFileSync(blogConfigModulePath, [
-			`const blogConfig = ${JSON.stringify(blogConfigData)}`,
-			'export default blogConfig',
-			`export const myFeed = ${JSON.stringify(toMyFeedEntry(blogConfigData))}`,
-			'',
-		].join('\n'))
+		// 上游形状的 blog.config 数据模块（<buildDir>/clarity/blog.config.mjs）：
+		// anti-mirror 等 jiti 加载的 Layer 模块无法解析 #clarity/* 别名
+		// （src/blog.config.ts 运行时适配层仅适用于 App / Nitro 构建上下文），
+		// 因此把映射结果内联成真实模块，供其以 file URL 动态导入。
 
 		// 两个说明符的 TS 侧声明（app / server 类型工程的路径重定向目标）
 		const yamlDecl = addTypeTemplate({
