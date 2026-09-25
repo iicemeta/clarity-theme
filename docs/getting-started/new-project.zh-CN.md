@@ -85,9 +85,9 @@ Clarity 从 blog-v3 提取，Layer 中有意保留了上游作者的少量公开
 
 ## 更新 Theme
 
-生成的 `package.json` 声明的是 caret range（例如 `^0.1.3`）。按 npm
-node-semver 规则，它表示 `>=0.1.3 <0.2.0`：可以接受后续 `0.1.x` patch 版本，
-不能接受 `0.2.0`，且 caret range 并不是锁死版本。lockfile 记录的是实际解析
+生成的 `package.json` 声明的是 caret range（例如 `^0.2.0`）。按 npm
+node-semver 规则，它表示 `>=0.2.0 <0.3.0`：可以接受后续 `0.2.x` patch 版本，
+不能接受 `0.3.0`，且 caret range 并不是锁死版本。lockfile 记录的是实际解析
 安装的 resolved version，在你主动更新之前可能一直停留在 range 内较旧的
 patch 版本上 —— 仅运行 `pnpm install` 不会刷新它：
 

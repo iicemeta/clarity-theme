@@ -1,5 +1,5 @@
 import type { ClarityConfig, ClarityConfigInput } from './schema'
-import { clarityConfigSchema, legacyConfigKeys, stripLegacyConfigKeys } from './schema'
+import { clarityConfigSchema } from './schema'
 
 /**
  * 定义 Clarity Theme 站点配置
@@ -8,14 +8,7 @@ import { clarityConfigSchema, legacyConfigKeys, stripLegacyConfigKeys } from './
  * 此处会立即完成默认值填充与校验，避免错误配置进入构建流程。
  */
 export function defineClarityConfig(config: ClarityConfigInput): ClarityConfig {
-	const { config: stripped, legacyKeys } = stripLegacyConfigKeys(config)
-	for (const key of legacyKeys) {
-		console.warn(
-			`[clarity-config] clarity.config.ts 的 ${key} 已废弃（${legacyConfigKeys[key]}），已忽略。`
-			+ '该 0.1.x 兼容将在 0.2.0 移除，请从配置中删除此键。',
-		)
-	}
-	const result = clarityConfigSchema.safeParse(stripped)
+	const result = clarityConfigSchema.safeParse(config)
 	if (!result.success) {
 		const issues = result.error.issues
 			.map(issue => `  - ${issue.path.join('.') || '(根对象)'}: ${issue.message}`)

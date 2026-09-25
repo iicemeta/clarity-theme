@@ -621,14 +621,13 @@ const rawConfig = {
 const config = defineClarityConfig(rawConfig)
 check('config defineClarityConfig 运行时可用', typeof defineClarityConfig === 'function')
 check('config 默认值填充', config.article.defaultCategory === '未分类' && config.features.atom === true)
-// 0.1.x 兼容契约（repair phase 1）：已移除的 legacy 键警告 + 忽略（不 fatal），
-// 注册表之外的未知键仍被 strict schema 拒绝。
+// 0.2.0 契约：legacy 兼容层已移除——0.1.x 的 legacy 键与其它未知键一样 fatal。
 try {
-	const legacyParsed = defineClarityConfig({ ...rawConfig, article: { useRandomPermalink: true } })
-	check('config legacy 键 useRandomPermalink 警告后忽略（0.1.x 兼容）', legacyParsed.article.hidePostPrefix === true)
+	defineClarityConfig({ ...rawConfig, article: { useRandomPermalink: true } })
+	check('config legacy 键 useRandomPermalink 已移除（0.2.0 fatal）', false)
 }
-catch {
-	check('config legacy 键 useRandomPermalink 警告后忽略（0.1.x 兼容）', false)
+catch (error) {
+	check('config legacy 键 useRandomPermalink 已移除（0.2.0 fatal）', /useRandomPermalink/.test(String(error)))
 }
 try {
 	defineClarityConfig({ ...rawConfig, unknowKey: true })

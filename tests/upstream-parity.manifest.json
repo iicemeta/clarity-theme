@@ -147,22 +147,17 @@
     "src/modules/clarity-config/index.ts": {
       "class": "boundary",
       "reason": "Theme 基础设施：读取 clarity.config.ts 并注入上游形状的扁平 AppConfig / ~~/blog.config 别名 / SEO 与路由规则",
-      "hash": "d9cbb96f29333f3ee61e41d6f9317f5bdeebb611c5c78ba7b5ef662ea1ae66ef"
+      "hash": "602f8ad8adc5f00820471ad0537665e8ce6b46c8619462994092ad8169241ca0"
     },
     "src/modules/clarity-source-layout/index.ts": {
       "class": "boundary",
       "reason": "Theme 基础设施：将 Layer 的 src/ 目录布局注册到 Nuxt（避免 srcDir 泄漏到消费项目）",
       "hash": "f9d8daaa7e36c8a5e37ad2773ceb24c43b731cb4b74bf0df2d4827875771280e"
     },
-    "src/shared/utils/clarity.ts": {
-      "class": "boundary",
-      "reason": "0.1.x 公开 API 兼容（useClarityConfig / useClaritySite 等读取 clarity 键）；上游组件已恢复直接使用 useAppConfig()",
-      "hash": "32a19bf9e61def511e7c2d1749f94492479f6fb1f36e8cf6d525cfd760c860a7"
-    },
     "src/server/utils/clarity.ts": {
       "class": "boundary",
-      "reason": "0.1.x 公开 API 兼容（useClarityServerConfig）；上游 server 路由已恢复直接读取 ~~/blog.config",
-      "hash": "1081d9f80aa6ed1afba0d8a21711267800fde148a606d94fb3fc11bfaea875bf"
+      "reason": "Nitro 私有配置通道（useClarityServerConfig，非公共导出）；上游 server 路由已恢复直接读取 ~~/blog.config",
+      "hash": "cfe5eb9f88e1d54930d51cd05962938ee9714cbf7b04a32bd8f2f2ceed54766e"
     },
     "src/remark-plugins/rehype-meta-slots.mjs": {
       "class": "boundary",

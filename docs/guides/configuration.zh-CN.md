@@ -26,7 +26,7 @@
 
 ## 严格性与 0.1.x 兼容
 
-schema 对未知键直接致命报错（拼写保护）。唯一窄口径例外：0.1.x 曾接受、后来移除的键——目前只有 `article.useRandomPermalink`——会输出废弃**警告**并被忽略，使旧 consumer 配置可以继续构建。该兼容层（注册表：`src/config/schema.ts` 的 `legacyConfigKeys`）将在 **0.2.0** 移除，升级前请从配置中删除该键。其余未知键仍然致命。
+schema 对未知键直接致命报错（拼写保护），**无任何例外**。0.1.x 已移除的键——如 `article.useRandomPermalink`——与其他未知键一样无法通过校验；升级时请删除它们（迁移对照见 [legacy 政策](../maintainers/legacy-policy.zh-CN.md)）。
 
 ## 完整示例
 

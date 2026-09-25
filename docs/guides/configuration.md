@@ -23,7 +23,7 @@ Configuration entry points:
 
 ## Strictness and 0.1.x compatibility
 
-The schema rejects unknown keys with a fatal validation error (typo protection). One narrow exception: keys that 0.1.x accepted and later removed — currently `article.useRandomPermalink` — produce a deprecation **warning** and are ignored, so old consumer configs keep building. This compatibility layer (registry: `legacyConfigKeys` in `src/config/schema.ts`) will be removed in **0.2.0**; delete the key from your config before upgrading. Any other unknown key remains fatal.
+The schema rejects unknown keys with a fatal validation error (typo protection), with **no exceptions**. Removed 0.1.x keys — such as `article.useRandomPermalink` — fail validation like any other unknown key; delete them when upgrading (see the [legacy policy](../maintainers/legacy-policy.md) migration table).
 
 ## Complete example
 

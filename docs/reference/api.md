@@ -47,12 +47,6 @@ Through the TypeScript entry:
 - `ClarityConfig`
 - `ClarityConfigInput`
 - `ClarityUiConfig`
-- `ClarityUiConfigInput`
-- `ClarityAppConfig`
-- `ClarityPublicConfig`
-- `ClarityPublicSiteConfig`
-- `ClarityPublicArticleConfig`
-- `ClarityPublicStatsConfig`
 - `ClarityPublicIntegrationsConfig`
 - `FeedEntry`
 - `FeedGroup`
@@ -141,18 +135,9 @@ These helpers build URLs and do not fetch, cache, transform, or proxy images the
 
 ## Layer Runtime API
 
-The following auto-imported helpers are supported because consumer components may read Theme configuration:
+The supported reading path for consumer components is the flat upstream-shaped app config through Nuxt's `useAppConfig()` — `title`, `nav`, `component.*`, `footer`, `header`, `pagination`, `themes`, and so on. That is the same shape every Theme component uses, and it is what a consumer component should use.
 
-| Helper | Returns |
-| --- | --- |
-| `useClarityConfig()` — **deprecated** | Client-visible public configuration subset plus UI configuration |
-| `useClaritySite()` — **deprecated** | Client-visible site section (without `author.email`) |
-| `useClarityArticle()` — **deprecated** | Client-visible article subset (`categories`, `order`) |
-| `useClaritySiteFeedEntry()` — **deprecated** | Feed entry derived from site configuration |
-
-They read the injected `clarity` app-config key, a 0.1.x compatibility surface. The supported reading path is the upstream-shaped flat app config (`useAppConfig()` — `title`, `nav`, `component.*`, …), which all Theme components use. The `clarity` key and these helpers are scheduled for removal in **0.2.0**; migrate custom components to `useAppConfig()`.
-
-They require a Nuxt app context and are not standalone package subpath exports.
+The 0.1.x helpers `useClarityConfig()`, `useClaritySite()`, `useClarityArticle()`, and `useClaritySiteFeedEntry()` (which read the removed nested `clarity` app-config key) were **removed in 0.2.0**. They are no longer auto-imported and no longer exist in the package. See the [legacy policy](../maintainers/legacy-policy.md) for the old-to-new mapping.
 
 Theme server routes use the internal `useClarityServerConfig()` helper, which reads the full site/feed/stats configuration and feature route flags from Nitro's private runtime config. It never enters the client bundle and is not a public package export.
 
@@ -204,8 +189,8 @@ export default defineNuxtConfig({
 
 The following are intentionally not public ESM APIs:
 
-- `src/modules/clarity-config` internals, including `toPublicClarityConfig`
-- ordinary `src/composables/*` other than the clarity accessors above
+- `src/modules/clarity-config` internals
+- ordinary `src/composables/*` (all of them; consumer components read `useAppConfig()`)
 - `src/stores/*`, internal utility functions, and generated type templates
 - individual component props/styles unless covered by a documented rendering contract
 - remark plugin instances; Nuxt Layer configuration loads them internally

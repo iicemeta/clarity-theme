@@ -1,6 +1,6 @@
 export type { Nav, NavItem } from '../types/nav'
-export type { ClarityAppConfig, ClarityUiConfig, ClarityUiConfigInput, NavGroup } from './app'
+export type { ClarityUiConfig, NavGroup } from './app'
 export { defineClarityConfig } from './define'
 export type { Arch, FeedEntry, FeedGroup } from './feed'
-export type { ClarityPublicConfig, ClarityPublicIntegrationsConfig } from './public'
+export type { ClarityPublicIntegrationsConfig } from './public'
 export * from './schema'
