@@ -2,7 +2,7 @@
 
 [English](./README.md) | **简体中文**
 
-本节文档化 Clarity Theme 面向文章的全部 Markdown 与 MDC 能力：语法外观、精确写法、props 与 slots，以及普通消费站点能否依赖它。它同时服务两类读者——人类作者与编码 Agent——并作为 [`article-beautifier`](../../skills/article-beautifier/SKILL.md) Skill 的导航层。
+本节文档化 Clarity Theme 面向文章的全部 Markdown 与 MDC 能力：语法外观、精确写法、props 与 slots，以及普通消费站点能否依赖它。它同时服务两类读者——人类作者与编码 Agent——并作为 [`article-beautifier`](../../../skills/article-beautifier/SKILL.md) Skill 的导航层。
 
 事实来源优先级：`src/` 中的 Layer 实现、`nuxt.config.ts` 中的渲染管线、`playground/content/compatibility/` 中的兼容性基准，最后才是本文档。文档与源码冲突时以源码为准，并请修正文档。
 
@@ -38,7 +38,7 @@
 
 ## Agent 阅读顺序
 
-1. 先读 [`skills/article-beautifier/references/_index.md`](../../skills/article-beautifier/references/_index.md)——机器可读的能力索引。
+1. 先读 [`skills/article-beautifier/references/_index.md`](../../../skills/article-beautifier/references/_index.md)——机器可读的能力索引。
 2. 只挑选与文章语义匹配的 reference 文件。
 3. 打开 `docs/mdc/components/` 或 `docs/mdc/plugins/` 下对应的页面。当 Skill 通过 `npx skills add` 独立安装时，改用 `skills/article-beautifier/references/` 下的捆绑副本——它们是这些页面的同步副本。
 4. 绝不猜测 prop、slot 或 variant；文档没有写的内容就不要使用。

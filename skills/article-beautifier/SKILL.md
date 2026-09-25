@@ -5,6 +5,8 @@ description: Beautify and restructure a Clarity Theme Markdown/MDC article witho
 
 # Article Beautifier
 
+> **Status: OPTIONAL / FROZEN.** This skill is a content-creation aid, not part of the Clarity Theme runtime or its public API. Its feature set is frozen — fix errors only, no new capabilities.
+
 Improve an article's information hierarchy, readability, and visual structure — not its component count. Plain Markdown is the default; MDC is an upgrade you must justify per use.
 
 This Skill never edits theme implementation, components, config, or dependencies. It edits article Markdown/MDC files only.
@@ -20,7 +22,7 @@ This Skill never edits theme implementation, components, config, or dependencies
 7. Re-check: meaning preserved, syntax valid, restraint respected.
 8. Report what you changed, why, and what you deliberately left as plain Markdown.
 
-The reference pages are bundled copies of the Theme repository's `docs/mdc/` wiki, so this Skill is self-contained after `npx skills add`. Repository copies are authoritative; do not treat the bundles as the source of truth when both are present.
+The reference pages are bundled copies of the Theme repository's `docs/_content/mdc/` wiki, so this Skill is self-contained after `npx skills add`. Repository copies are authoritative; do not treat the bundles as the source of truth when both are present.
 
 ## Restraint rules
 

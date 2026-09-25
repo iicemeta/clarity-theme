@@ -28,7 +28,7 @@ The tested source baseline is blog-v3 3.7.2 at Clarity's recorded sync commit. V
 | `article.categories` | `article.categories` | Default `{}` | `AUTO` | Same icon/color structure |
 | `article.types` | `article.types` | Default `{ tech: {} }` | `AUTO` | First key is default layout |
 | `article.order` | `article.order` | Date/updated defaults | `AUTO` | `pagination.sortOrder` must reference a key |
-| `article.useRandomPremalink` (upstream typo) | no Clarity field | — | `REVIEW` | Removed in Clarity 0.1.0: random permalink generation belongs to consumer build scaffolding, not the Theme |
+| `article.useRandomPremalink` (upstream typo) | delete the key | — | `REVIEW` | LEGACY (deprecated): the key is accepted with a build-time deprecation warning and ignored (registry `legacyConfigKeys`), removed in 0.2.0. Random permalink generation belongs to consumer build scaffolding, not the Theme |
 | `article.hidePostPrefix` | `article.hidePostPrefix` | Default `true` | `AUTO` | Removes `/posts` for file-routed articles |
 | `article.robotsNotIndex` | `article.robotsNotIndex` | Default `[]` | `AUTO` | Feeds robots config |
 
@@ -59,40 +59,45 @@ Do not edit article frontmatter while mapping these fields. `permalink` remains 
 
 ## App UI fields
 
-Old app config spread the entire blog config. In Clarity it must contain only:
+Old app config spread the entire blog config. In Clarity, UI overrides go in consumer `app/app.config.ts` under the **flat upstream-shaped keys** (current API):
 
 ```text
-clarity.component
-clarity.footer
-clarity.header
-clarity.link
-clarity.nav
-clarity.pagination
-clarity.themes
+component
+footer
+header
+link
+nav
+pagination
+themes
 ```
+
+> LEGACY (deprecated, removed 0.2.0): the 0.1.x nested form `component` /
+> `footer` / … under `app.config.clarity` still works through the
+> compatibility merge, but new migrations must use the flat keys above.
+> See `docs/maintainers/legacy-policy.md`.
 
 | Source UI | Clarity UI | Notes |
 | --- | --- | --- |
-| `component.alert` | `clarity.component.alert` | `defaultStyle` |
-| `component.codeblock` | `clarity.component.codeblock` | Threshold/indent settings |
-| `component.excerpt` | `clarity.component.excerpt` | Animation/caret |
-| `component.slide` | `clarity.component.slide` | Title visibility |
-| `component.stats.birthYear` | `clarity.component.stats.birthYear` | Optional |
-| `component.stats.wordCount` | no field | Stats widget computes current values |
-| `footer.copyright` | `clarity.footer.copyright` | Generated default available |
-| `footer.iconNav` | `clarity.footer.iconNav` | Complete array replaces default |
-| `footer.nav` | `clarity.footer.nav` | Complete array replaces default |
-| `header.logo` | `clarity.header.logo` | Defaults to author avatar |
-| `header.showTitle` | `clarity.header.showTitle` | |
-| `header.subtitle` | `clarity.header.subtitle` | Defaults to site subtitle |
-| `header.emojiTail` | `clarity.header.emojiTail` | Complete array |
-| `link.remindNoFeed` | `clarity.link.remindNoFeed` | |
-| `link.randomInGroup` | `clarity.link.randomInGroup` | |
-| `nav` | `clarity.nav` | Complete array |
-| `pagination.perPage` | `clarity.pagination.perPage` | |
-| `pagination.sortOrder` | `clarity.pagination.sortOrder` | Must exist in `article.order` |
-| `pagination.allowAscending` | `clarity.pagination.allowAscending` | |
-| `themes.light/system/dark` | `clarity.themes.light/system/dark` | Icon/tip |
+| `component.alert` | `component.alert` | `defaultStyle` |
+| `component.codeblock` | `component.codeblock` | Threshold/indent settings |
+| `component.excerpt` | `component.excerpt` | Animation/caret |
+| `component.slide` | `component.slide` | Title visibility |
+| `component.stats.birthYear` | `component.stats.birthYear` | Optional |
+| `component.stats.wordCount` | `component.stats.wordCount` | Preset text (default empty); the widget computes live counts alongside |
+| `footer.copyright` | `footer.copyright` | Generated default available |
+| `footer.iconNav` | `footer.iconNav` | Complete array replaces default |
+| `footer.nav` | `footer.nav` | Complete array replaces default |
+| `header.logo` | `header.logo` | Defaults to author avatar |
+| `header.showTitle` | `header.showTitle` | |
+| `header.subtitle` | `header.subtitle` | Defaults to site subtitle |
+| `header.emojiTail` | `header.emojiTail` | Complete array |
+| `link.remindNoFeed` | `link.remindNoFeed` | |
+| `link.randomInGroup` | `link.randomInGroup` | |
+| `nav` | `nav` | Complete array |
+| `pagination.perPage` | `pagination.perPage` | |
+| `pagination.sortOrder` | `pagination.sortOrder` | Must exist in `article.order` |
+| `pagination.allowAscending` | `pagination.allowAscending` | |
+| `themes.light/system/dark` | `themes.light/system/dark` | Icon/tip |
 
 Rewrite expressions importing `blogConfig`. Do not spread it into app config.
 

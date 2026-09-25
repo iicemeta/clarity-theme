@@ -2,7 +2,7 @@
 
 Machine navigation layer for the Article Beautifier Skill. Read this file first, then open only the referenced file for capabilities the article actually needs. Paths are relative to this skill directory (`skills/article-beautifier/`).
 
-These pages are **bundled copies** of the Theme repository's `docs/mdc/` references, so the Skill stays self-contained after `npx skills add` installs only this directory. The repository copies are authoritative; when the Theme's MDC surface changes, update `docs/mdc/` first and re-sync these files. Status definitions and full evidence live in `docs/mdc/audit.md` (repository).
+These pages are **bundled copies** of the Theme repository's `docs/_content/mdc/` references, so the Skill stays self-contained after `npx skills add` installs only this directory. The repository copies are authoritative; when the Theme's MDC surface changes, update `docs/_content/mdc/` first and re-sync these files. Status definitions and full evidence live in `docs/_content/mdc/audit.md` (repository).
 
 ## Recommended capabilities
 
@@ -186,7 +186,7 @@ conditional:
 
 ## Forbidden for recommendations
 
-`do-not-use`: `::md-title` (unused, undocumented wrapper) and inline site-shell embedding such as `:blog-header`. See `docs/mdc/audit.md` in the Theme repository before ever revisiting these.
+`do-not-use`: `::md-title` (unused, undocumented wrapper) and inline site-shell embedding such as `:blog-header`. See `docs/_content/mdc/audit.md` in the Theme repository before ever revisiting these.
 
 ## Selection heuristics
 

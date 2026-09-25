@@ -105,9 +105,9 @@ All documents are also available in 简体中文 as sibling `*.zh-CN.md` files. 
 - **Getting started** — [new project](./docs/getting-started/new-project.md), [manual installation](./docs/getting-started/manual-installation.md), [migrating from blog-v3](./docs/getting-started/migration-from-blog-v3.md)
 - **Guides** — [configuration](./docs/guides/configuration.md), [content](./docs/guides/content.md), [customization](./docs/guides/customization.md), [integrations](./docs/guides/integrations.md)
 - **Reference** — [public API](./docs/reference/api.md), [routes and outputs](./docs/reference/routes-and-outputs.md), [compatibility matrix](./docs/reference/compatibility.md)
-- **Concepts** — [architecture](./docs/concepts/architecture.md)
-- **Maintainers** — [development](./docs/maintainers/development.md), [testing](./docs/maintainers/testing.md), [upstream sync](./docs/maintainers/upstream-sync.md), [patches](./docs/maintainers/patches.md), [publishing](./docs/maintainers/publishing.md), [release checklist](./docs/maintainers/release-checklist.md), [project status](./docs/maintainers/project-status.md), [roadmap](./docs/maintainers/roadmap.md), [documentation rules](./docs/maintainers/documentation.md)
-- **Release history** — [CHANGELOG](./CHANGELOG.md); historical records live under [docs/history](./docs/history/)
+- **Concepts** — [architecture](./docs/concepts/architecture.md) — the upstream → sync-manifest → `src/` → Layer modules → consumer pipeline, and the SOURCE / TRANSFORM / CLARITY-ONLY / LEGACY source classification
+- **Maintainers** — [development](./docs/maintainers/development.md), [testing & parity](./docs/maintainers/testing.md), [upstream sync](./docs/maintainers/upstream-sync.md), [transform parity](./docs/maintainers/transform-parity.md), [legacy policy](./docs/maintainers/legacy-policy.md), [patches](./docs/maintainers/patches.md), [publishing](./docs/maintainers/publishing.md), [release checklist](./docs/maintainers/release-checklist.md), [project status](./docs/maintainers/project-status.md), [roadmap](./docs/maintainers/roadmap.md), [documentation rules](./docs/maintainers/documentation.md)
+- **Release history** — [CHANGELOG](./CHANGELOG.md); historical records live under [docs/history](./docs/history/) (frozen narratives — not current specification)
 
 ## Development
 
