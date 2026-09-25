@@ -30,3 +30,5 @@ logs
 
 # clarity-config 构建期生成的消费项目数据模块（~~/package.json 等别名目标）
 src/generated/
+.parity-cache/
+tests/parity/artifacts/

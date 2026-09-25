@@ -262,3 +262,38 @@ jobs:
 
       - name: 'File-install static generation（file: → generate → 页面断言 + 包边界）'
         run: pnpm test:file-generate
+
+  # ============================================================
+  # Layer 4 · runtime parity gate（repair phase 3）
+  # upstream blog-v3 与 clarity 两个真实 consumer 的浏览器运行时对比：
+  # DOM 结构 / 字体 / 样式表 / computed style / geometry。
+  # ubuntu-latest 预装 google-chrome（native CDP，无额外浏览器依赖）。
+  # ============================================================
+  runtime-parity:
+    name: Layer 4 · runtime parity gate
+    needs: [resolve, playground]
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ needs.resolve.outputs.node-primary }}
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Runtime parity（upstream ↔ clarity，DOM/字体/样式/几何矩阵）
+        run: pnpm test:runtime-parity --fresh
+
+      - name: Upload parity artifacts
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: parity-report
+          path: tests/parity/artifacts/
+          retention-days: 14

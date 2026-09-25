@@ -41,4 +41,11 @@ export default antfu({
 	rules: {
 		'style/eol-last': ['warn', 'never'],
 	},
+}, {
+	// runtime/visual parity 测试工具（tests/parity + 驱动脚本）：
+	// 进度与失败诊断依赖 stdout 输出，允许 console
+	files: ['tests/parity/**/*.mjs', 'scripts/test-runtime-parity.mjs', 'scripts/test-visual-parity.mjs'],
+	rules: {
+		'no-console': 'off',
+	},
 })
