@@ -194,10 +194,13 @@ function assertCommitExists(commit, directory) {
 }
 
 function git(args, options = {}) {
+	// Windows 下 git 子进程继承调用方 stdin 句柄会偶发 `spawnSync git EBUSY`；
+	// 同步工具只读取 git 的 stdout，一律忽略 stdin 以保证宿主无关。
+	const stdio = options.stdio === 'inherit' ? ['ignore', 'inherit', 'inherit'] : options.stdio
 	return execFileSync('git', args, {
 		encoding: options.encoding ?? 'buffer',
 		cwd: options.cwd,
-		stdio: options.stdio ?? 'pipe',
+		stdio: stdio ?? ['ignore', 'pipe', 'pipe'],
 		maxBuffer: 1024 * 1024 * 128,
 	})
 }

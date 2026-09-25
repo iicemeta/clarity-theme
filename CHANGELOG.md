@@ -6,8 +6,59 @@ All notable changes to Clarity Theme are documented here. The format follows
 
 ## Unreleased
 
+## 0.2.0-rc.1 - 2026-09-25
+
+Release candidate for the 0.2.0 breaking line. It freezes the Phase 1–4 repair
+work and removes the 0.1.x compatibility layer. **Breaking:** the 0.1.x
+compatibility surface is gone; 0.2.x is the current API and 0.1.x is legacy.
+
+### Added
+
+- **Runtime/visual parity gate.** `pnpm test:runtime-parity` and
+  `pnpm test:visual-parity` build a real consumer from the packed tarball and
+  compare the rendered result against the upstream blog-v3 build across DOM
+  structure, attributes, styles, computed style, and geometry, at desktop and
+  mobile widths. The source-parity gate keeps its recorded 103 `identical` /
+  16 `mechanical` split; no parity class was relaxed for this release.
+- Release gate for a clean outside-the-repo consumer installed from the
+  packed tarball, with production HTML and route assertions.
+
+### Changed
+
+- **Layer fidelity reset.** The Theme is a faithful Layer extraction of
+  blog-v3: upstream components, layouts, pages, composables, stores, styles,
+  and server routes are byte-identical or mechanical, and they read the flat
+  upstream-shaped app config through `useAppConfig()`. The `clarity` nested
+  app-config key is no longer injected.
+- Documentation governance now classifies every legacy mention as `CURRENT`,
+  `MIGRATION`, or `HISTORY`; the removed surfaces are recorded as `HISTORY`
+  with an explicit old-to-new mapping.
+- The creator template targets the Theme release being cut
+  (`clarity-theme: ^0.2.0`), keeping generated consumers on the current line.
+
+### Removed
+
+- **0.1.x legacy configuration (breaking).** Deleted
+  `src/shared/utils/clarity.ts` and with it `useClarityConfig()`,
+  `useClaritySite()`, `useClarityArticle()`, and `useClaritySiteFeedEntry()`;
+  deleted the `clarity` app-config key injection, its deep-merge path, and
+  its `AppConfigInput` typing; deleted the `legacyConfigKeys` /
+  `stripLegacyConfigKeys` compat registry in the schema and in
+  `defineClarityConfig` / module config parsing; deleted
+  `toPublicClarityConfig()` and the `ClarityAppConfig` / `ClarityUiConfigInput`
+  public types that modelled the nested key. `article.useRandomPermalink` is
+  now a fatal unknown key again.
+- Migration: see the [legacy policy](docs/maintainers/legacy-policy.md) for
+  the 0.1.x → 0.2.0 old-to-new table.
+
 ### Fixed
 
+- **Production/runtime fixes.** Consumer install reliability (package metadata
+  and legacy config paths), and the dev cold-start transient lazy-import
+  failure that made first dev boot flaky.
+- **Static generation fixes.** Packaged consumers regain working prerender
+  output; the release now verifies real HTML in the build output rather than
+  trusting a zero exit code.
 - `pnpm release:check --allow-untagged` now treats any HEAD without the
   expected `v<version>` tag as the untagged case, instead of failing when the
   commit only carries an unrelated `create-v<version>` creator-release tag.

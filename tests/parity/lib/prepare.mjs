@@ -11,7 +11,7 @@
  */
 import { execSync } from 'node:child_process'
 import { createHash } from 'node:crypto'
-import { cpSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import { cpSync, existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
 import process from 'node:process'
@@ -33,6 +33,12 @@ function run(cmd, cwd, env = {}) {
 	execSync(cmd, { cwd, stdio: ['ignore', 'pipe', 'pipe'], env: { ...process.env, NUXT_TELEMETRY_DISABLED: '1', ...env } })
 }
 
+// Windows 下 git 子进程若继承调用方 stdin 句柄会偶发 `spawnSync git EBUSY`；
+// parity 只读取 git 的 stdout，因此一律忽略 stdin，保证宿主终端无关。
+function gitStdio(encoding) {
+	return { cwd: themeDir, encoding, stdio: ['ignore', 'pipe', 'pipe'] }
+}
+
 function computeStamp() {
 	const fixtureFiles = [
 		'tests/parity/fixtures/site.mjs',
@@ -48,8 +54,8 @@ function computeStamp() {
 		hash.update(readFileSync(join(themeDir, file)))
 	}
 	// 主题侧影响生成的面：HEAD 状态 + 工作区是否含未提交修改
-	hash.update(execSync('git rev-parse HEAD', { cwd: themeDir, encoding: 'utf8' }))
-	const dirty = execSync('git status --porcelain -- src nuxt.config.ts package.json', { cwd: themeDir, encoding: 'utf8' })
+	hash.update(execSync('git rev-parse HEAD', gitStdio('utf8')))
+	const dirty = execSync('git status --porcelain -- src nuxt.config.ts package.json', gitStdio('utf8'))
 	hash.update(dirty)
 	return hash.digest('hex').slice(0, 16)
 }
@@ -81,7 +87,6 @@ function hasCommit(dir) {
 		return false
 	}
 }
-
 // ---------------------------------------------------------------------------
 // 配置模板（全部由 site.mjs 渲染，禁止第二数据源）
 // ---------------------------------------------------------------------------
@@ -501,8 +506,8 @@ async function buildClarityConsumer(fresh) {
 
 function buildThemeTarball() {
 	run('pnpm pack --pack-destination .parity-cache', themeDir)
-	const name = execSync('ls .parity-cache', { cwd: themeDir, encoding: 'utf8' })
-		.split('\n')
+	// 目录枚举走 node:fs，避免通过 `ls` 子进程读取（宿主 shell / 编码差异）
+	const name = readdirSync(join(themeDir, '.parity-cache'))
 		.find(f => /^clarity-theme-.*\.tgz$/.test(f))
 	return `file:${join(cacheDir, name).replaceAll('\\', '/')}`
 }

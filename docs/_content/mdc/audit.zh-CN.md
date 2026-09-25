@@ -90,7 +90,7 @@ Theme 侧比对对象：`src/components/content/**`、`src/remark-plugins/**`、
 
 ## 缺口
 
-1. **没有组件级缺口。** 上游全部 27 个 content 组件都存在于 `src/components/content/` 并被 Layer `components` 配置注册。diff 发现的差异只是适配（相对导入、`useClarityConfig()`、ProseCode 双模式）。
+1. **没有组件级缺口。** 上游全部 27 个 content 组件都存在于 `src/components/content/` 并被 Layer `components` 配置注册。diff 发现的差异只是适配（相对导入、ProseCode 双模式）。
 2. **依赖补丁的行为。** 上游四个补丁会改变文章渲染（tab 保留、小数密度、Shiki 选择器、ICO 透传）。Theme 刻意不携带任何补丁；需要该行为的消费者自行注册。见[补丁策略](../../maintainers/patches.zh-CN.md)与[补丁](./plugins/patches.zh-CN.md)。本次审计没有修改任何代码。
 3. **基准覆盖缺口。** `blur`、`chat`、`emoji-clock`、`key`、`link-banner`、`link-card`、`poetry`、`quote`、`tab`、`timeline`、`video-embed`、`feed-card`、`feed-group`、`meta-slots` 没有兼容性基准行。它们凭借源码证据归为 `supported`/`conditional`。补充基准覆盖属于未来的测试工作，不是文档变更。
 4. **数据驱动组件。** FeedCard/FeedGroup 期望 `FeedEntry` 数据，并由友链页从消费者 `feeds.ts` 消费。它们也能从 MDC YAML 渲染，但不是通用文章工具。

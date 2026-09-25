@@ -23,6 +23,12 @@ import process from 'node:process'
 import { fileURLToPath } from 'node:url'
 
 const themeDir = fileURLToPath(new URL('..', import.meta.url))
+
+// Windows 下 git 子进程若继承调用方的 stdin 句柄，可能以 `spawnSync git EBUSY`
+// 失败（句柄被并发占用）。门禁只读取 git 的 stdout，因此统一忽略 stdin，
+// 让脚本在任意宿主终端（IDE、CI、管道）下行为一致。
+const GIT_STDIO = ['ignore', 'pipe', 'pipe']
+
 const manifest = JSON.parse(readFileSync(join(themeDir, 'sync-manifest.json'), 'utf8'))
 const parityPath = join(themeDir, 'tests/upstream-parity.manifest.json')
 const parity = JSON.parse(readFileSync(parityPath, 'utf8'))
@@ -55,6 +61,7 @@ function listRecords() {
 		cwd: upstreamDir,
 		encoding: 'utf8',
 		maxBuffer: 1024 * 1024 * 64,
+		stdio: GIT_STDIO,
 	}).split('\0').filter(Boolean)
 	for (const file of upstreamFiles.filter(f => manifest.include.some(glob => matchGlob(glob, f)))) {
 		const themePath = mapUpstreamPath(file)
@@ -73,6 +80,7 @@ function run() {
 		cwd: upstreamDir,
 		encoding: 'utf8',
 		maxBuffer: 1024 * 1024 * 64,
+		stdio: GIT_STDIO,
 	}).split('\0').filter(Boolean)
 
 	const includeFiles = upstreamFiles.filter(file => manifest.include.some(glob => matchGlob(glob, file)))
@@ -80,6 +88,7 @@ function run() {
 		cwd: themeDir,
 		encoding: 'utf8',
 		maxBuffer: 1024 * 1024 * 64,
+		stdio: GIT_STDIO,
 	}).split('\0').filter(Boolean).map(normalizeSlash).filter(path => existsSync(join(themeDir, path)))
 
 	const expectedThemePaths = new Set(includeFiles.map(mapUpstreamPath))
@@ -237,8 +246,8 @@ function resolveUpstreamDir() {
 		// 单 commit depth-1 fetch：一次请求拿到该 commit 的完整 snapshot
 		// （commit/tree/blob），后续逐文件读取全部本地命中；
 		// blobless clone 会让每个 git show 都触发一次网络懒加载（120 次请求）。
-		execFileSync('git', ['init', '--quiet', tempDir])
-		execFileSync('git', ['remote', 'add', 'origin', manifest.upstream.repo], { cwd: tempDir })
+		execFileSync('git', ['init', '--quiet', tempDir], { stdio: GIT_STDIO })
+		execFileSync('git', ['remote', 'add', 'origin', manifest.upstream.repo], { cwd: tempDir, stdio: GIT_STDIO })
 		execFileSync('git', ['fetch', '--quiet', '--depth', '1', 'origin', commit], { cwd: tempDir, stdio: ['ignore', 2, 2] })
 		available = hasCommit(tempDir)
 	}
@@ -274,6 +283,7 @@ function gitShow(path) {
 		cwd: upstreamDir,
 		encoding: 'utf8',
 		maxBuffer: 1024 * 1024 * 16,
+		stdio: GIT_STDIO,
 	})
 }
 

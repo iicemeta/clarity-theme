@@ -20,7 +20,7 @@
 import { execSync, spawnSync } from 'node:child_process'
 import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync } from 'node:fs'
 import { tmpdir } from 'node:os'
-import { join } from 'node:path'
+import { basename, dirname, join } from 'node:path'
 import process from 'node:process'
 import { fileURLToPath } from 'node:url'
 
@@ -228,7 +228,11 @@ for (const [key, entry] of Object.entries(pkg.exports ?? {})) {
 		check(`exports ${key} (${condition}) 指向的文件存在`, existsSync(join(themeDir, file)), file)
 	}
 }
+// `files` 里 `!` 开头的是排除模式（防御性边界声明），不是必须存在的路径：
+// 校验它们「存在」会把从未落盘的目录当成发布阻塞项。包含项才要求存在。
 for (const file of pkg.files ?? []) {
+	if (file.startsWith('!'))
+		continue
 	const fullPath = join(themeDir, file)
 	check(`files 条目存在：${file}`, existsSync(fullPath))
 }
@@ -246,7 +250,7 @@ try {
 
 	console.log('[7/7] tarball 审计')
 	const packageDir = join(workDir, 'package')
-	execSync(`tar -xzf ${JSON.stringify(join(workDir, packed))} -C ${JSON.stringify(workDir)}`, { stdio: 'ignore' })
+	extractTarball(join(workDir, packed), workDir)
 	const files = listFiles(packageDir).map(file => file.replaceAll('\\', '/')).sort()
 	auditTarball(files, packageDir)
 
@@ -281,6 +285,23 @@ function packTo(destination) {
 		env: { ...process.env, NUXT_TELEMETRY_DISABLED: '1' },
 	})
 	return readdirSync(destination).find(file => /^clarity-theme-.*\.tgz$/.test(file)) ?? ''
+}
+
+/**
+ * 解压 tarball 做边界审计。
+ *
+ * Windows 盘符陷阱：GNU tar 把 `D:\...` 中的 `D:` 解释为远程主机（`host:path`），
+ * 报 `Cannot connect to D: resolve failed`，导致审计在 Windows 上直接崩溃、
+ * 发布门禁失去作用。改为先 `cd` 到 tarball 所在目录再用相对文件名解压，
+ * 即不出现盘符冒号；`--force-local` 不可移植（BSD tar 不支持）。
+ */
+function extractTarball(tarball, destination) {
+	const dir = dirname(tarball)
+	const name = basename(tarball)
+	execSync(`tar -xzf ${JSON.stringify(name)} -C ${JSON.stringify(destination)}`, {
+		cwd: dir,
+		stdio: ['ignore', 'pipe', 'pipe'],
+	})
 }
 
 function auditTarball(files, packageDir) {
