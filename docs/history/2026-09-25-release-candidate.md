@@ -48,6 +48,38 @@ surface and was not touched.
 Verification: no remaining references to any of the removed identifiers exist
 under `src/`, `scripts/`, `tests/`, `create-clarity-theme/`, or `skills/`.
 
+### Leftovers the first removal pass missed
+
+Deleting the *read* path is not the same as removing the legacy surface. A
+second pass found four places that still *wrote* or *taught* the removed key,
+each of which had silently stopped working:
+
+| Place | Problem | Resolution |
+| --- | --- | --- |
+| `scripts/test-consumer.mjs` | The acceptance fixture overrode `clarity.header.emojiTail`, so the override was ignored and the `🧪` assertion failed | Rewritten as a flat `header` override |
+| `create-clarity-theme/templates/default/app/app.config.ts` | Shipped an empty `clarity` object into every generated project | Replaced with an empty flat config plus the override contract |
+| `docs/guides/customization.md` (+ `.zh-CN`) | Told consumers to nest overrides under `clarity`, with partial groups | Examples unwrapped to flat keys and completed |
+| `docs/getting-started/migration-from-blog-v3.md` (+ `.zh-CN`) | Same, in the blog-v3 migration path | Same |
+
+The configuration guide also still showed `defineAppConfig({ clarity: ... })`
+as the entry point, contradicting the removal.
+
+### The flat override type contract
+
+Fixing the fixture exposed a second, independent defect that had nothing to do
+with legacy code. The declared UI groups (`ClarityUiConfig`) have **no optional
+members**, so a *partial* group is not merely unfriendly — it fails
+`defineAppConfig` type checking, and that single error collapses
+`ResolvedAppConfig`, after which every Theme component reports spurious
+`possibly undefined` / `unknown` errors. The acceptance run produced 38 such
+errors from a one-field override.
+
+Reproduced in the playground (identical 38 errors), then fixed by supplying the
+complete group, which typechecks clean. The contract is now stated in the
+configuration guide (both languages), in the migration guide, and in the
+creator scaffold, so consumers no longer have to discover it from an error
+cascade.
+
 ### Migration mapping
 
 The old → new table lives in
@@ -111,6 +143,11 @@ packed tarball only — never via `workspace:` or `link:`, and never reusing the
 `install` → `dev` → `build` → `generate` → `preview`, plus production HTML and
 route assertions against the emitted output directory.
 
+The in-repo acceptance gate (`pnpm test:consumer`) goes further and **passed on
+CI**: pack → outside-repo install → exports and type-track audit → typecheck →
+three configuration branches generated → emitted HTML asserted. Its earlier
+failure is described in [section 2](#the-flat-override-type-contract).
+
 ## 6. Dev
 
 `pnpm dev` cold-start was flaky: the first boot could fail on a transient lazy
@@ -139,11 +176,11 @@ compares it against the upstream blog-v3 build across DOM structure,
 attributes, stylesheets, computed style, and geometry, at desktop and mobile
 widths, with a 2px geometry tolerance.
 
-The gate exists and is wired into CI as Layer 4. Its local run on the
-maintainer Windows host was blocked by an environment limitation (see
-Remaining Risks) and was therefore not used as the acceptance signal; the CI
-run is. The tolerance was not widened and no class was relaxed to make this
-release pass.
+The gate is wired into CI as Layer 4 and **passed on CI** for the release
+commit (2m35s), comparing a tarball-built consumer against the upstream build
+for the full semantic matrix. It could not be run on the maintainer Windows
+host (see Remaining Risks), so CI is the acceptance signal. The 2px tolerance
+was not widened and no comparison class was relaxed to make this release pass.
 
 ## 9. Visual Parity
 
@@ -181,16 +218,34 @@ regression, creator CLI regression, compatibility contract, peer audit, then
 playground generation, then the real-consumer and file-install generation
 layers, then runtime parity, then pack/release checks.
 
-Passing on the maintainer host: lint, `docs:check`, typecheck, `verify`,
-`test:upstream-parity`, `test:transform-parity`, `test:config`,
-`test:migration`, `test:contract`, `test:sync`, peer audit, `playground
-generate`, and the tarball/release checks.
+**Result: the pull-request pipeline passed end to end** — all 11 jobs green on
+the release commit. Every job that had failed locally for environment reasons
+passed on CI, including the layers that could not be reproduced on the
+maintainer host:
 
-Not reproducible on the maintainer host: the gates that need either a fresh
-symbolic-link installation or a child process with piped stdin. These are
-environment limitations, not package defects, and are listed in the next
-section. They are verified on CI, which runs on Linux where neither limitation
-applies.
+| Job | Result |
+| --- | --- |
+| Resolve versions from package.json | pass (3s) |
+| Layer 1 · lint, both Node versions | pass |
+| Layer 1 · typecheck + verify + migration, both Node versions | pass |
+| Layer 2 · playground generate | pass (1m0s) |
+| Layer 3 · real consumer + rendering regression | pass (8m5s) |
+| Layer 3b · file: install generate (ubuntu / windows) | pass |
+| Layer 4 · runtime parity gate | pass (2m35s) |
+
+Layer 3 is the one that matters most here: it packs the Theme, installs it into
+an outside-the-repo consumer, checks the exports and type tracks, typechecks,
+then generates three configuration branches and asserts the emitted HTML.
+
+Two consecutive failures preceded this green run, and both were real defects
+rather than flakes — a legacy scaffold the first removal pass missed, and a
+partial UI override that broke app-config type resolution (sections 2 and 5).
+
+Locally reproducible on the maintainer host: lint, `docs:check`, typecheck,
+`verify`, `test:upstream-parity`, `test:transform-parity`, `test:config`,
+`test:migration`, `test:contract`, `test:sync`, peer audit, `playground
+generate`, and the tarball/release checks. Locally blocked: anything needing a
+fresh symbolic-link install or a child process with piped stdin — see below.
 
 ## 12. Remaining Risks
 
@@ -209,9 +264,14 @@ applies.
 3. **Local generation required disabling a host safe-delete shim.** The bulk
    `fs.rm` performed during generation is intercepted by an external guard; the
    generation itself is unaffected once that shim is disabled for the command.
-4. **The runtime and visual parity gates were not accepted from a local run.**
-   They are accepted from CI only. This is the single most important residual
-   uncertainty for this candidate and should be confirmed by the CI result
-   before the version is declared final.
-5. **This candidate is not published.** `npm publish`, master merge, upstream
+4. **The parity gates are accepted from CI, not from a local run.** Both
+   runtime parity and visual parity need a real browser and a clean tarball
+   install, so they cannot be reproduced on the maintainer host. This is the
+   main reason the CI result is the acceptance signal for this candidate, and
+   the reason the release commit is the one that was verified.
+5. **Visual parity was not run for this release.** It is a nightly/dispatch
+   diagnostic by design and is deliberately excluded from the pull-request
+   gate, so the release is accepted on the semantic runtime matrix, not on
+   screenshot diffs.
+6. **This candidate is not published.** `npm publish`, master merge, upstream
    sync, and further development are all out of scope for Phase 5.
