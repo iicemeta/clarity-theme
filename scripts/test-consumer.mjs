@@ -522,10 +522,17 @@ export default [
 	},
 ] satisfies FeedGroup[]`,
 
-		// ---- app/app.config.ts override：消费项目覆盖 Theme UI 默认值 ----
+		// ---- app/app.config.ts override：消费项目按上游扁平形状覆盖 Theme UI 默认值 ----
+		// 0.2.0 起只支持扁平键（0.1.x 的嵌套 clarity 键已删除，写在这里会被完全忽略）。
+		// 覆盖某个 UI 键必须给出**完整对象**：Theme 声明的 AppConfigInput 里该键属性全部必填，
+		// 缺字段会让类型退化（ResolvedAppConfig 解析失败），Theme 组件随之全量报 possibly undefined。
+		// 下面除 emojiTail 外都等于 Theme 的注入默认值（site 未设 avatar / subtitle）。
 		'app/app.config.ts': `export default defineAppConfig({
-	clarity: {
-		header: { emojiTail: ['🧪'] },
+	header: {
+		logo: '/favicon.svg',
+		showTitle: true,
+		subtitle: '${site.description}',
+		emojiTail: ['🧪'],
 	},
 })`,
 
@@ -621,14 +628,13 @@ const rawConfig = {
 const config = defineClarityConfig(rawConfig)
 check('config defineClarityConfig 运行时可用', typeof defineClarityConfig === 'function')
 check('config 默认值填充', config.article.defaultCategory === '未分类' && config.features.atom === true)
-// 0.1.x 兼容契约（repair phase 1）：已移除的 legacy 键警告 + 忽略（不 fatal），
-// 注册表之外的未知键仍被 strict schema 拒绝。
+// 0.2.0 契约：legacy 兼容层已移除——0.1.x 的 legacy 键与其它未知键一样 fatal。
 try {
-	const legacyParsed = defineClarityConfig({ ...rawConfig, article: { useRandomPermalink: true } })
-	check('config legacy 键 useRandomPermalink 警告后忽略（0.1.x 兼容）', legacyParsed.article.hidePostPrefix === true)
+	defineClarityConfig({ ...rawConfig, article: { useRandomPermalink: true } })
+	check('config legacy 键 useRandomPermalink 已移除（0.2.0 fatal）', false)
 }
-catch {
-	check('config legacy 键 useRandomPermalink 警告后忽略（0.1.x 兼容）', false)
+catch (error) {
+	check('config legacy 键 useRandomPermalink 已移除（0.2.0 fatal）', /useRandomPermalink/.test(String(error)))
 }
 try {
 	defineClarityConfig({ ...rawConfig, unknowKey: true })

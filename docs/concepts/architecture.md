@@ -29,21 +29,21 @@ Every file under `src/` belongs to exactly one class. The authoritative registri
 | **SOURCE** | Upstream file, byte-identical after EOL normalization (`identical`) or mechanical import-path adaptation (`mechanical`). Never edited by hand; drift fails `pnpm test:upstream-parity`. | most of `src/components/`, `src/pages/`, `src/composables/`, `src/assets/` |
 | **TRANSFORM** | Upstream file that requires human redesign for the Layer form; upstream-side changes must be re-applied by hand and re-registered. | `nuxt.config.ts`, `src/config/*` (replaces upstream `blog.config.ts`/`app.config.ts`), `src/modules/clarity-config`, remark plugin `.mjs` runtimes |
 | **CLARITY-ONLY** | File with no upstream counterpart — Layer boundary infrastructure. | `src/modules/clarity-source-layout`, `src/config/ui.ts`, `src/config/public.ts`, `src/img/`, `patches/temporal-spec.patch` |
-| **LEGACY** | 0.1.x compatibility surface kept for old consumers, deprecated, scheduled for removal in 0.2.0. See [legacy policy](../maintainers/legacy-policy.md). | `useClarityConfig()` / `useClaritySite()` / `useClarityArticle()` / `useClaritySiteFeedEntry()` (`src/shared/utils/clarity.ts`), the `clarity` app-config key, `article.useRandomPermalink` warn-and-ignore handling |
+| **HISTORY** | A 0.1.x compatibility surface that existed in the repository but was deleted in 0.2.0. No live code remains; the classification is kept so archives stay auditable. See [legacy policy](../maintainers/legacy-policy.md). | the deleted `src/shared/utils/clarity.ts` (`useClarityConfig()` / `useClaritySite()` / `useClarityArticle()` / `useClaritySiteFeedEntry()`), the deleted `clarity` app-config key, the deleted `article.useRandomPermalink` warn-and-ignore registry |
 
 ## 2. Theme / Consumer Boundary
 
 ```text
 clarity-theme (Nuxt Layer package)
 ├── nuxt.config.ts         Layer capabilities and module integration (TRANSFORM)
-└── src/                   Layer srcDir — SOURCE / TRANSFORM / CLARITY-ONLY / LEGACY mix
+└── src/                   Layer srcDir — SOURCE / TRANSFORM / CLARITY-ONLY mix
     ├── modules/           clarity-source-layout, clarity-config, anti-mirror
     ├── config/            Public config/content/schema API (TS + MJS dual tracks)
     ├── assets/ components/ composables/ layouts/ pages/ plugins/ stores/ types/ utils/
     ├── img/               Pure image helper export
     ├── remark-plugins/    Content pipeline plugins
     ├── server/            Atom/OPML/stats Nitro routes
-    ├── shared/            Cross-boundary utilities (incl. LEGACY composables)
+    ├── shared/            Cross-boundary utilities (icon/link/str/time)
     └── public/            Generic feed style and font assets
 
 consumer blog
@@ -77,7 +77,7 @@ Applies `src/`, `src/modules/`, `src/public/`, `src/server/`, `src/shared/`, and
 
 The consumer-config bridge. In `setup` it:
 
-1. Discovers `clarity.config.ts` / `.mjs` / `.js` and `feeds.ts`, validates the config through the Zod schema (legacy keys warned and ignored — see §6), and parses it a second time before depending on it.
+1. Discovers `clarity.config.ts` / `.mjs` / `.js` and `feeds.ts`, validates the config through the Zod strict schema (every unknown key is fatal, including removed 0.1.x legacy keys — see §6), and parses it a second time before depending on it.
 2. Injects aliases (§5) so upstream import specifiers resolve inside the Layer.
 3. Maps parsed data into appConfig (flat upstream shape), Nitro private runtimeConfig, `nuxt.options.site`, robots rules, `nuxt-llms`, head meta/link/scripts, and feature-flag route rules.
 4. Writes **build-time generated modules** to `<buildDir>/clarity/` (§4) and re-writes them on `build:before` (Nuxt wipes the buildDir after modules run).
@@ -86,7 +86,7 @@ The consumer-config bridge. In `setup` it:
 
 ### Runtime application
 
-`src/` (the Layer `srcDir`) contains the layout, pages, components, composables, stores, plugins, styles, and types. Nuxt auto-imports apply within the extended application. All upstream-derived components read the **flat upstream-shaped app config** through `useAppConfig()` — never the LEGACY `clarity` key.
+`src/` (the Layer `srcDir`) contains the layout, pages, components, composables, stores, plugins, styles, and types. Nuxt auto-imports apply within the extended application. All upstream-derived components read the **flat upstream-shaped app config** through `useAppConfig()`.
 
 ### Server
 
@@ -119,13 +119,13 @@ Write timing is **idempotent and double**: once in module `setup` (for prepare/d
 
 These aliases prevent Theme code from assuming consumer directory layout; upstream files keep their original import specifiers.
 
-## 6. Legacy Surface (0.1.x)
+## 6. Removed 0.1.x Surface
 
-The following exist only for consumers written against the 0.1.0 API. They are **deprecated**, not part of the recommended path, and scheduled for removal in 0.2.0 — see [legacy policy](../maintainers/legacy-policy.md):
+The 0.1.x compatibility surface was deleted in 0.2.0. Nothing below exists in the current source tree — the list is kept as a migration map, see [legacy policy](../maintainers/legacy-policy.md):
 
-- `useClarityConfig()`, `useClaritySite()`, `useClarityArticle()`, `useClaritySiteFeedEntry()` (read the injected `clarity` app-config key).
-- The `clarity` key in consumer `app/app.config.ts`.
-- `article.useRandomPermalink` in `clarity.config.ts` (accepted with a deprecation warning, ignored; unknown keys outside the legacy registry remain fatal).
+- `useClarityConfig()`, `useClaritySite()`, `useClarityArticle()`, `useClaritySiteFeedEntry()` (used to read the injected `clarity` app-config key) → use `useAppConfig()`.
+- The `clarity` key in consumer `app/app.config.ts` → use the flat top-level keys.
+- `article.useRandomPermalink` in `clarity.config.ts` (used to be accepted with a deprecation warning and ignored) → delete the key; unknown keys are fatal again.
 
 The current reading path for components and consumers is the flat upstream-shaped app config via `useAppConfig()`.
 

@@ -45,7 +45,7 @@
 | [测试](./maintainers/testing.zh-CN.md) | 验证矩阵与各层运行方式 |
 | [上游同步](./maintainers/upstream-sync.zh-CN.md) | 基线 manifest、漂移处理与同步命令 |
 | [Transform 面治理](./maintainers/transform-parity.zh-CN.md) | nuxt.config.ts 派生面登记表与门禁 |
-| [Legacy 政策](./maintainers/legacy-policy.zh-CN.md) | 0.1.x 兼容面：分类、迁移与 0.2.0 sunset |
+| [Legacy 政策](./maintainers/legacy-policy.zh-CN.md) | 已移除的 0.1.x 兼容面：删除了什么、迁移对照与删除规则 |
 | [补丁策略](./maintainers/patches.zh-CN.md) | 为什么补丁由消费方持有 |
 | [发布](./maintainers/publishing.zh-CN.md) | 永久发布流程：版本、tag、OIDC npm 发布与回滚 |
 | [发布清单](./maintainers/release-checklist.zh-CN.md) | 与版本无关的发布模板 |

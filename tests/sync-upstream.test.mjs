@@ -465,7 +465,8 @@ function commit(directory, message) {
 }
 
 function git(args, cwd) {
-	return execFileSync('git', args, { cwd, encoding: 'utf8' })
+	// 忽略 stdin：Windows 下继承调用方句柄会让 git 偶发 EBUSY（见 scripts/sync-upstream.mjs 同注释）
+	return execFileSync('git', args, { cwd, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] })
 }
 
 function runApply(fixture) {

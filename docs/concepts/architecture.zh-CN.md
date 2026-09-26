@@ -29,21 +29,21 @@ consumer 只看到一个 Layer。`sync-manifest.json` 与 consumer 契约之间�
 | **SOURCE** | upstream 文件，EOL 归一后逐字一致（`identical`）或仅机械导入路径适配（`mechanical`）。禁止手改；漂移即 `pnpm test:upstream-parity` 失败。 | `src/components/`、`src/pages/`、`src/composables/`、`src/assets/` 的大多数 |
 | **TRANSFORM** | 需要人工重设计为 Layer 形态的 upstream 文件；上游侧变更必须人工重放并重新登记。 | `nuxt.config.ts`、`src/config/*`（取代上游 `blog.config.ts`/`app.config.ts`）、`src/modules/clarity-config`、remark 插件 `.mjs` 运行时 |
 | **CLARITY-ONLY** | 无 upstream 对应物的 Layer 边界基础设施。 | `src/modules/clarity-source-layout`、`src/config/ui.ts`、`src/config/public.ts`、`src/img/`、`patches/temporal-spec.patch` |
-| **LEGACY** | 为 0.1.x 旧 consumer 保留的兼容面，已废弃，计划 0.2.0 移除。见[legacy 政策](../maintainers/legacy-policy.zh-CN.md)。 | `useClarityConfig()` / `useClaritySite()` / `useClarityArticle()` / `useClaritySiteFeedEntry()`（`src/shared/utils/clarity.ts`）、app-config 的 `clarity` 键、`article.useRandomPermalink` 警告并忽略逻辑 |
+| **HISTORY** | 0.1.x 兼容面：曾在仓库中存在，已于 0.2.0 整体删除。当前源码无任何活代码；保留该分类仅为让历史归档可审计。见[legacy 政策](../maintainers/legacy-policy.zh-CN.md)。 | 已删除的 `src/shared/utils/clarity.ts`（`useClarityConfig()` / `useClaritySite()` / `useClarityArticle()` / `useClaritySiteFeedEntry()`）、已删除的 app-config `clarity` 键、已删除的 `article.useRandomPermalink` 警告并忽略注册表 |
 
 ## 2. 主题 / 消费项目边界
 
 ```text
 clarity-theme（Nuxt Layer 包）
 ├── nuxt.config.ts         Layer 能力与模块集成（TRANSFORM）
-└── src/                   Layer srcDir — SOURCE / TRANSFORM / CLARITY-ONLY / LEGACY 混合
+└── src/                   Layer srcDir — SOURCE / TRANSFORM / CLARITY-ONLY 混合
     ├── modules/           clarity-source-layout、clarity-config、anti-mirror
     ├── config/            公共 config/content/schema API（TS + MJS 双轨）
     ├── assets/ components/ composables/ layouts/ pages/ plugins/ stores/ types/ utils/
     ├── img/               纯图片助手导出
     ├── remark-plugins/    内容管线插件
     ├── server/            Atom/OPML/stats Nitro 路由
-    ├── shared/            跨边界工具（含 LEGACY composables）
+    ├── shared/            跨边界工具（icon/link/str/time）
     └── public/            通用订阅源样式与字体资产
 
 consumer 博客
@@ -77,7 +77,7 @@ Theme 提供通用行为。consumer 提供全部站点数据，并自行负责�
 
 consumer 配置桥。`setup` 阶段：
 
-1. 发现 `clarity.config.ts` / `.mjs` / `.js` 与 `feeds.ts`，经 Zod schema 校验（legacy 键警告并忽略——见 §6），依赖前二次 parse。
+1. 发现 `clarity.config.ts` / `.mjs` / `.js` 与 `feeds.ts`，经 Zod strict schema 校验（未知键一律致命，含已移除的 0.1.x legacy 键——见 §6），依赖前二次 parse。
 2. 注入别名（§5），使 upstream 导入说明符在 Layer 内解析。
 3. 将解析数据映射进 appConfig（upstream 扁平形状）、Nitro 私有 runtimeConfig、`nuxt.options.site`、robots 规则、`nuxt-llms`、head meta/link/scripts，以及 feature 路由规则。
 4. 将**构建期生成模块**写入 `<buildDir>/clarity/`（§4），并在 `build:before` 重写（Nuxt 在模块运行后清理 buildDir）。
@@ -86,7 +86,7 @@ consumer 配置桥。`setup` 阶段：
 
 ### 运行时应用
 
-`src/`（Layer `srcDir`）包含布局、页面、组件、composables、stores、插件、样式与类型。Nuxt 自动导入在扩展应用内生效。全部 upstream 派生组件通过 `useAppConfig()` 读取 **upstream 形状的扁平 app config**——绝不读 LEGACY `clarity` 键。
+`src/`（Layer `srcDir`）包含布局、页面、组件、composables、stores、插件、样式与类型。Nuxt 自动导入在扩展应用内生效。全部 upstream 派生组件通过 `useAppConfig()` 读取 **upstream 形状的扁平 app config**。
 
 ### 服务端
 
@@ -119,13 +119,13 @@ upstream 文件通过 `~~/package.json`、`~~/pnpm-workspace.yaml`、`~~/blog.co
 
 这些别名使 Theme 代码不假设 consumer 目录布局；upstream 文件保持原始导入说明符。
 
-## 6. Legacy 面（0.1.x）
+## 6. 已移除的 0.1.x 面
 
-以下内容仅为按 0.1.0 API 编写的 consumer 存在。它们**已废弃**，不属于推荐路径，计划 0.2.0 移除——见[legacy 政策](../maintainers/legacy-policy.zh-CN.md)：
+0.1.x 兼容面已在 0.2.0 整体删除。以下内容在当前源码树中均已不存在——保留此列表作为迁移对照，见[legacy 政策](../maintainers/legacy-policy.zh-CN.md)：
 
-- `useClarityConfig()`、`useClaritySite()`、`useClarityArticle()`、`useClaritySiteFeedEntry()`（读取注入的 `clarity` app-config 键）。
-- consumer `app/app.config.ts` 中的 `clarity` 键。
-- `clarity.config.ts` 的 `article.useRandomPermalink`（接受但输出废弃警告并忽略；注册表之外的未知键仍然致命）。
+- `useClarityConfig()`、`useClaritySite()`、`useClarityArticle()`、`useClaritySiteFeedEntry()`（曾读取注入的 `clarity` app-config 键）→ 改用 `useAppConfig()`。
+- consumer `app/app.config.ts` 中的 `clarity` 键 → 改用顶层扁平键。
+- `clarity.config.ts` 的 `article.useRandomPermalink`（曾被接受、输出废弃警告后忽略）→ 删除该键；未知键重新恢复致命报错。
 
 组件与 consumer 的现行读取路径是经 `useAppConfig()` 的扁平 upstream 形状 app config。
 

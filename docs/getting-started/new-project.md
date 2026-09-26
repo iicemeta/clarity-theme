@@ -92,9 +92,9 @@ rendered as your site content.
 
 ## Updating the Theme
 
-The generated `package.json` declares a caret range (for example `^0.1.3`).
-Under npm node-semver that means `>=0.1.3 <0.2.0`: later `0.1.x` patch releases
-are accepted, `0.2.0` is not, and the range is not an exact pin. The lockfile
+The generated `package.json` declares a caret range (for example `^0.2.0`).
+Under npm node-semver that means `>=0.2.0 <0.3.0`: later `0.2.x` patch releases
+are accepted, `0.3.0` is not, and the range is not an exact pin. The lockfile
 records the resolved version actually installed, which may stay on an older
 in-range patch until you request an update — `pnpm install` alone does not
 refresh it:

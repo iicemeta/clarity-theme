@@ -146,22 +146,24 @@ test('vite.optimizeDeps.include：依赖预构建清单与上游一致', () => {
 
 /** 读取 manifest commit 的 upstream nuxt.config.ts（解析顺序与 source parity 门一致） */
 function readUpstreamNuxtConfig() {
+	// 忽略 stdin：Windows 下继承调用方句柄会让 git 偶发 EBUSY（见 scripts/test-upstream-parity.mjs 同注释）
+	const gitStdio = ['ignore', 'pipe', 'pipe']
 	const candidates = [
 		process.env.CLARITY_UPSTREAM_DIR,
 		resolve(themeDir, '../blog-v3-upstream'),
 	].filter(Boolean)
 	for (const dir of candidates) {
 		if (existsSync(dir) && hasCommit(dir)) {
-			return execFileSync('git', ['show', `${commit}:nuxt.config.ts`], { cwd: dir, encoding: 'utf8', maxBuffer: 1024 * 1024 })
+			return execFileSync('git', ['show', `${commit}:nuxt.config.ts`], { cwd: dir, encoding: 'utf8', maxBuffer: 1024 * 1024, stdio: gitStdio })
 		}
 	}
 	const tempDir = mkdtempSync(join(tmpdir(), 'clarity-transform-'))
 	console.error(`未找到本地 upstream 仓库，拉取 ${manifest.upstream.repo}@${commit.slice(0, 7)} 到临时目录……`)
 	try {
-		execFileSync('git', ['init', '--quiet', tempDir])
-		execFileSync('git', ['remote', 'add', 'origin', manifest.upstream.repo], { cwd: tempDir })
+		execFileSync('git', ['init', '--quiet', tempDir], { stdio: gitStdio })
+		execFileSync('git', ['remote', 'add', 'origin', manifest.upstream.repo], { cwd: tempDir, stdio: gitStdio })
 		execFileSync('git', ['fetch', '--quiet', '--depth', '1', 'origin', commit], { cwd: tempDir, stdio: ['ignore', 2, 2] })
-		return execFileSync('git', ['show', `${commit}:nuxt.config.ts`], { cwd: tempDir, encoding: 'utf8', maxBuffer: 1024 * 1024 })
+		return execFileSync('git', ['show', `${commit}:nuxt.config.ts`], { cwd: tempDir, encoding: 'utf8', maxBuffer: 1024 * 1024, stdio: gitStdio })
 	}
 	finally {
 		rmSync(tempDir, { recursive: true, force: true })

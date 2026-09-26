@@ -16,14 +16,14 @@ Configuration entry points:
 | File | Responsibility | Validation |
 | --- | --- | --- |
 | `clarity.config.ts` | Site / content / feature configuration (`defineClarityConfig`) | Zod schema (`clarity-theme/schema`) |
-| `app/app.config.ts` | UI overrides (`defineAppConfig({ clarity: ... })`) | TypeScript (`CustomAppConfig` merge) |
+| `app/app.config.ts` | UI overrides (`defineAppConfig` with the flat upstream keys) | TypeScript (`CustomAppConfig` merge) |
 | `content.config.ts` | Calls the Theme factory to generate the Content collection | `createClarityContentConfig` reparses internally |
 | `feeds.ts` | Friend data (`FeedGroup[]`) | TypeScript |
 | `runtimeConfig` | Environment and secrets; secrets are only valid in the server-only section | Nuxt |
 
 ## Strictness and 0.1.x compatibility
 
-The schema rejects unknown keys with a fatal validation error (typo protection). One narrow exception: keys that 0.1.x accepted and later removed — currently `article.useRandomPermalink` — produce a deprecation **warning** and are ignored, so old consumer configs keep building. This compatibility layer (registry: `legacyConfigKeys` in `src/config/schema.ts`) will be removed in **0.2.0**; delete the key from your config before upgrading. Any other unknown key remains fatal.
+The schema rejects unknown keys with a fatal validation error (typo protection), with **no exceptions**. Removed 0.1.x keys — such as `article.useRandomPermalink` — fail validation like any other unknown key; delete them when upgrading (see the [legacy policy](../maintainers/legacy-policy.md) migration table).
 
 ## Complete example
 
@@ -160,7 +160,7 @@ The first key of `article.types` is the default article layout; `pagination.sort
 
 ## `app/app.config.ts` (UI overrides, all optional)
 
-The type is `ClarityUiConfig` (from `clarity-theme/config`). Every field may be overridden as needed:
+The type is `ClarityUiConfig` (from `clarity-theme/config`). Every field may be overridden, but an override must supply the **complete object for that group** — the declared members are all required, so a partial group is a `nuxt typecheck` error even though it would merge fine at runtime:
 
 | Group | Fields |
 | --- | --- |
@@ -176,7 +176,7 @@ The type is `ClarityUiConfig` (from `clarity-theme/config`). Every field may be 
 | `pagination` | `perPage` / `sortOrder` (must be an `article.order` key) / `allowAscending` |
 | `themes` | light / system / dark `icon` / `tip` |
 
-Objects merge deeply; arrays replace the Theme value entirely. Only `component`, `footer`, `header`, `link`, `nav`, `pagination`, and `themes` are valid groups — see [customization](./customization.md).
+Objects merge deeply; arrays replace the Theme value entirely. Only `component`, `footer`, `header`, `link`, `nav`, `pagination`, and `themes` are valid groups — see [customization](./customization.md). Supply every member of a group you override; a partial group degrades type resolution for the whole app config, not just that key.
 
 ## Files consumers must provide (the Theme never carries them)
 

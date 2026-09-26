@@ -9,8 +9,8 @@
 Clarity Theme 是以 `nuxt.config.ts` 为根的可复用 Nuxt 4 Layer，全部运行时源码位于 `src/`（见[架构](../concepts/architecture.zh-CN.md)）：
 
 - layer-only 的 `clarity-source-layout` 引导模块只把 `src/` 布局应用到 Clarity layer，npm、Git commit 与本地目录安装解析一致，且不会覆盖消费方目录。
-- `clarity-config` 模块加载并校验 `clarity.config.ts`（Zod 严格模式），注入上游形状的扁平 app config（使上游组件与 blog-v3 完全一致地读取 `useAppConfig()`）与 0.1.x 的 `clarity` 兼容键，生成 `~~/package.json`、`~~/pnpm-workspace.yaml` 的构建期数据模块，接线 SEO/robots/llms/route rules/head 脚本，并应用固定链接与 `/posts` 前缀 Content hook。
-- 上游 `modules/anti-mirror` 模块被显式注册（位于 `clarity-config` 之后）并保持始终启用、沿用上游硬编码黑名单；`features.antiMirror` 配置已废弃，仅为 0.1.x 输入兼容保留。
+- `clarity-config` 模块加载并校验 `clarity.config.ts`（Zod 严格模式），注入上游形状的扁平 app config（使上游组件与 blog-v3 完全一致地读取 `useAppConfig()`），生成 `~~/package.json`、`~~/pnpm-workspace.yaml` 的构建期数据模块，接线 SEO/robots/llms/route rules/head 脚本，并应用固定链接与 `/posts` 前缀 Content hook。
+- 上游 `modules/anti-mirror` 模块被显式注册（位于 `clarity-config` 之后）并保持始终启用、沿用上游硬编码黑名单；`features.antiMirror` 配置可被接受但会被忽略（该模块无法关闭），并计划在未来的破坏性发布中移除。
 - 五个公共包导出（`.` / `./config` / `./content` / `./schema` / `./img`），带成对的 `.mjs` 运行时与 `.d.mts` 类型轨道。
 - 通用 UI、页面、组件、样式、composables、stores、Markdown/MDC/Shiki/KaTeX/Mermaid/ABC 渲染、搜索、分页、归档、TOC、Atom/OPML/stats 输出。
 - 独立的 `create-clarity-theme` workspace 包（独立版本、changelog、测试与发布工作流）为新消费者提供脚手架。

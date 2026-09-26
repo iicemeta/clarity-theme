@@ -47,12 +47,6 @@ function defineClarityConfig(config: ClarityConfigInput): ClarityConfig
 - `ClarityConfig`
 - `ClarityConfigInput`
 - `ClarityUiConfig`
-- `ClarityUiConfigInput`
-- `ClarityAppConfig`
-- `ClarityPublicConfig`
-- `ClarityPublicSiteConfig`
-- `ClarityPublicArticleConfig`
-- `ClarityPublicStatsConfig`
 - `ClarityPublicIntegrationsConfig`
 - `FeedEntry`
 - `FeedGroup`
@@ -141,18 +135,9 @@ categories/tags/type/draft 的默认值来自解析后的配置与 Content schem
 
 ## Layer 运行时 API
 
-由于消费者组件可能读取主题配置，以下自动导入的辅助函数受支持：
+消费者组件受支持的读取路径是经 Nuxt `useAppConfig()` 的上游形状扁平 app config——`title`、`nav`、`component.*`、`footer`、`header`、`pagination`、`themes` 等。全部 Theme 组件都使用这一形状，消费者组件也应使用它。
 
-| 辅助函数 | 返回值 |
-| --- | --- |
-| `useClarityConfig()` — **已废弃** | 客户端可见的公共配置子集加上 UI 配置 |
-| `useClaritySite()` — **已废弃** | 客户端可见的 site 分区（不含 `author.email`） |
-| `useClarityArticle()` — **已废弃** | 客户端可见的 article 子集（`categories`、`order`） |
-| `useClaritySiteFeedEntry()` — **已废弃** | 由站点配置派生的 feed 条目 |
-
-它们读取注入的 `clarity` app-config 键，属 0.1.x 兼容面。受支持的读取方式是上游形状的扁平 app config（`useAppConfig()`——`title`、`nav`、`component.*` 等），全部 Theme 组件均使用该路径。`clarity` 键与这些助手计划在 **0.2.0** 移除，自定义组件请迁移到 `useAppConfig()`。
-
-它们需要 Nuxt 应用上下文，不是独立的包子路径导出。
+0.1.x 的 `useClarityConfig()`、`useClaritySite()`、`useClarityArticle()`、`useClaritySiteFeedEntry()`（读取已删除的嵌套 `clarity` app-config 键）**已在 0.2.0 移除**：不再自动导入，包内也不再存在。旧 API 到新 API 的对照见 [legacy 政策](../maintainers/legacy-policy.zh-CN.md)。
 
 Theme 服务端路由使用内部 `useClarityServerConfig()` 助手，从 Nitro 私有 runtimeConfig 读取完整 site/feed/stats 配置与 feature 路由开关。它不会进入客户端 bundle，也不是公开的包导出。
 
@@ -204,8 +189,8 @@ export default defineNuxtConfig({
 
 以下内容刻意不作为公共 ESM API：
 
-- `src/modules/clarity-config` 内部结构，包括 `toPublicClarityConfig`
-- 除上述 clarity 访问器之外的普通 `src/composables/*`
+- `src/modules/clarity-config` 内部结构
+- 全部普通 `src/composables/*`（消费者组件改读 `useAppConfig()`）
 - `src/stores/*`、内部工具函数与生成的类型模板
 - 单个组件的 props/样式，除非被有文档记载的渲染契约覆盖
 - remark 插件实例；Nuxt Layer 配置在内部加载它们

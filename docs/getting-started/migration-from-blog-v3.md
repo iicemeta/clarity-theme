@@ -25,10 +25,12 @@ hand-write `package.json`.
 ### Theme updates after migration
 
 A `package.json` range is not the installed version. Under npm node-semver,
-`^0.1.3` means `>=0.1.3 <0.2.0`: it accepts later `0.1.x` patch releases but
-not `0.2.0` — a caret range is not an exact pin. `pnpm-lock.yaml` records the
+`^0.2.0` means `>=0.2.0 <0.3.0`: it accepts later `0.2.x` patch releases but
+not `0.3.0` — a caret range is not an exact pin. `pnpm-lock.yaml` records the
 resolved version actually installed, which may stay on an older in-range patch
-until you request an update; `pnpm install` alone does not refresh it.
+until you request an update; `pnpm install` alone does not refresh it. A
+consumer still pinned to a `^0.1.x` range stays on the legacy 0.1.x line and
+must widen the range to receive 0.2.x.
 
 ```bash
 pnpm update clarity-theme          # refresh the resolved version within the declared range
@@ -180,27 +182,33 @@ Do not spread a custom collection schema into this file without reviewing the fa
 
 ### 3.5 Convert `app/app.config.ts` to UI-only overrides
 
-Remove the old `...blogConfig` spread. Keep only UI groups under `clarity`:
+Remove the old `...blogConfig` spread. Keep only the UI groups, written as flat upstream-shaped keys:
 
 ```ts
 export default defineAppConfig({
-	clarity: {
-		component: { codeblock: { triggerRows: 32, collapsedRows: 16 } },
-		header: { showTitle: true, emojiTail: ['📝'] },
-		nav: [
-			{
-				title: '',
-				items: [
-					{ icon: 'tabler:files', text: 'Articles', url: '/' },
-					{ icon: 'tabler:link', text: 'Friends', url: '/link' },
-					{ icon: 'tabler:archive', text: 'Archive', url: '/archive' },
-				],
-			},
-		],
-		pagination: { perPage: 10, sortOrder: 'date' },
+	component: {
+		alert: { defaultStyle: 'card' },
+		codeblock: { triggerRows: 32, collapsedRows: 16, enableIndentGuide: true, indent: 4, tabSize: 3 },
+		excerpt: { animation: true, caret: '_' },
+		slide: { showTitle: true },
+		stats: { birthYear: 0, wordCount: '' },
 	},
+	header: { logo: '', showTitle: true, subtitle: '', emojiTail: ['📝'] },
+	nav: [
+		{
+			title: '',
+			items: [
+				{ icon: 'tabler:files', text: 'Articles', url: '/' },
+				{ icon: 'tabler:link', text: 'Friends', url: '/link' },
+				{ icon: 'tabler:archive', text: 'Archive', url: '/archive' },
+			],
+		},
+	],
+	pagination: { perPage: 10, sortOrder: 'date', allowAscending: false },
 })
 ```
+
+Every group you override must be complete: the declared members are all required, so a partial group fails `nuxt typecheck`. If you only need a couple of fields, keep the rest at their Theme defaults rather than listing a partial group.
 
 Allowed top-level keys are exactly `component`, `footer`, `header`, `link`, `nav`, `pagination`, and `themes`. Site values derived from `blog.config.ts` must live in `clarity.config.ts`; the module warns when it finds site-level fields in app config. Objects merge deeply; arrays replace the Theme value entirely.
 
@@ -302,15 +310,19 @@ Implicit upstream behavior becomes explicit feature flags (all default `true` ex
 
 ## 5. `app/app.config.ts` mapping
 
+Clarity keeps the upstream-shaped **flat** app config, so the mapping is identity: the top-level key names do not change.
+
 | Old top-level key | New consumer key |
 | --- | --- |
-| `component` | `clarity.component` |
-| `footer` | `clarity.footer` |
-| `header` | `clarity.header` |
-| `link` | `clarity.link` |
-| `nav` | `clarity.nav` |
-| `pagination` | `clarity.pagination` |
-| `themes` | `clarity.themes` |
+| `component` | `component` |
+| `footer` | `footer` |
+| `header` | `header` |
+| `link` | `link` |
+| `nav` | `nav` |
+| `pagination` | `pagination` |
+| `themes` | `themes` |
+
+The 0.1.x nested form (`app.config.clarity.component`, …) was removed in 0.2.0. If a migrated project still carries a `clarity` key, delete it and move each value to the matching top-level key. See the [legacy policy](../maintainers/legacy-policy.md).
 
 Special cases: `header.logo` defaults from `site.author.avatar`; `header.subtitle` defaults from `site.subtitle`; `footer.copyright` has a generated default; `pagination.sortOrder` must be a key in `article.order`; `component.stats.wordCount` is obsolete (the widget computes current word counts from the stats API).
 

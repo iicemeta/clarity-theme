@@ -23,10 +23,11 @@ truth。迁移则保留消费方自己的 `package.json`，只通过包管理器
 ### 迁移后的 Theme 更新
 
 `package.json` 中的 range 不等于实际安装的版本。按 npm node-semver 规则，
-`^0.1.3` 表示 `>=0.1.3 <0.2.0`：可以接受后续 `0.1.x` patch 版本，但不能接受
-`0.2.0` —— caret range 不是锁死版本。`pnpm-lock.yaml` 记录的是实际解析安装的
+`^0.2.0` 表示 `>=0.2.0 <0.3.0`：可以接受后续 `0.2.x` patch 版本，但不能接受
+`0.3.0` —— caret range 不是锁死版本。`pnpm-lock.yaml` 记录的是实际解析安装的
 resolved version，在你主动更新之前，它可能一直停留在 range 内较旧的 patch
-版本上；仅运行 `pnpm install` 不会刷新它。
+版本上；仅运行 `pnpm install` 不会刷新它。仍固定在 `^0.1.x` range 的 consumer
+会停留在 legacy 0.1.x 线上，必须放宽 range 才会拿到 0.2.x。
 
 ```bash
 pnpm update clarity-theme          # 在已声明范围内刷新 resolved version
@@ -178,27 +179,33 @@ export default createClarityContentConfig(clarityConfig)
 
 ### 3.5 把 `app/app.config.ts` 转换为仅 UI 覆盖
 
-移除旧的 `...blogConfig` 展开，只保留 `clarity` 下的 UI 分组：
+移除旧的 `...blogConfig` 展开，只保留 UI 分组，并直接写成扁平的上游形状键：
 
 ```ts
 export default defineAppConfig({
-	clarity: {
-		component: { codeblock: { triggerRows: 32, collapsedRows: 16 } },
-		header: { showTitle: true, emojiTail: ['📝'] },
-		nav: [
-			{
-				title: '',
-				items: [
-					{ icon: 'tabler:files', text: 'Articles', url: '/' },
-					{ icon: 'tabler:link', text: 'Friends', url: '/link' },
-					{ icon: 'tabler:archive', text: 'Archive', url: '/archive' },
-				],
-			},
-		],
-		pagination: { perPage: 10, sortOrder: 'date' },
+	component: {
+		alert: { defaultStyle: 'card' },
+		codeblock: { triggerRows: 32, collapsedRows: 16, enableIndentGuide: true, indent: 4, tabSize: 3 },
+		excerpt: { animation: true, caret: '_' },
+		slide: { showTitle: true },
+		stats: { birthYear: 0, wordCount: '' },
 	},
+	header: { logo: '', showTitle: true, subtitle: '', emojiTail: ['📝'] },
+	nav: [
+		{
+			title: '',
+			items: [
+				{ icon: 'tabler:files', text: 'Articles', url: '/' },
+				{ icon: 'tabler:link', text: 'Friends', url: '/link' },
+				{ icon: 'tabler:archive', text: 'Archive', url: '/archive' },
+			],
+		},
+	],
+	pagination: { perPage: 10, sortOrder: 'date', allowAscending: false },
 })
 ```
+
+覆盖的任何分组都必须完整：声明的成员全部必填，分组不完整会让 `nuxt typecheck` 报错。若只需要其中几个字段，请让其余字段保持 Theme 默认值，而不要写一个不完整的分组。
 
 允许的顶层键只有 `component`、`footer`、`header`、`link`、`nav`、`pagination` 与 `themes`。从 `blog.config.ts` 派生的站点值必须放进 `clarity.config.ts`；模块发现 app config 中出现站点级字段时会输出 WARN。对象深度合并；数组整体替换 Theme 值。
 
@@ -300,15 +307,19 @@ Clarity 提供 `server/api/stats.get.ts`、`server/routes/atom.xml.get.ts` 与 `
 
 ## 5. `app/app.config.ts` 映射
 
+Clarity 保持上游形状的**扁平** app config，因此映射是恒等映射：顶层键名不变。
+
 | 旧顶层键 | 新消费方键 |
 | --- | --- |
-| `component` | `clarity.component` |
-| `footer` | `clarity.footer` |
-| `header` | `clarity.header` |
-| `link` | `clarity.link` |
-| `nav` | `clarity.nav` |
-| `pagination` | `clarity.pagination` |
-| `themes` | `clarity.themes` |
+| `component` | `component` |
+| `footer` | `footer` |
+| `header` | `header` |
+| `link` | `link` |
+| `nav` | `nav` |
+| `pagination` | `pagination` |
+| `themes` | `themes` |
+
+0.1.x 的嵌套形式（`app.config.clarity.component` 等）已在 0.2.0 移除。若迁移后的项目仍带 `clarity` 键，请删除该键并把每个值移到对应的顶层键。见 [legacy 政策](../maintainers/legacy-policy.zh-CN.md)。
 
 特例：`header.logo` 默认取 `site.author.avatar`；`header.subtitle` 默认取 `site.subtitle`；`footer.copyright` 有生成默认值；`pagination.sortOrder` 必须是 `article.order` 的键；`component.stats.wordCount` 已废弃（小部件从 stats API 计算当前字数）。
 

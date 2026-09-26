@@ -28,7 +28,7 @@ The tested source baseline is blog-v3 3.7.2 at Clarity's recorded sync commit. V
 | `article.categories` | `article.categories` | Default `{}` | `AUTO` | Same icon/color structure |
 | `article.types` | `article.types` | Default `{ tech: {} }` | `AUTO` | First key is default layout |
 | `article.order` | `article.order` | Date/updated defaults | `AUTO` | `pagination.sortOrder` must reference a key |
-| `article.useRandomPremalink` (upstream typo) | delete the key | — | `REVIEW` | LEGACY (deprecated): the key is accepted with a build-time deprecation warning and ignored (registry `legacyConfigKeys`), removed in 0.2.0. Random permalink generation belongs to consumer build scaffolding, not the Theme |
+| `article.useRandomPremalink` (upstream typo) | delete the key | — | `REVIEW` | HISTORY (removed in 0.2.0): the key is no longer accepted; leaving it fails config validation. Random permalink generation belongs to consumer build scaffolding, not the Theme |
 | `article.hidePostPrefix` | `article.hidePostPrefix` | Default `true` | `AUTO` | Removes `/posts` for file-routed articles |
 | `article.robotsNotIndex` | `article.robotsNotIndex` | Default `[]` | `AUTO` | Feeds robots config |
 
@@ -71,10 +71,9 @@ pagination
 themes
 ```
 
-> LEGACY (deprecated, removed 0.2.0): the 0.1.x nested form `component` /
-> `footer` / … under `app.config.clarity` still works through the
-> compatibility merge, but new migrations must use the flat keys above.
-> See `docs/maintainers/legacy-policy.md`.
+> HISTORY (removed in 0.2.0): the 0.1.x nested form `component` /
+> `footer` / … under `app.config.clarity` is no longer read. Migrate to the
+> flat keys above. See `docs/maintainers/legacy-policy.md`.
 
 | Source UI | Clarity UI | Notes |
 | --- | --- | --- |

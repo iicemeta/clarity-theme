@@ -15,8 +15,7 @@ import {
 } from 'nuxt/kit'
 import { parse as parseYaml } from 'yaml'
 import { fallbackPnpmWorkspace } from '../../config/pnpm-workspace'
-import { toPublicClarityConfig } from '../../config/public'
-import { clarityConfigSchema, legacyConfigKeys, stripLegacyConfigKeys } from '../../config/schema'
+import { clarityConfigSchema } from '../../config/schema'
 import { toServerClarityConfig } from '../../config/server'
 import uiDefaults from '../../config/ui'
 
@@ -77,7 +76,7 @@ export default defineNuxtModule<ModuleOptions>({
 		// @pinia/nuxt 不会自动扫描 Layer 的 stores 目录，需显式注册
 		addImportsDir(resolve(themeSrcDir, 'stores'))
 
-		// ---- AppConfig 类型化：上游扁平键 + 0.1.x 的 clarity 键都获得类型提示 ----
+		// ---- AppConfig 类型化：上游扁平键获得类型提示 ----
 		// 注意：类型文件生成于 buildDir/types/ 下，相对路径必须以其为基准计算，
 		// 否则导入解析失败会因 skipLibCheck 静默退化为 any（审计发现 #9）。
 		const appConfigTypeDir = resolve(nuxt.options.buildDir, 'types')
@@ -89,15 +88,13 @@ export default defineNuxtModule<ModuleOptions>({
 				// app/types/index.ts 的 Window.twikoo 等环境声明在 node_modules Layer 中
 				// 不会被 tsconfig include 命中（被 node_modules exclude 过滤），需显式导入
 				`import '${globalsTypePath}'`,
-				`import type { ClarityAppConfig, ClarityAppConfigArticle, ClarityUiConfigInput } from '${appConfigTypePath}'`,
+				`import type { ClarityAppConfigArticle, ClarityUiConfig } from '${appConfigTypePath}'`,
 				'',
 				'declare module \'@nuxt/schema\' {',
-				'  // 读取侧：clarity 用 unknown 回落到注入值；UI 扁平键补充完整类型，',
+				'  // 读取侧：UI 扁平键补充完整类型（0.2.0 起不再提供 clarity 嵌套键），',
 				'  // 使上游组件在 JSON 字面量（空数组 / 宽化字符串）下仍获得正确类型。',
 				'  // article 只声明 categories（Record 索引），order / types 保留 Resolved 字面量。',
 				'  interface CustomAppConfig {',
-				'    /** @deprecated 0.1.x 兼容键：UI 覆盖请直接使用顶层扁平键（上游形状） */',
-				'    clarity?: unknown',
 				'    article?: ClarityAppConfigArticle',
 				'    component?: ClarityUiConfig[\'component\']',
 				'    footer?: ClarityUiConfig[\'footer\']',
@@ -105,9 +102,6 @@ export default defineNuxtModule<ModuleOptions>({
 				'    link?: ClarityUiConfig[\'link\']',
 				'    nav?: ClarityUiConfig[\'nav\']',
 				'    themes?: ClarityUiConfig[\'themes\']',
-				'  }',
-				'  interface AppConfigInput {',
-				'    clarity?: ClarityAppConfig | ClarityUiConfigInput',
 				'  }',
 				'}',
 				'',
@@ -137,7 +131,7 @@ export default defineNuxtModule<ModuleOptions>({
 		// ---- 读取并校验站点配置（错误在构建开始前暴露） ----
 		const jiti = createJiti(import.meta.url, { moduleCache: false, interopDefault: true })
 		const configModule = await importConfigFile(jiti, configPath)
-		const config = parseClarityConfig((configModule as { default?: unknown })?.default ?? configModule, configPath, logger)
+		const config = parseClarityConfig((configModule as { default?: unknown })?.default ?? configModule, configPath)
 		const { site, article, integrations, features } = config
 
 		// ---- 上游构建期数据模块：~~/package.json 与 ~~/pnpm-workspace.yaml ----
@@ -293,14 +287,13 @@ export default defineNuxtModule<ModuleOptions>({
 			})
 		})
 
-		// ---- 消费项目 app/app.config.ts：读取 0.1.x `clarity` 键的 UI 覆盖 ----
+		// ---- 消费项目 app/app.config.ts：站点级字段的迁移警告 ----
 		const consumerAppConfig = await loadConsumerAppConfig(nuxt, jiti)
-		const clarityUi = pickUiOverrides(consumerAppConfig?.clarity)
 		await warnSiteLevelAppConfigOverrides(consumerAppConfig, logger)
 
 		// ---- 上游形状的扁平 AppConfig 注入（upstream parity 的关键）----
 		// blog-v3 组件一律通过 useAppConfig() 读取扁平键（title / nav / component.*）。
-		// 这里将 clarity.config.ts + UI 默认值 + 0.1.x clarity 覆盖注入为同一形状；
+		// 这里将 clarity.config.ts + UI 默认值注入为同一形状；
 		// 消费项目仍可在自己的 app.config.ts 中按上游习惯直接覆盖任意扁平键。
 		updateAppConfig({
 			// 站点数据（上游来自 blog.config.ts 展开进 app.config.ts）
@@ -333,34 +326,16 @@ export default defineNuxtModule<ModuleOptions>({
 			stats: config.stats,
 			twikoo: integrations.twikoo ?? { envId: '', preload: '' },
 
-			// UI 配置：站点派生值覆盖结构默认值，0.1.x clarity 覆盖优先级最高
-			...mergeUiConfig(clarityUi, {
-				...uiDefaults,
-				header: {
-					...uiDefaults.header,
-					logo: site.author.avatar ?? site.favicon,
-					subtitle: site.subtitle ?? site.description,
-				},
-				footer: {
-					...uiDefaults.footer,
-					copyright: `© ${new Date().getFullYear()} ${site.author.name}`,
-				},
-			}),
-		})
-
-		// ---- 0.1.x 兼容：继续注入完整的 clarity 键（useClarityConfig() 读取侧）----
-		updateAppConfig({
-			clarity: {
-				...toPublicClarityConfig(config),
-				header: {
-					logo: site.author.avatar ?? '',
-					subtitle: site.subtitle ?? '',
-				},
-				footer: {
-					copyright: site.copyright?.name
-						? `© ${new Date().getFullYear()} ${site.author.name} · ${site.copyright.name}`
-						: `© ${new Date().getFullYear()} ${site.author.name}`,
-				},
+			// UI 配置：站点派生值覆盖结构默认值
+			...uiDefaults,
+			header: {
+				...uiDefaults.header,
+				logo: site.author.avatar ?? site.favicon,
+				subtitle: site.subtitle ?? site.description,
+			},
+			footer: {
+				...uiDefaults.footer,
+				copyright: `© ${new Date().getFullYear()} ${site.author.name}`,
 			},
 		})
 
@@ -453,18 +428,8 @@ async function importConfigFile(jiti: ReturnType<typeof createJiti>, configPath:
 	}
 }
 
-function parseClarityConfig(raw: unknown, configPath: string, logger: ReturnType<typeof useLogger>): ClarityConfig {
-	// 0.1.x 兼容：已移除的 legacy 键（如 article.useRandomPermalink）警告后忽略，
-	// 不让 strictObject 直接 fatal。defineClarityConfig 已剥离过时此处为空操作，
-	// 覆盖裸对象导出（未经过 defineClarityConfig）的配置文件。
-	const { config: stripped, legacyKeys } = stripLegacyConfigKeys(raw)
-	for (const key of legacyKeys) {
-		logger.warn(
-			`${configPath} 的 ${key} 已废弃（${legacyConfigKeys[key]}），已忽略。`
-			+ '该 0.1.x 兼容将在 0.2.0 移除，请从配置中删除此键。',
-		)
-	}
-	const result = clarityConfigSchema.safeParse(stripped)
+function parseClarityConfig(raw: unknown, configPath: string): ClarityConfig {
+	const result = clarityConfigSchema.safeParse(raw)
 	if (!result.success) {
 		const issues = result.error.issues
 			.map(issue => `  - ${issue.path.join('.') || '(根对象)'}: ${issue.message}`)
@@ -512,49 +477,13 @@ async function warnSiteLevelAppConfigOverrides(appConfig: Record<string, unknown
 	if (!appConfig) {
 		return
 	}
-	const offenders = Object.keys(appConfig).filter(key => !uiConfigKeys.has(key) && key !== 'clarity')
-	if (appConfig.clarity && typeof appConfig.clarity === 'object') {
-		const clarityOffenders = Object.keys(appConfig.clarity as Record<string, unknown>).filter(key => !uiConfigKeys.has(key))
-		if (clarityOffenders.length) {
-			logger.warn(
-				`app/app.config.ts 的 clarity 中出现站点级字段 [${clarityOffenders.join(', ')}]，`
-				+ '请将站点配置迁移到 clarity.config.ts。',
-			)
-		}
-	}
+	const offenders = Object.keys(appConfig).filter(key => !uiConfigKeys.has(key))
 	if (offenders.length) {
 		logger.warn(
 			`app/app.config.ts 中出现站点级字段 [${offenders.join(', ')}]，`
 			+ '它们会覆盖 clarity.config.ts 的注入结果；请将站点配置迁移到 clarity.config.ts。',
 		)
 	}
-}
-
-/** 深度合并 UI 覆盖：对象递归合并、数组整体替换（覆盖语义） */
-function mergeUiConfig(overrides: Record<string, unknown> | undefined, base: Record<string, unknown>) {
-	if (!overrides) {
-		return base
-	}
-	const result: Record<string, unknown> = { ...base }
-	for (const [key, value] of Object.entries(overrides)) {
-		const baseValue = result[key]
-		result[key]
-			= value && baseValue && typeof value === 'object' && typeof baseValue === 'object'
-				&& !Array.isArray(value) && !Array.isArray(baseValue)
-				? mergeUiConfig(value as Record<string, unknown>, baseValue as Record<string, unknown>)
-				: value
-	}
-	return result
-}
-
-function pickUiOverrides(clarity: unknown) {
-	if (!clarity || typeof clarity !== 'object') {
-		return undefined
-	}
-	const picked = Object.fromEntries(
-		Object.entries(clarity as Record<string, unknown>).filter(([key]) => uiConfigKeys.has(key)),
-	)
-	return Object.keys(picked).length ? picked : undefined
 }
 
 /** clarity.config → 上游 blog.config 扁平形状（与 src/blog.config.ts 适配层保持一致） */

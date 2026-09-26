@@ -1,73 +1,51 @@
 #!/usr/bin/env node
 /**
- * clarity.config 校验行为回归（Issue C）
+ * clarity.config 校验行为回归
  *
- * 0.1.x 兼容契约：
- *   - 已移除的 legacy 键（如 article.useRandomPermalink）→ 警告 + 忽略，不致命
- *   - 注册表之外的未知键 → 仍然致命（拼写错误保护不放宽）
- *   - defineClarityConfig 与模块内 parseClarityConfig 共用同一契约
+ * 0.2.0 契约（legacy 兼容层已移除）：
+ *   - 0.1.x 的 legacy 键（article.useRandomPermalink）与其它未知键一样致命
+ *   - strictObject 拼写保护无例外
+ *   - defineClarityConfig 与模块内 parse 共用同一 strict schema
  */
 import assert from 'node:assert/strict'
 // eslint-disable-next-line test/no-import-node-test
 import { it as test } from 'node:test'
 import { defineClarityConfig } from '../src/config/define.mjs'
-import { clarityConfigSchema, legacyConfigKeys, stripLegacyConfigKeys } from '../src/config/schema.mjs'
+import { clarityConfigSchema } from '../src/config/schema.mjs'
 
 const validSite = {
-	title: 'Legacy Compat Site',
-	description: 'verify legacy key handling',
-	url: 'https://legacy.example.com/',
+	title: 'Strict Schema Site',
+	description: 'verify strict key handling',
+	url: 'https://strict.example.com/',
 	author: { name: 'Tester' },
 }
 
-test('legacy 注册表非空且仅含已移除键', () => {
-	assert.deepEqual(Object.keys(legacyConfigKeys), ['article.useRandomPermalink'])
+test('schema 默认值填充', () => {
+	const parsed = clarityConfigSchema.parse({ site: validSite })
+	assert.equal(parsed.article.defaultCategory, '未分类')
+	assert.equal(parsed.features.atom, true)
 })
 
-test('legacy 键被剥离并报告，其余配置保持原值', () => {
-	const { config, legacyKeys } = stripLegacyConfigKeys({
-		site: validSite,
-		article: { useRandomPermalink: true, hidePostPrefix: false },
-	})
-	assert.deepEqual(legacyKeys, ['article.useRandomPermalink'])
-	assert.equal(config.article.hidePostPrefix, false)
-	assert.equal('useRandomPermalink' in config.article, false)
-	assert.deepEqual(clarityConfigSchema.safeParse(config).error?.issues, undefined)
+test('0.2.0 已移除的 legacy 键 useRandomPermalink 致命', () => {
+	assert.throws(
+		() => defineClarityConfig({ site: validSite, article: { useRandomPermalink: true } }),
+		/useRandomPermalink/,
+	)
 })
 
-test('未命中 legacy 键时不产生拷贝、不报告', () => {
-	const input = { site: validSite }
-	const { config, legacyKeys } = stripLegacyConfigKeys(input)
-	assert.deepEqual(legacyKeys, [])
-	assert.equal(config, input)
-})
-
-test('注册表外的未知键仍然致命（strictObject 不放宽）', () => {
-	const { config } = stripLegacyConfigKeys({ site: validSite, articel: { typo: true } })
-	const result = clarityConfigSchema.safeParse(config)
-	assert.equal(result.success, false)
-})
-
-test('defineClarityConfig：legacy 键警告后通过校验', () => {
-	const warnings = []
-	const originalWarn = console.warn
-	console.warn = message => warnings.push(String(message))
-	try {
-		const config = defineClarityConfig({
-			site: validSite,
-			article: { useRandomPermalink: true },
-		})
-		assert.equal(config.article.hidePostPrefix, true)
-	}
-	finally {
-		console.warn = originalWarn
-	}
-	assert.equal(warnings.filter(w => w.includes('useRandomPermalink') && w.includes('0.2.0')).length, 1)
-})
-
-test('defineClarityConfig：未知键仍抛出校验错误', () => {
+test('任意未知键致命（strictObject 拼写保护）', () => {
 	assert.throws(
 		() => defineClarityConfig({ site: validSite, unknowKey: true }),
 		/校验失败/,
 	)
+	assert.throws(
+		() => clarityConfigSchema.parse({ site: validSite, articel: {} }),
+		/Unrecognized key/,
+	)
+})
+
+test('合法配置通过并填充默认值', () => {
+	const config = defineClarityConfig({ site: validSite })
+	assert.equal(config.article.hidePostPrefix, true)
+	assert.equal(config.feed.limit, 50)
 })

@@ -45,7 +45,7 @@ Authoring material (the Markdown/MDC capability audit, syntax guide, and per-com
 | [Testing](./maintainers/testing.md) | Verification matrix and how to run each layer |
 | [Upstream sync](./maintainers/upstream-sync.md) | Baseline manifest, drift handling, and sync commands |
 | [Transform parity](./maintainers/transform-parity.md) | The nuxt.config.ts derived-surface registry and its gate |
-| [Legacy policy](./maintainers/legacy-policy.md) | 0.1.x compatibility surface: classification, migration, 0.2.0 sunset |
+| [Legacy policy](./maintainers/legacy-policy.md) | Removed 0.1.x compatibility surface: what was deleted, migration map, removal rules |
 | [Patch strategy](./maintainers/patches.md) | Why consumers own dependency patches |
 | [Publishing](./maintainers/publishing.md) | Permanent release process: version, tag, OIDC npm publish, rollback |
 | [Release checklist](./maintainers/release-checklist.md) | Version-agnostic release template |
