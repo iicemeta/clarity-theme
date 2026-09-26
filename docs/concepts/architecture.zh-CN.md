@@ -2,217 +2,146 @@
 
 [English](./architecture.md) | **简体中文**
 
-本文档描述当前实现。它从属于源代码与测试。
+本文描述当前实现，以源码与测试为准。一次性审计与阶段叙事存放于 [docs/history](../history/)——那是历史记录，不是现行规范。
 
-## 1. 主题 / 使用方边界
+## 0. 管线总览
 
 ```text
-clarity-theme (Nuxt Layer package)
-├── nuxt.config.ts         Layer capabilities and module integration
-└── src/                   Theme runtime source (Layer srcDir)
-    ├── modules/           clarity-config consumer config discovery/injection
-    ├── assets/ components/ composables/ layouts/ pages/ plugins/ stores/ types/ utils/
-    ├── config/            Public config/content/schema API
-    ├── img/               Pure image helper export
-    ├── remark-plugins/    Content pipeline plugins
-    ├── server/            Atom/OPML/stats routes
-    ├── shared/            Shared types and utilities
-    └── public/            Generic feed style and font assets
-
-consumer blog
-├── nuxt.config.ts         extends clarity-theme; deployment/site rules
-├── clarity.config.ts      site and feature contract
-├── content.config.ts      Theme content factory call
-├── content/               articles and pages
-├── feeds.ts               optional friend data
-└── app/app.config.ts      optional UI override
+Upstream blog-v3（事实来源，由 sync-manifest.json 钉住基线）
+        ↓  sync / 机械适配
+src/  （Layer 运行时源码；include 同步面冻结）
+        ↓  应用 Layer 布局且不泄漏到消费项目
+clarity-source-layout（Nuxt 模块）
+        ↓  发现 consumer 配置，注入别名/appConfig/head/SEO
+clarity-config（Nuxt 模块）
+        ↓  extends: ['clarity-theme']
+consumer 博客（clarity.config.ts、content/、feeds.ts、app.config、部署）
 ```
 
-主题提供通用行为。使用方提供全部站点相关数据，并继续对密钥、部署、重定向与补丁负责。
+consumer 只看到一个 Layer。`sync-manifest.json` 与 consumer 契约之间的一切，都是为了让 upstream 派生文件在该 Layer 内不加改写地运行。
 
-## 2. 目录归属
+## 1. 源码分类
 
-| 目录 | 职责 | 是否入包 | 环境 | 上游同步关系 |
-| --- | --- | --- | --- | --- |
-| `src/assets/` … `src/utils/` | UI、页面、布局、组件、composables、stores、plugins、样式、类型、工具 | 是 | 主题运行时 | 上游 `app/**` 经 sync `pathMap` 映射到此；若干文件经过适配，`app/types/**`、`app/stores/**` 与 `app/utils/**` 未被显式分类 |
-| `src/config/` | 公共 config/content/schema API 与 TS/MJS 双轨 | 是 | 构建/消费者 API | 主题派生的契约层；根 transform 文件促成了这次替换 |
-| `src/img/` | 公共纯图片辅助导出 | 是 | 消费者 API | 主题持有的包导出，包装 `src/utils/img.ts` 类型 |
-| `src/modules/` | `clarity-config` 构建桥与反镜像客户端 | 是 | Nuxt 构建 | 上游 `modules/**` 为 `include`，但上游反镜像模块已被主题配置模块替换 |
-| `src/remark-plugins/` | Markdown AST 转换 | 是 | Content 构建 | 上游派生的 `.ts` 加上 `include` 下的主题 `.mjs`/`.d.mts` 运行时轨 |
-| `src/server/` | Atom、OPML 与统计的 Nitro handler | 是 | SSR/静态生成 | 上游派生并适配；`server/**` 为 `include` |
-| `src/shared/` | Content 行类型与跨边界工具 | 是 | 主题运行时/服务端 | 上游派生加主题新增；`shared/**` 为 `include` |
-| `src/public/` | 通用 Atom XSL/CSS 与内置字体 | 是 | 静态资源 | `public/assets/**` 与 `public/fonts/**` 为 `include` |
-| `skills/` | Agent 工作流 Skill（`migrate-blog-v3-to-clarity`） | 否 | Agent 工作流 | 主题持有；不打入包中 |
-| `playground/` | 最小 workspace 消费者与兼容性夹具 | 否 | 开发 | 主题持有；不打入包中 |
-| `scripts/` | 验证、消费者/兼容性测试装置、同步工具 | 否 | 开发/测试 | 主题持有；上游 `scripts/**` 被排除 |
-| `tests/` | 同步回归套件 | 否 | 测试 | 主题持有；未针对未来上游路径显式分类 |
-| `docs/` | 用户与维护文档 | 否 | 开发 | 主题持有；未针对未来上游路径显式分类 |
+`src/` 下每个文件属于且仅属于一类。权威登记表：`sync-manifest.json`（include/transform/manual）、`tests/upstream-parity.manifest.json`（include 面逐文件分类）、`docs/maintainers/transform-parity.md`（`nuxt.config.ts` 派生面登记）：
 
-根级包/Layer 元数据、workspace 配置、质量配置、CI、许可证与同步 manifest 在[上游同步](../maintainers/upstream-sync.zh-CN.md)中有各自的包或 manifest 处理说明。
+| 分类 | 含义 | 示例 |
+| --- | --- | --- |
+| **SOURCE** | upstream 文件，EOL 归一后逐字一致（`identical`）或仅机械导入路径适配（`mechanical`）。禁止手改；漂移即 `pnpm test:upstream-parity` 失败。 | `src/components/`、`src/pages/`、`src/composables/`、`src/assets/` 的大多数 |
+| **TRANSFORM** | 需要人工重设计为 Layer 形态的 upstream 文件；上游侧变更必须人工重放并重新登记。 | `nuxt.config.ts`、`src/config/*`（取代上游 `blog.config.ts`/`app.config.ts`）、`src/modules/clarity-config`、remark 插件 `.mjs` 运行时 |
+| **CLARITY-ONLY** | 无 upstream 对应物的 Layer 边界基础设施。 | `src/modules/clarity-source-layout`、`src/config/ui.ts`、`src/config/public.ts`、`src/img/`、`patches/temporal-spec.patch` |
+| **LEGACY** | 为 0.1.x 旧 consumer 保留的兼容面，已废弃，计划 0.2.0 移除。见[legacy 政策](../maintainers/legacy-policy.zh-CN.md)。 | `useClarityConfig()` / `useClaritySite()` / `useClarityArticle()` / `useClaritySiteFeedEntry()`（`src/shared/utils/clarity.ts`）、app-config 的 `clarity` 键、`article.useRandomPermalink` 警告并忽略逻辑 |
+
+## 2. 主题 / 消费项目边界
+
+```text
+clarity-theme（Nuxt Layer 包）
+├── nuxt.config.ts         Layer 能力与模块集成（TRANSFORM）
+└── src/                   Layer srcDir — SOURCE / TRANSFORM / CLARITY-ONLY / LEGACY 混合
+    ├── modules/           clarity-source-layout、clarity-config、anti-mirror
+    ├── config/            公共 config/content/schema API（TS + MJS 双轨）
+    ├── assets/ components/ composables/ layouts/ pages/ plugins/ stores/ types/ utils/
+    ├── img/               纯图片助手导出
+    ├── remark-plugins/    内容管线插件
+    ├── server/            Atom/OPML/stats Nitro 路由
+    ├── shared/            跨边界工具（含 LEGACY composables）
+    └── public/            通用订阅源样式与字体资产
+
+consumer 博客
+├── nuxt.config.ts         extends clarity-theme；自有 routeRules/重定向/部署
+├── clarity.config.ts      站点与功能契约（defineClarityConfig）
+├── content.config.ts      createClarityContentConfig(clarityConfig)
+├── content/               文章与页面
+├── feeds.ts               可选友链数据
+├── tsconfig.json          根工程引用（标准 Nuxt 文件；必需）
+└── app/app.config.ts      可选 UI 覆盖（upstream 形状的扁平键）
+```
+
+Theme 提供通用行为。consumer 提供全部站点数据，并自行负责密钥、部署、重定向与补丁。
 
 ## 3. Layer 模型
 
-### 包/Layer 根
+### 包 / Layer 根
 
 `clarity-theme` 解析到 `nuxt.config.ts`。该配置：
 
-- 注册 Content、SEO、图片、图标、色彩模式、Pinia、VueUse、Bikariya、LLMs 以及本地 source-layout/clarity-config 模块。
-- 为 Layer CSS、组件目录、图标、模块与 SCSS 变量使用包内绝对路径。
-- 通过指向 `.mjs` 运行时实现的 `file://` URL 配置 Markdown remark/rehype 插件。
-- 设置运行时构建元数据、预渲染平台行为、Vite 优化、图片密度/格式、链接检查器行为，并禁用 OG 图片生成。
+- 注册 Content、SEO、image、icon、color mode、Pinia、VueUse、Bikariya、LLMs，以及下述两个本地模块。
+- Layer CSS、组件目录、图标、模块与 SCSS 变量全部使用包内绝对路径。
+- Markdown remark/rehype 插件通过 `file://` URL 指向 `.mjs` 运行时实现。
+- 设置运行时构建元数据、prerender 平台行为（CF Pages/GH Actions/Netlify 关闭 `autoSubfolderIndex`）、Vite 优化、图片密度/格式，并禁用 OG 图生成。
 
-### 构建期模块
+### `clarity-source-layout`（最先运行）
 
-`src/modules/clarity-source-layout` 最先运行。它把 `src/`、
-`src/modules/`、`src/public/`、`src/server/`、`src/shared/` 与派生应用目录
-应用到 Clarity 自身 layer 元数据，避免这些值经 c12 泄漏到 consumer root 配置。
+将 `src/`、`src/modules/`、`src/public/`、`src/server/`、`src/shared/` 与派生应用目录应用到 Clarity layer 元数据，**且不经 c12 泄漏到 consumer 根配置**。
 
-`src/modules/clarity-config` 在 `nuxt-llms` 之前运行。它发现并校验使用方文件，注入别名与 appConfig，派生 SEO/head/路由规则，并注册主题 Pinia store 与 Shiki 回退。
+### `clarity-config`（先于 `nuxt-llms` 与 `anti-mirror`）
+
+consumer 配置桥。`setup` 阶段：
+
+1. 发现 `clarity.config.ts` / `.mjs` / `.js` 与 `feeds.ts`，经 Zod schema 校验（legacy 键警告并忽略——见 §6），依赖前二次 parse。
+2. 注入别名（§5），使 upstream 导入说明符在 Layer 内解析。
+3. 将解析数据映射进 appConfig（upstream 扁平形状）、Nitro 私有 runtimeConfig、`nuxt.options.site`、robots 规则、`nuxt-llms`、head meta/link/scripts，以及 feature 路由规则。
+4. 将**构建期生成模块**写入 `<buildDir>/clarity/`（§4），并在 `build:before` 重写（Nuxt 在模块运行后清理 buildDir）。
+5. 注册 Vite `resolveId` 契约：把 consumer 的绝对路径 `<rootDir>/package.json` / `pnpm-workspace.yaml` 重定向到生成模块（§5）。
+6. 注册 `content:file:afterParse` 钩子（frontmatter `permalink`、可选 `/posts` 前缀移除）。
 
 ### 运行时应用
 
-`src/`（Layer `srcDir`）包含布局、页面、全局/content/partial/post/widget/popover 组件、composables、stores、plugins、样式与类型。Nuxt 自动导入在被扩展的应用内生效。
+`src/`（Layer `srcDir`）包含布局、页面、组件、composables、stores、插件、样式与类型。Nuxt 自动导入在扩展应用内生效。全部 upstream 派生组件通过 `useAppConfig()` 读取 **upstream 形状的扁平 app config**——绝不读 LEGACY `clarity` 键。
 
 ### 服务端
 
-`src/server/` 包含三个 Nitro 路由：
+`src/server/` 含三个 Nitro 路由——`GET /atom.xml`、`GET /subscriptions.opml`、`GET /api/stats`。它们经 Nitro 私有 runtimeConfig（`useClarityServerConfig()`）读取 site/feed/stats 配置与 feature 开关；关闭的功能在运行时 404。
 
-- `GET /atom.xml`
-- `GET /subscriptions.opml`
-- `GET /api/stats`
+## 4. 构建期生成模块
 
-它们查询 Content 集合，并通过 Nitro 私有 runtime 配置（`useClarityServerConfig()`）读取站点/feed/统计配置与 feature 路由开关；禁用的功能在运行时返回 404。
+upstream 文件通过 `~~/package.json`、`~~/pnpm-workspace.yaml`、`~~/blog.config` 读取 consumer 数据。JSON/YAML 无法被 Nitro prerenderer 导入，而把生成数据写进安装包内部会污染 pnpm store（跨 consumer 共享的硬链接目标）。因此 `clarity-config` 在 `<buildDir>/clarity/` **生成归一化 ES 模块**：
 
-### 仅开发/测试的表面
-
-`playground/`、`scripts/`、`tests/`、`docs/` 与 `.github/` 不打入包中。它们验证 Layer，但不会成为使用方的运行时依赖。
-
-## 4. 配置流
-
-1. 使用方在 `clarity.config.ts` 中调用 `defineClarityConfig()`。
-2. Zod schema 填充默认值，并立即拒绝未知/无效字段。
-3. `src/modules/clarity-config` 发现 `clarity.config.ts` / `.mjs` / `.js`，用 jiti 加载，并在依赖它之前进行第二次解析。
-4. 模块映射解析后的数据：
-   - `toPublicClarityConfig()`（客户端子集）加上派生的 header/footer 默认值进入 appConfig。
-   - `toServerClarityConfig()` 进入 Nitro 私有 runtime 配置，供服务端 handler 与 feature 路由守卫使用。
-   - 站点 title/URL/language 映射到 `nuxt.options.site`。
-   - `article.robotsNotIndex` 映射到 robots disallow 规则。
-   - 站点域名/标题/描述映射到 `nuxt-llms`。
-   - 作者/favicon/alternate/preconnect/scripts/标题模板映射到 head。
-   - 主题/使用方/Nuxt/Vue 包版本映射到公共运行时配置。
-   - stats/Atom/OPML 功能开关映射到预渲染路由规则。
-5. 一个 `content:file:afterParse` 钩子应用 frontmatter `permalink` 与可选的 `/posts` 前缀移除。
-6. 反镜像在配置了黑名单时，会被序列化、压缩并注入为内联 head 脚本。
-
-配置是严格的。`integrations.scripts` 被排除在 appConfig 之外并在构建期消费；`feed.*`、完整 `stats.*`、feature 路由开关、仅构建期 article 字段与 `site.author.email` 通过服务端专用 runtime 配置提供，不进入 appConfig。
-
-## 5. App Config 流
-
-上游组件通过 `useAppConfig()` 读取**上游形状的扁平 app config**（`title`、`nav`、`component.*`、`article.*` 等），与 blog-v3 中 `blog.config.ts` 展开进 `app/app.config.ts` 的行为完全一致。
-
-- `clarity-config` 从 `clarity.config.ts` + UI 默认值（`src/config/ui.ts`）+ 站点派生值（header logo/subtitle、footer copyright）注入该扁平结构。
-- 消费方 `app/app.config.ts` 可直接覆盖扁平键（上游习惯），也可通过 0.1.x 的 `clarity` 兼容键覆盖；两条路径合并进同一结构。
-- Layer 级 `src/app.config.ts` 为空占位，避免 Layer 默认值遮蔽消费方覆盖。
-- Nuxt 将消费方输入合并到模块注入之上；对象深度合并，数组按 defu 语义按下标合并。
-
-生成的 TypeScript 模板扩展 `CustomAppConfig`（扁平 UI 键 + `article`）与 `AppConfigInput`（`clarity`），消费方保持类型化覆盖，上游读取方保留解析后的完整形态。
-
-## 6. Content 流
-
-使用方的 `content.config.ts` 通常包含：
-
-```ts
-import { createClarityContentConfig } from 'clarity-theme/content'
-import clarityConfig from './clarity.config'
-
-export default createClarityContentConfig(clarityConfig)
-```
-
-该工厂：
-
-1. 通过 `clarityConfigSchema` 重新解析配置。
-2. 构建文章字段：标题、描述、日期、分类、标签、类型、图片、推荐、引用、草稿、固定链接与阅读时长。
-3. 使用配置的文章类型作为枚举，record 为空时回退到 `tech`。
-4. 定义单个 `content` 集合，source 为 `**`，page 类型。
-5. 用站点地图 URL/lastmod 元数据扩展 schema。
-
-Markdown 处理由 Layer 配置：
-
-- `remark-code-component` 将配置的 `mermaid` 与 `music-abc` 围栏代码块转换为组件 props。
-- `remark-math` 加 `rehype-katex` 渲染公式。
-- `remark-reading-time` 填充阅读元数据。
-- `rehype-meta-slots` 将 `meta-*` 元素提取为可复用的 slot 树。
-- Content 构建期刻意禁用 Shiki 高亮；主题 Prose 组件在运行时执行高亮。
-
-## 7. Feed 流
-
-### Atom
-
-`src/server/routes/atom.xml.get.ts` 查询 `posts/%` 下的 Content 行，按更新日期排序，根据 `feed.limit` 截断，从 `site.url` 构建绝对 URL，并输出 Atom XML。`feed.enableStyle` 控制 XSLT 声明。
-
-### 友链数据
-
-模块将 `#clarity/feeds` 别名到使用方的 `feeds.ts` / `.mjs` / `.js`，或主题的空回退。友链页面通过该别名读取模块。
-
-### OPML
-
-`src/server/routes/subscriptions.opml.get.ts` 将站点自身的 feed 条目与展平后带 feed URL 的友链条目合并，输出 OPML 2.0。
-
-## 8. 服务端路由 / 客户端边界
-
-- 文章/列表/归档/页面渲染发生在 Vue SSR/客户端代码中。
-- Atom、OPML 与统计是使用 `@nuxt/content/server` 的 Nitro handler。
-- 统计直接查询 Content，并预渲染为 JSON。
-- 公共运行时配置暴露构建环境与包版本。
-- 真正的密钥必须保留在使用方 `runtimeConfig` 中；appConfig 与 `clarity.config.ts` 不是密钥存储。
-
-服务端 handler 不再通过 appConfig 读取 feed/统计配置，这些字段不再进入客户端 payload。`site.author.email` 仍作为有意的公开元数据（HTML `author` meta 与 feed 输出），等待单独的可见性决策。
-
-## 9. 注入别名
-
-| 别名 | 指向 | 稳定性 |
+| 模块 | 内容 | 消费方 |
 | --- | --- | --- |
-| `#clarity/feeds` | 使用方 feeds 模块或主题空回退 | Layer/服务端代码受支持的注入契约 |
-| `#clarity/config` | 使用方 clarity 配置模块路径 | 内部构建别名 / 潜在的服务端安全配置来源；不是稳定的独立公共导出 |
-| `~/shiki.config` | 存在时指向使用方文件；否则指向主题 `src/shiki.config.ts` | 受支持的回退机制 |
-| `~~/blog.config` | `src/blog.config.ts` 适配层（由 `clarity.config.ts` 派生上游扁平结构） | Layer 适配层，使上游文件（`shared/utils/time`、服务端路由）保持 byte-identical |
-| `~~/shared` | 消费方无 `shared/` 时指向主题 `src/shared` | 上游 `~~/shared/...` 导入的 Layer 回退 |
-| `~/feeds` | 消费方无 `app/feeds.ts` 时指向主题 feeds 回退 | 上游 `~/feeds` 的 Layer 回退 |
-| `~~/package.json` / `~~/pnpm-workspace.yaml` | `src/generated/` 下的构建期数据模块 | 上游 BlogTech/atom 的构建数据桥接；按消费方生成 |
+| `package-json.mjs` | consumer `name` / `version` / `packageManager`，恒有 `version` 导出 | `BlogTech.vue`（client bundle） |
+| `pnpm-workspace.mjs` | consumer catalogs 或 Theme 回退 | `BlogTech.vue`（client bundle） |
+| `blog.config.mjs` | 由 `clarity.config.ts` 派生的 upstream 形状配置 | `anti-mirror`（构建期 head 脚本）；`~~/blog.config` 别名消费方走 `src/blog.config.ts` 适配层 |
 
-这些别名避免主题代码假设使用方的目录布局；上游文件保留其原始导入说明符。
+写入时机**幂等且双写**：模块 `setup` 一次（供 prepare/dev 与 jiti 加载的 Layer 模块），`build:before` 再写一次（Nuxt 在模块运行后清理 buildDir）。prerenderer 将这些模块内联（`prerender:config` → `externals.inline`），TS 路径映射把 `~~/package.json` / `~~/pnpm-workspace.yaml` 类型指向声明模板。consumer 缺 `version` 降级为空显示加构建警告——不会使构建失败。
 
-## 10. 组件覆盖机制
+## 5. 注入别名与 prerender 契约
 
-使用方可以在相同的 Layer 相对路径放置组件，例如 `app/components/content/Badge.vue`。使用方组件优先于 Layer 组件。这一点由 playground 与 tarball 消费者的 Badge 覆盖验证。
+| 别名 / id | 解析到 | 说明 |
+| --- | --- | --- |
+| `#clarity/feeds` | consumer feeds 模块或 Theme 空回退 | 友链页 + OPML |
+| `#clarity/config` | consumer clarity 配置模块路径 | 内部构建别名 |
+| `~/shiki.config` | consumer 提供时用之；否则 Theme 回退 | |
+| `~~/blog.config` | `src/blog.config.ts` 适配层（由 `clarity.config.ts` 派生的 upstream 扁平形状） | App/Nitro 上下文；jiti 加载的 Layer 模块读生成的 `blog.config.mjs` |
+| `~~/shared` | consumer 无 `shared/` 时指向 Theme `src/shared` | |
+| `~/feeds` | consumer 无 `feeds.ts` 时指向 Theme 回退 | |
+| `~~/package.json` / `~~/pnpm-workspace.yaml` | `<buildDir>/clarity/` 生成模块 | 精确说明符别名 |
+| *（Vite resolveId 契约）* | 绝对路径 `<rootDir>/package.json` / `pnpm-workspace.yaml` → 生成模块 | **原因**：生产（bundled）构建中 rolldown 原生 alias 插件会让更短的 `~~` → rootDir 前缀别名抢过精确别名，把导入改写到 consumer 真实 JSON（缺 `version` 键曾使 client 构建失败）。重定向契约使 client / nitro / prerender 在任何别名命中顺序下行为一致。 |
 
-当前重复路径会刻意触发 Nuxt 警告 `NUXT_B3011`；这是警告噪音，不是覆盖失败。组件名称、内部 props 与视觉标记不是稳定的公共 API，除非作为功能契约的一部分被文档化。稳定的契约是覆盖行为与渲染出的功能输出。
+这些别名使 Theme 代码不假设 consumer 目录布局；upstream 文件保持原始导入说明符。
 
-## 11. 包导出与运行时双轨
+## 6. Legacy 面（0.1.x）
 
-`package.json` 暴露 Layer 根加四个辅助子路径。Node 加载的配置、schema、content、图片与 remark 插件代码使用 `.mjs` 运行时实现，因为不能依赖 `node_modules` 内文件的原生 TypeScript 剥离。`.d.mts` 文件重新导出 TypeScript 类型源。
+以下内容仅为按 0.1.0 API 编写的 consumer 存在。它们**已废弃**，不属于推荐路径，计划 0.2.0 移除——见[legacy 政策](../maintainers/legacy-policy.zh-CN.md)：
 
-这意味着若干契约刻意拥有成对实现：
+- `useClarityConfig()`、`useClaritySite()`、`useClarityArticle()`、`useClaritySiteFeedEntry()`（读取注入的 `clarity` app-config 键）。
+- consumer `app/app.config.ts` 中的 `clarity` 键。
+- `clarity.config.ts` 的 `article.useRandomPermalink`（接受但输出废弃警告并忽略；注册表之外的未知键仍然致命）。
 
-- `src/config/schema.ts` 与 `src/config/schema.mjs`
-- `src/config/define.ts` 与 `src/config/define.mjs`
-- `src/config/content.ts` 与 `src/config/content.mjs`
-- `src/img/index.ts` 与 `src/img/index.mjs`
-- 每个 remark 插件的 `.ts` 类型源与 `.mjs` 运行时
+组件与 consumer 的现行读取路径是经 `useAppConfig()` 的扁平 upstream 形状 app config。
 
-它们必须保持行为同步。
+## 7. 组件覆盖、包导出与双轨
 
-## 12. 构建 / 运行时 / 使用方关系
+- consumer 按相同 Layer 相对路径覆盖组件（如 `app/components/content/Badge.vue`）；consumer 组件优先。重复路径的 `NUXT_B3011` 警告是预期噪音，不是覆盖失败。
+- 包导出：Layer 根加 `./config`、`./content`、`./schema`、`./img`。Node 加载的代码在 `.ts` 类型源旁提供 `.mjs` 运行时（`schema`、`define`、`content`、`img`、remark 插件）；两轨必须保持行为同步。
 
-- **构建期：** 配置解析/校验、appConfig 注入、别名、路由规则、SEO 接线、head 脚本、Content schema 生成与静态预渲染。
-- **SSR 运行时：** Vue 页面/组件、Content payload 渲染、Nitro feed/统计 handler。
-- **客户端运行时：** 水合、Shiki/Mermaid/ABC 渲染、搜索、色彩模式、弹窗/灯箱、Twikoo 挂载与交互组件。
-- **使用方安装：** npm/Git 包解析带来声明的依赖与 Layer 文件；消费者项目不要求 playground workspace 行为。
+## 8. Prerender / Client / Nitro
 
-静态生成目前会预渲染 playground 的 Content 页面、原始 content/payload 端点、feed/服务端输出、favicon 重定向输出、sitemap 支持文件与回退文档。
+- **Prerender**：`nuxt generate` 预渲染全部页面路由加 feed/server 输出、payload 端点、sitemap 支持文件与回退文档；爬虫从 `/` 发现文章路由。生成模块内联进 prerenderer 构建（§4）。CF Pages / GH Actions / Netlify 上 `nitro.prerender.autoSubfolderIndex` 关闭（扁平 `page.html` 而非 `page/index.html`）。
+- **Nitro 运行时**：Atom/OPML/stats 处理器直接查询 Content；关闭的功能运行时 404。
+- **Client 运行时**：水合、Shiki/Mermaid/ABC 渲染、搜索、颜色模式、弹窗/灯箱、Twikoo 挂载。真实密钥留在 consumer `runtimeConfig`；appConfig 与 `clarity.config.ts` 不是密钥存储。
 
-## 13. 上游同步边界
+## 9. 开发 / 测试专用面
 
-当前 Layer 派生自一个上游博客，但不是 git subtree 或子模块。`sync-manifest.json` 记录 commit 基线与路径分类。只有未修改的 `include` 路径可以快进。当前大多数 UI/服务端文件已经被适配，上游修改它们时会产生冲突。transform/manual 文件始终需要人工审查。
+`playground/`（workspace consumer）、`scripts/`（验证、consumer/兼容性/file-generate/runtime-parity 测试台、同步工具）、`tests/`（source parity 门、config 回归、transform parity 门、runtime/visual parity 测试台）、`docs/`、`.github/`、`skills/` 不进包。`docs/history/` 是过往审计与修复阶段的冻结记录。`docs/_content/mdc/` 的 Markdown/MDC 写作语料是 `article-beautifier` skill 的内容创作素材，不是主题文档。
 
-见[上游同步](../maintainers/upstream-sync.zh-CN.md)。
+见[上游同步](../maintainers/upstream-sync.zh-CN.md)、[Transform 面治理](../maintainers/transform-parity.zh-CN.md)与[测试](../maintainers/testing.zh-CN.md)。

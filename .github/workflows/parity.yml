@@ -1,0 +1,43 @@
+name: Parity (nightly)
+
+# Runtime + Visual parity 全量诊断：
+# - nightly 与手动触发时运行完整矩阵并上传截图/diff 工件；
+# - PR 门禁只跑语义层（ci.yml 的 Layer 4 runtime-parity job），
+#   截图诊断不进 PR（任务 §20：不让开发体验不可用）。
+on:
+  schedule:
+    - cron: '0 3 * * *' # 每天 11:00 CST（UTC 03:00）
+  workflow_dispatch:
+
+concurrency:
+  group: parity-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  parity:
+    name: runtime + visual parity（upstream ↔ clarity）
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Visual parity（含语义矩阵 + 截图/diff 工件）
+        run: pnpm test:visual-parity --fresh
+
+      - name: Upload visual artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: parity-visual
+          path: tests/parity/artifacts/
+          retention-days: 30

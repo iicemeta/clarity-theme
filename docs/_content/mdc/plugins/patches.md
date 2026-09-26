@@ -27,7 +27,7 @@ The upstream `@nuxtjs/mdc` patch also passed inline-code text as a `code` prop. 
 
 ## When Not to Use
 
-Do not register patches speculatively; each one is a maintained fork of a dependency in your lockfile. See the maintainer [patch strategy](../../maintainers/patches.md).
+Do not register patches speculatively; each one is a maintained fork of a dependency in your lockfile. See the maintainer [patch strategy](../../../maintainers/patches.md).
 
 ## Common Mistakes
 

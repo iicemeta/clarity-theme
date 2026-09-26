@@ -31,6 +31,8 @@ export default defineNuxtConfig({
 
 Keep your own `routeRules`, redirects, `runtimeConfig`, custom modules, plugins, and deployment settings in this file. The Layer already provides its modules, Markdown pipeline, styles, color mode, SEO defaults, and feature route rules; duplicating them produces unstable merges.
 
+Also keep the standard Nuxt project files, first of all a root `tsconfig.json` referencing the generated `.nuxt/tsconfig.*` projects (the `create-clarity-theme` scaffold ships one). Vite/oxc resolves module aliases (for example `#modals` inside Theme components) through the root tsconfig paths; a hand-rolled consumer without it fails the production build at Vue SFC type resolution.
+
 ## 3. Define site configuration
 
 ```ts

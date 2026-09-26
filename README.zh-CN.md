@@ -105,9 +105,9 @@ Clarity 属于应用运行时的一部分（Nuxt 构建与静态生成会直接�
 - **入门** — [创建新项目](./docs/getting-started/new-project.zh-CN.md)、[手动安装](./docs/getting-started/manual-installation.zh-CN.md)、[从 blog-v3 迁移](./docs/getting-started/migration-from-blog-v3.zh-CN.md)
 - **指南** — [配置](./docs/guides/configuration.zh-CN.md)、[内容](./docs/guides/content.zh-CN.md)、[自定义](./docs/guides/customization.zh-CN.md)、[集成](./docs/guides/integrations.zh-CN.md)
 - **参考** — [公共 API](./docs/reference/api.zh-CN.md)、[路由与输出](./docs/reference/routes-and-outputs.zh-CN.md)、[兼容性矩阵](./docs/reference/compatibility.zh-CN.md)
-- **概念** — [架构](./docs/concepts/architecture.zh-CN.md)
-- **维护者** — [开发](./docs/maintainers/development.zh-CN.md)、[测试](./docs/maintainers/testing.zh-CN.md)、[上游同步](./docs/maintainers/upstream-sync.zh-CN.md)、[补丁](./docs/maintainers/patches.zh-CN.md)、[发布](./docs/maintainers/publishing.zh-CN.md)、[发布清单](./docs/maintainers/release-checklist.zh-CN.md)、[项目状态](./docs/maintainers/project-status.zh-CN.md)、[路线图](./docs/maintainers/roadmap.zh-CN.md)、[文档规则](./docs/maintainers/documentation.zh-CN.md)
-- **发布历史** — [CHANGELOG](./CHANGELOG.md)；历史记录位于 [docs/history](./docs/history/)
+- **概念** — [架构](./docs/concepts/architecture.zh-CN.md)——upstream → sync-manifest → `src/` → Layer 模块 → consumer 管线，以及 SOURCE / TRANSFORM / CLARITY-ONLY / LEGACY 源码分类
+- **维护者** — [开发](./docs/maintainers/development.zh-CN.md)、[测试与 Parity](./docs/maintainers/testing.zh-CN.md)、[上游同步](./docs/maintainers/upstream-sync.zh-CN.md)、[Transform 面治理](./docs/maintainers/transform-parity.zh-CN.md)、[Legacy 政策](./docs/maintainers/legacy-policy.zh-CN.md)、[补丁](./docs/maintainers/patches.zh-CN.md)、[发布](./docs/maintainers/publishing.zh-CN.md)、[发布清单](./docs/maintainers/release-checklist.zh-CN.md)、[项目状态](./docs/maintainers/project-status.zh-CN.md)、[路线图](./docs/maintainers/roadmap.zh-CN.md)、[文档规则](./docs/maintainers/documentation.zh-CN.md)
+- **发布历史** — [CHANGELOG](./CHANGELOG.md)；历史记录位于 [docs/history](./docs/history/)（冻结叙事——不是现行规范）
 
 ## 开发
 

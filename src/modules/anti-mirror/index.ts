@@ -1,3 +1,5 @@
+import { join } from 'node:path'
+import { pathToFileURL } from 'node:url'
 import { defineNuxtModule } from 'nuxt/kit'
 import { minifySync } from 'oxc-minify'
 import handleMirror from './runtime/client'
@@ -14,10 +16,13 @@ export default defineNuxtModule({
 	meta: {
 		name: 'anti-mirror',
 	},
-	async setup(options, nuxt) {
-		// 生成的数据模块由 clarity-config 在 setup 阶段写入，静态 import 会在
-		// 模块加载阶段读到上一次构建的旧值，因此改为 setup 内动态 import。
-		const { default: blogConfig } = await import('../../generated/blog.config.mjs')
+	async setup(_options, nuxt) {
+		// 生成的数据模块由 clarity-config（先于本模块注册）在 setup 阶段写入
+		// <buildDir>/clarity/；静态相对路径会命中安装包内部位置（穿透 pnpm
+		// 硬链接污染 store），改用基于 buildDir 的 file URL 动态导入，jiti 与
+		// Node 原生加载均可解析。
+		const buildInfoUrl = pathToFileURL(join(nuxt.options.buildDir, 'clarity', 'blog.config.mjs')).href
+		const { default: blogConfig } = await import(buildInfoUrl)
 		nuxt.options.app.head.script ??= []
 		nuxt.options.app.head.script.push({
 			innerHTML: toIifeString(handleMirror, blacklist.map(btoa), btoa(blogConfig.url)),

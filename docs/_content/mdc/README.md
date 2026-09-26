@@ -2,7 +2,7 @@
 
 **English** | [简体中文](./README.zh-CN.md)
 
-This section documents every article-facing Markdown and MDC capability of Clarity Theme: what it looks like, its exact syntax, its props and slots, and whether an ordinary consumer site can rely on it. It is written for two audiences at once — human authors and coding agents — and is the navigation layer for the [`article-beautifier`](../../skills/article-beautifier/SKILL.md) Skill.
+This section documents every article-facing Markdown and MDC capability of Clarity Theme: what it looks like, its exact syntax, its props and slots, and whether an ordinary consumer site can rely on it. It is written for two audiences at once — human authors and coding agents — and is the navigation layer for the [`article-beautifier`](../../../skills/article-beautifier/SKILL.md) Skill.
 
 Source of truth, in order: the Layer implementation in `src/`, the rendering pipeline in `nuxt.config.ts`, the compatibility fixtures in `playground/content/compatibility/`, then these documents. When a document disagrees with the source, the source wins; please fix the document.
 
@@ -38,7 +38,7 @@ Zero `upstream-only` component gaps means every article component of the audited
 
 ## Reading order for agents
 
-1. Read [`skills/article-beautifier/references/_index.md`](../../skills/article-beautifier/references/_index.md) — the machine-readable capability index.
+1. Read [`skills/article-beautifier/references/_index.md`](../../../skills/article-beautifier/references/_index.md) — the machine-readable capability index.
 2. Select only the reference files that match the article's semantics.
 3. Open the matching page under `docs/mdc/components/` or `docs/mdc/plugins/`. When the Skill is installed standalone via `npx skills add`, use its bundled copies under `skills/article-beautifier/references/` instead — they are synced duplicates of these pages.
 4. Never guess a prop, slot, or variant; if it is not documented there, do not use it.

@@ -18,9 +18,10 @@
 | --- | --- |
 | [配置](./guides/configuration.zh-CN.md) | `clarity.config.ts` 字段级契约与 UI app config |
 | [内容](./guides/content.zh-CN.md) | 文章集合、frontmatter schema、固定链接与渲染功能 |
-| [Markdown / MDC 参考](./mdc/README.zh-CN.md) | 文章能力审计、语法指南与逐组件 references |
 | [自定义](./guides/customization.zh-CN.md) | UI 覆盖、组件、Shiki、CSS、页面与服务端路由 |
 | [集成](./guides/integrations.zh-CN.md) | Twikoo、head 脚本与反镜像 |
+
+写作素材（Markdown/MDC 能力审计、语法指南与逐组件写作参考）属于内容创作语料，不是主题文档，存放于正式导航之外的 [`docs/_content/mdc/`](./_content/mdc/README.zh-CN.md)，供 `article-beautifier` agent skill 使用。
 
 ## 参考 — 面向与主题集成的开发者
 
@@ -43,6 +44,8 @@
 | [开发](./maintainers/development.zh-CN.md) | 仓库结构、命令与工作流 |
 | [测试](./maintainers/testing.zh-CN.md) | 验证矩阵与各层运行方式 |
 | [上游同步](./maintainers/upstream-sync.zh-CN.md) | 基线 manifest、漂移处理与同步命令 |
+| [Transform 面治理](./maintainers/transform-parity.zh-CN.md) | nuxt.config.ts 派生面登记表与门禁 |
+| [Legacy 政策](./maintainers/legacy-policy.zh-CN.md) | 0.1.x 兼容面：分类、迁移与 0.2.0 sunset |
 | [补丁策略](./maintainers/patches.zh-CN.md) | 为什么补丁由消费方持有 |
 | [发布](./maintainers/publishing.zh-CN.md) | 永久发布流程：版本、tag、OIDC npm 发布与回滚 |
 | [发布清单](./maintainers/release-checklist.zh-CN.md) | 与版本无关的发布模板 |

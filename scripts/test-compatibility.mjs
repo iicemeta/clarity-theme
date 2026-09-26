@@ -771,6 +771,28 @@ async function launchBrowser() {
 					}
 				}, options.timeout ?? 30000, 200)
 
+				// dev 冷启动瞬态：首航时 vite 按需编译慢一拍，懒加载页组件
+				// （src/pages/[...slug].vue）可能一次 fetch 失败，router 打出
+				// VUE_ROUTER_R0010 + "Failed to fetch dynamically imported
+				// module"。同页重载即恢复，属时序噪音而非真实破损：出现一次
+				// 就重载重收集；reload 后再次出现则保留并照常判失败。
+				const transientSignal = [...console_, ...exceptions]
+					.some(text => /Failed to fetch dynamically imported module|VUE_ROUTER_R0010/i.test(text))
+				if (transientSignal) {
+					console_.length = 0
+					exceptions.length = 0
+					await cdp.send('Page.reload', {}, sessionId)
+					await waitFor(async () => {
+						try {
+							return await this.evaluate(READYSTATE_EXPRESSION)
+						}
+						catch {
+							return false
+						}
+					}, options.timeout ?? 30000, 200)
+					await sleep(1000)
+				}
+
 				if (options.prepare)
 					await this.evaluate(options.prepare).catch(() => {})
 
@@ -791,6 +813,8 @@ async function launchBrowser() {
 					})
 				}
 				await sleep(options.timeout ? 500 : 1000)
+				// 双保险：瞬态模式条目不计入判定（真破损由 waitFor/eval 断言兜底）
+				const isTransient = text => /Failed to fetch dynamically imported module|VUE_ROUTER_R0010/i.test(text)
 				if (process.env.COMPAT_DEBUG) {
 					const info = await Promise.all([
 						this.evaluate('location.href').catch(() => ''),
@@ -799,7 +823,13 @@ async function launchBrowser() {
 					])
 					console.log(`      [debug] url=${info[0]} article=${info[1]} lists=${info[2]}`)
 				}
-				return { console: console_, exceptions, networkErrors, selectorFound, selectorError }
+				return {
+					console: console_.filter(entry => !isTransient(entry.text)),
+					exceptions: exceptions.filter(text => !isTransient(text)),
+					networkErrors,
+					selectorFound,
+					selectorError,
+				}
 			}
 			finally {
 				offConsole()

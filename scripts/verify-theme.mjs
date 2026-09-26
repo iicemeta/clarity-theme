@@ -93,7 +93,7 @@ const attributionAllowList = new Set([
 	'tests/',
 ])
 
-const ignoredDirs = new Set(['node_modules', '.git', '.nuxt', '.output', '.data', 'dist', '.test-consumer'])
+const ignoredDirs = new Set(['node_modules', '.git', '.nuxt', '.output', '.data', 'dist', '.test-consumer', '.parity-cache', 'artifacts'])
 const sourceExtensions = new Set(['.ts', '.mts', '.js', '.mjs', '.vue', '.scss', '.css', '.json', '.md', '.svg'])
 const errors = []
 

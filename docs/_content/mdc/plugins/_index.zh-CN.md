@@ -14,4 +14,4 @@
 | [reading-time](./reading-time.zh-CN.md) | frontmatter | supported | 自动注入的阅读时间 |
 | [patches](./patches.zh-CN.md) | 消费者补丁 | conditional | 依赖消费者自有补丁的渲染行为 |
 
-Layer 配置了整条 Markdown 管线；消费项目不要重复注册这些插件。见[内容指南](../../guides/content.zh-CN.md)。
+Layer 配置了整条 Markdown 管线；消费项目不要重复注册这些插件。见[内容指南](../../../guides/content.zh-CN.md)。

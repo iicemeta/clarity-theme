@@ -14,4 +14,4 @@ These capabilities are not written as component tags: they enter through fenced 
 | [reading-time](./reading-time.md) | frontmatter | supported | Injected reading time |
 | [patches](./patches.md) | consumer patches | conditional | Rendering behaviors that depend on consumer-owned patches |
 
-The Layer configures the whole Markdown pipeline; consumer projects must not re-register these plugins. See [content guide](../../guides/content.md).
+The Layer configures the whole Markdown pipeline; consumer projects must not re-register these plugins. See [content guide](../../../guides/content.md).

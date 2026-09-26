@@ -88,4 +88,4 @@ Headings (h1–h4 enter the TOC), lists, task lists, footnotes, blockquotes, and
 
 ## Raw HTML and other elements
 
-Raw HTML keeps working, and the MDC container form `:::div` can wrap Markdown in a class-carrying element. Use it sparingly — prefer semantic components; raw wrappers are escape hatches, not structure. Embedding arbitrary Vue components by name (for example the site-header demo in upstream content) is classified `do-not-use`; classified `do-not-use` in the capability audit (`docs/mdc/audit.md` in the Theme repository).
+Raw HTML keeps working, and the MDC container form `:::div` can wrap Markdown in a class-carrying element. Use it sparingly — prefer semantic components; raw wrappers are escape hatches, not structure. Embedding arbitrary Vue components by name (for example the site-header demo in upstream content) is classified `do-not-use`; classified `do-not-use` in the capability audit (`docs/_content/mdc/audit.md` in the Theme repository).
