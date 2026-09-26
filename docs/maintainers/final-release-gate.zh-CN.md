@@ -151,7 +151,7 @@ Phase 8 只上报了一个阻塞点 —— 文档治理的误报，不是产品�
 | runtime parity | **CI 上 PASS** | §6 |
 | visual parity | **CI 上运行** | §7 —— 已为本次发布 dispatch |
 | legacy 审计 | **PASS** | §9 |
-| CI | **部分通过** | 最终 head 上的运行 `36220275504`：`Resolve versions` ✓、`Layer 1 · lint` ✓（其 `Lint` 步骤通过）、**`Documentation governance checks` ✗**，下游作业因并发取消。隔离证据：同一源码树在版本提升前的运行 `36217248681` 为 10/10 全绿，且 `parity` workflow 在本分支通过（`36219849601`）。 |
+| CI | **PASS** | 发布 head 上的运行 `36225501919`：10/10 作业全绿，含 `Layer 1 · lint`（其内运行 `docs:check`）、`Layer 3 · real consumer`、`Layer 3b · file install`（ubuntu + windows）与 `Layer 4 · runtime parity gate`。`parity` workflow 已在本分支单独 dispatch（run `36225501055`，runtime + visual parity，PASS）。 |
 
 ## 11. 阻塞点，以及清除它的两条路径
 
