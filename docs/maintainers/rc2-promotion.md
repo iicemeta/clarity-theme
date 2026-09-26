@@ -118,17 +118,17 @@ transform review, so they stay with it.
 | sync baseline check | **PASS** | `sync:verify` reports the baseline equals upstream `main` — proof the rehearsal baseline was not carried over |
 | config / migration / contract | **PASS** | all three |
 | peer audit | **PASS** | no issues |
-| consumer (outside-repo tarball) | **BLOCKED locally** | fresh `pnpm install` fails in `esbuild`'s postinstall on this host. Verified on CI. |
-| generate (playground) | **PASS** | 51 prerendered routes; real HTML for `/`, `/archive`, `/link` and the article page |
-| runtime parity | **BLOCKED locally** | the harness cannot resolve this host's pnpm installation. Verified on CI. |
+| consumer (outside-repo tarball) | **PASS on CI** | blocked locally (fresh `pnpm install` fails in `esbuild`'s postinstall); the CI job `Layer 3 · real consumer + rendering regression` passed in 5m31s |
+| generate (playground) | **PASS** | 51 prerendered routes; real HTML for `/`, `/archive`, `/link` and the article page, byte-identical to the rc.1 measurements |
+| runtime parity | **PASS on CI** | blocked locally (the harness cannot resolve this host's pnpm installation); the CI job `Layer 4 · runtime parity gate` passed in 2m38s |
 | visual parity | **NOT RUN** | nightly/dispatch diagnostic by design, excluded from the PR gate |
-| pack / release check | **PASS** | tarball audited, no boundary violations, version consistent |
-| CI | see the branch's pull-request run | the acceptance signal for the two gates that cannot run locally |
+| pack / release check | **PASS** | tarball audited — 157 files, 51 runtime dependencies, no boundary violations, version consistent |
+| CI | **PASS** | run `36216767950` on the rc.2 head: all 10 jobs green, including both gates that cannot run locally |
 
 Local results and CI results are reported separately on purpose: this host
 cannot create symlinks, cannot spawn children with a piped `stdio`, and cannot
 complete a fresh dependency install, so the consumer and runtime-parity gates
-have no local verdict. They are not claimed as passing.
+have no local verdict. Both were confirmed by CI, not assumed.
 
 ## 6. Baseline integrity
 
@@ -157,7 +157,7 @@ and the rehearsed baseline itself.
 
 Every gate that can run on this host passes, source parity is unchanged from
 rc.1, and the formal baseline is provably intact. The two gates that cannot run
-here are deferred to CI and are recorded as blocked rather than assumed green.
+here were confirmed by CI (all 10 jobs green), not assumed.
 
 **Not done, by instruction:** nothing published, no formal 0.2.0 release, no
 merge to the main branch, no merge of the rehearsal branch, no deletion of the

@@ -90,14 +90,14 @@
 | sync 基线检查 | **PASS** | `sync:verify` 报告基线等于上游 `main` —— 证明演练基线未被带入 |
 | config / migration / contract | **PASS** | 三项均通过 |
 | peer 审计 | **PASS** | 无问题 |
-| consumer（仓库外 tarball） | **本地 BLOCKED** | 全新 `pnpm install` 在本机 `esbuild` postinstall 失败。由 CI 验证。 |
-| generate（playground） | **PASS** | 51 条预渲染路由；`/`、`/archive`、`/link` 与文章页产出真实 HTML |
-| runtime parity | **本地 BLOCKED** | harness 无法解析本机 pnpm 安装位置。由 CI 验证。 |
+| consumer（仓库外 tarball） | **CI 上 PASS** | 本地被阻断（全新 `pnpm install` 在本机 `esbuild` postinstall 失败）；CI 作业 `Layer 3 · real consumer + rendering regression` 以 5m31s 通过 |
+| generate（playground） | **PASS** | 51 条预渲染路由；`/`、`/archive`、`/link` 与文章页产出真实 HTML，且与 rc.1 的测量字节数一致 |
+| runtime parity | **CI 上 PASS** | 本地被阻断（harness 无法解析本机 pnpm 安装位置）；CI 作业 `Layer 4 · runtime parity gate` 以 2m38s 通过 |
 | visual parity | **NOT RUN** | 按设计是 nightly/dispatch 诊断，被排除在 PR 门禁外 |
-| pack / release check | **PASS** | tarball 已审计、无越界、版本一致 |
-| CI | 见本分支的 PR 运行 | 这是本地无法运行的那两个门禁的验收信号 |
+| pack / release check | **PASS** | tarball 已审计 —— 157 文件、51 个 runtime 依赖、无越界、版本一致 |
+| CI | **PASS** | rc.2 head 上的运行 `36216767950`：10 个作业全绿，含本地无法运行的那两个门禁 |
 
-本地结果与 CI 结果是**分开**报告的：本机无法创建符号链接、无法用管道 `stdio` spawn 子进程、无法完成全新依赖安装，因此 consumer 与 runtime parity 在本地没有结论。不把它们声称为通过。
+本地结果与 CI 结果**特意分开**报告：本机无法创建符号链接、无法用管道 `stdio` spawn 子进程、无法完成全新依赖安装，因此 consumer 与 runtime parity 在本地没有结论。两者由 CI 确认，而非假定通过。
 
 ## 6. 基线完整性
 
@@ -118,6 +118,6 @@
 
 已提升：通用同步基础设施与它的回归测试，加上发布元数据与文档。未提升：任何上游内容、任何只对着所演练上游基线才成立的 transform 改动、以及被演练的基线本身。
 
-本机可运行的所有门禁均通过，源一致性相对 rc.1 未变，正式基线可证明未被污染。本地无法运行的两个门禁交由 CI，并记为 blocked 而非假定为绿。
+本机可运行的所有门禁均通过，源一致性相对 rc.1 未变，正式基线可证明未被污染。本地无法运行的两个门禁已由 CI 确认（10 个作业全绿），而非假定通过。
 
 **按指示未做的事：** 未发布任何东西、未创建正式 0.2.0 发布、未合并主分支、未合并演练分支、未删除演练分支、未向上游写入、未开始后续阶段。
