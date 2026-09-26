@@ -44,7 +44,9 @@
     "redirects.json",
     "edgeone.json",
     "scripts/**",
-    ".vscode/**"
+    ".vscode/**",
+    "README.md",
+    "pnpm-lock.yaml"
   ],
   "transform": [
     "app/app.config.ts",
@@ -58,6 +60,7 @@
     "tsconfig.json",
     "eslint.config.mjs",
     "stylelint.config.mjs",
-    "cspell.json"
+    "cspell.json",
+    "MIGRATION.md"
   ]
 }

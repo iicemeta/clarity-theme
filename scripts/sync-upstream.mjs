@@ -15,14 +15,29 @@
  * - verify  校验 manifest 基线状态 + 运行提纯验证
  *
  * 分类优先级：exclude > transform > manual > include > unknown。
- * unknown 变更会阻止 apply，避免未声明文件让基线静默前进。
+ * 未知（unknown）变更会阻止 apply，避免未声明文件让基线静默前进。
  * apply 前要求 Theme 工作树干净（避免覆盖未提交修改）。
+ *
+ * 演练目标 ref：`--ref <branch>` 覆盖 manifest 的 upstream.branch，让一次演练可以
+ * 针对任意上游 ref 运行（例如上游 dev 领先 main 时预演下一次 main 更新）。
+ * 不传时行为与旧版完全一致。
+ *
+ * 与 parity manifest 的关系（tests/upstream-parity.manifest.json，单一事实来源）：
+ * - `mechanical` 记录声明的机械替换在同步时**同样适用**：本地文件的期望内容 =
+ *   上游基线内容 + 该记录声明的替换。只有本地正好等于这个期望内容才允许快进，
+ *   写入时也把替换应用到上游新内容上。否则仍按冲突处理。
+ *   没有这一步，任何声明过的机械文件只要上游一改就会被判为「本地已适配」而
+ *   让整次 apply 全部回滚——这正是 Phase 6 演练发现的缺陷。
+ * - `boundary` / `bugfix` 记录（带 upstream 字段者）单独报告为边界变更：既不自动
+ *   覆盖也不静默忽略，仍然阻止基线前进，保留人工对照上游重构的机会。
  *
  * 路径映射：manifest.pathMap（upstream 前缀 → 本地前缀）在写入/比对本地文件时生效；
  * upstream app/* 对应本地 src/*（扁平化），modules/server/shared/public/remark-plugins
  * 对应 src/ 下同名目录。分类 glob 始终描述 upstream 路径，不因映射而改写。
  */
+import { Buffer } from 'node:buffer'
 import { execFileSync } from 'node:child_process'
+import { createHash } from 'node:crypto'
 import { existsSync, lstatSync, mkdirSync, mkdtempSync, readFileSync, rmSync, unlinkSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { dirname, isAbsolute, join, relative, sep } from 'node:path'
@@ -31,7 +46,10 @@ import { fileURLToPath } from 'node:url'
 
 const themeDir = fileURLToPath(new URL('..', import.meta.url))
 const manifestPath = join(themeDir, 'sync-manifest.json')
+const parityPath = join(themeDir, 'tests', 'upstream-parity.manifest.json')
 const manifest = readManifest(manifestPath)
+const parityRecords = readParityRecords(parityPath)
+const targetBranch = readArgValue('--ref') ?? manifest.upstream.branch
 const modes = new Set(['check', 'diff', 'apply', 'verify'])
 const mode = process.argv[2] ?? 'check'
 const globRegexCache = new Map()
@@ -57,9 +75,9 @@ catch (error) {
 }
 
 function sync() {
-	const { repo, branch } = manifest.upstream
+	const { repo } = manifest.upstream
 	const baselineCommit = manifest.upstream.commit
-	const head = remoteHead(repo, branch)
+	const head = remoteHead(repo, targetBranch)
 
 	if (head === baselineCommit) {
 		console.log(`✔ 上游已是最新：${short(baselineCommit)}`)
@@ -100,6 +118,7 @@ function sync() {
 		printSection('可直接同步（include）', buckets.include)
 		printSection('派生文件（transform，需按上游变更重构 Theme 版本）', buckets.transform)
 		printSection('需人工审查（manual）', buckets.manual)
+		printSection('边界文件（boundary / bugfix，需人工对照上游，绝不自动覆盖）', buckets.boundary)
 		printSection('已排除（exclude，忽略）', buckets.exclude)
 		printSection('未分类（请更新 sync-manifest.json）', buckets.unknown)
 		console.log(`\n共 ${changes.length} 个文件变更。`)
@@ -110,6 +129,10 @@ function sync() {
 
 		if (buckets.unknown.length) {
 			throw new Error(`存在 ${buckets.unknown.length} 个未分类文件；请先更新 sync-manifest.json，基线保持 ${short(baselineCommit)}。`)
+		}
+
+		if (buckets.boundary.length) {
+			throw new Error(`存在 ${buckets.boundary.length} 个边界文件的上游变更；请先人工对照上游重构 Theme 版本，基线保持 ${short(baselineCommit)}。`)
 		}
 
 		const { operations, conflicts } = buildOperations(changes, tempDir, head)
@@ -143,14 +166,14 @@ function verify() {
 	verifyTheme()
 
 	console.log('▶ manifest 基线状态')
-	const { repo, branch, commit } = manifest.upstream
-	const head = remoteHead(repo, branch)
+	const { repo, commit } = manifest.upstream
+	const head = remoteHead(repo, targetBranch)
 	if (head !== commit) {
-		console.error(`✖ 基线 ${short(commit)} 落后于 ${branch} 最新提交 ${short(head)}；请运行 apply 同步。`)
+		console.error(`✖ 基线 ${short(commit)} 落后于 ${targetBranch} 最新提交 ${short(head)}；请运行 apply 同步。`)
 		return false
 	}
 
-	console.log(`✔ 基线 ${short(commit)} 即 ${branch} 最新提交`)
+	console.log(`✔ 基线 ${short(commit)} 即 ${targetBranch} 最新提交`)
 	return true
 }
 
@@ -242,12 +265,92 @@ function parseNameStatus(output) {
 }
 
 function bucketChanges(changes) {
-	const buckets = { include: [], transform: [], manual: [], exclude: [], unknown: [] }
+	const buckets = { include: [], transform: [], manual: [], boundary: [], exclude: [], unknown: [] }
 	for (const change of changes) {
-		const bucket = classify(change.path)
-		buckets[bucket].push(change)
+		buckets[bucketFor(change.path)].push(change)
 	}
 	return buckets
+}
+
+/**
+ * 路径分类 + parity 边界记录提升。
+ * 路径落在 include 内、但 parity manifest 把对应 Theme 文件登记为 boundary / bugfix 时，
+ * 提升为 boundary：它既不是「未分类」（manifest 已经声明过），也不能自动同步。
+ */
+function bucketFor(path) {
+	const bucket = classify(path)
+	if (bucket !== 'include') {
+		return bucket
+	}
+	const record = parityRecords[mapUpstreamPath(path)]
+	if (record && (record.class === 'boundary' || record.class === 'bugfix')) {
+		return 'boundary'
+	}
+	return bucket
+}
+
+/**
+ * 本地文件在该记录下允许被快进时，唯一被接受的 sha。
+ * 无机械声明的文件直接复用上游基线 blob sha（常态路径，无需读取内容）；
+ * 有机械声明的文件才计算「基线内容 + 替换」的 blob sha。
+ */
+function expectedLocalShas(changes, baselineTree, upstreamDir) {
+	const expected = new Map()
+	for (const change of changes) {
+		for (const path of [change.path, change.oldPath].filter(Boolean)) {
+			if (classify(path) !== 'include' || expected.has(mapUpstreamPath(path))) {
+				continue
+			}
+			const localThemePath = mapUpstreamPath(path)
+			const baseline = baselineState(path, baselineTree)
+			if (baseline.kind !== 'file') {
+				expected.set(localThemePath, null)
+				continue
+			}
+			const replacements = mechanicalReplacements(localThemePath)
+			expected.set(
+				localThemePath,
+				replacements ? gitBlobSha(transformUpstreamContent(localThemePath, readBlob(baseline.sha, upstreamDir))) : baseline.sha,
+			)
+		}
+	}
+	return expected
+}
+
+/** 该 Theme 文件声明的机械替换；未声明返回 null。 */
+function mechanicalReplacements(localThemePath) {
+	const record = parityRecords[localThemePath]
+	if (!record || record.class !== 'mechanical' || !Array.isArray(record.replacements)) {
+		return null
+	}
+	return record.replacements
+}
+
+function transformUpstreamContent(localThemePath, content) {
+	const replacements = mechanicalReplacements(localThemePath)
+	if (!replacements || replacements.length === 0) {
+		return content
+	}
+	let text = content.toString('utf8')
+	for (const [from, to] of replacements) {
+		if (!text.includes(from)) {
+			throw new Error(`${localThemePath}: 上游内容中找不到声明的机械替换片段 ${JSON.stringify(from)}；parity manifest 需要更新`)
+		}
+		text = text.split(from).join(to)
+	}
+	return Buffer.from(text, 'utf8')
+}
+
+function readBlob(sha, upstreamDir) {
+	return git(['show', sha], { cwd: upstreamDir, encoding: 'buffer' })
+}
+
+/** git blob 对象的 sha：`sha1("blob <len>\\0" + content)`，与 ls-tree 输出同一命名空间 */
+function gitBlobSha(content) {
+	const hash = createHash('sha1')
+	hash.update(`blob ${content.length}\0`, 'utf8')
+	hash.update(content)
+	return hash.digest('hex')
 }
 
 function buildOperations(changes, upstreamDir, targetCommit) {
@@ -257,10 +360,12 @@ function buildOperations(changes, upstreamDir, targetCommit) {
 	const baselineTree = upstreamTree(manifest.upstream.commit, upstreamDir)
 	const headTree = upstreamTree(targetCommit, upstreamDir)
 	const themeTree = themeTrackedTree()
+	const expectedSha = expectedLocalShas(changes, baselineTree, upstreamDir)
 
 	const planDelete = (path) => {
 		const baseline = baselineState(path, baselineTree)
 		const local = localState(path, virtual, themeTree)
+		const expected = expectedSha.get(mapUpstreamPath(path))
 
 		if (baseline.kind === 'missing') {
 			if (local.kind === 'missing') {
@@ -270,7 +375,7 @@ function buildOperations(changes, upstreamDir, targetCommit) {
 			return
 		}
 
-		if (local.kind === 'file' && baseline.kind === 'file' && local.sha === baseline.sha) {
+		if (local.kind === 'file' && baseline.kind === 'file' && expected !== undefined && local.sha === expected) {
 			operations.push({ type: 'delete', path })
 			virtual.set(path, { kind: 'missing' })
 			return
@@ -280,34 +385,37 @@ function buildOperations(changes, upstreamDir, targetCommit) {
 			path,
 			reason: local.kind === 'missing'
 				? '基线存在但本地已删除'
-				: '本地内容已偏离基线',
+				: '本地内容已偏离基线（含声明的机械替换）',
 		})
 	}
 
 	const planWrite = (path) => {
+		const localThemePath = mapUpstreamPath(path)
 		const baseline = baselineState(path, baselineTree)
 		const local = localState(path, virtual, themeTree)
 		const upstream = upstreamState(path, headTree, upstreamDir)
+		const expected = expectedSha.get(localThemePath)
 
 		if (upstream.kind !== 'file') {
 			conflicts.push({ path, reason: `上游最新状态不是普通文件（${upstream.kind}）` })
 			return
 		}
 
-		const localIsBaseline = baseline.kind === 'file' && local.kind === 'file' && local.sha === baseline.sha
+		const localIsBaseline = baseline.kind === 'file' && local.kind === 'file' && expected !== undefined && local.sha === expected
 		const canCreate = baseline.kind === 'missing' && local.kind === 'missing'
 		if (!localIsBaseline && !canCreate) {
 			conflicts.push({
 				path,
 				reason: baseline.kind === 'missing'
 					? '上游新增但本地已存在'
-					: '本地内容已偏离基线',
+					: '本地内容已偏离基线（含声明的机械替换）',
 			})
 			return
 		}
 
-		operations.push({ type: 'write', path, data: upstream.data })
-		virtual.set(path, { kind: 'file', sha: upstream.sha })
+		const data = canCreate ? upstream.data : transformUpstreamContent(localThemePath, upstream.data)
+		operations.push({ type: 'write', path, data })
+		virtual.set(path, { kind: 'file', sha: gitBlobSha(data) })
 	}
 
 	for (const change of changes) {
@@ -659,4 +767,31 @@ function printSection(title, changes) {
 
 function short(sha) {
 	return sha.slice(0, 7)
+}
+
+/** 读取 `--name value` / `--name=value`；未提供返回 undefined。 */
+function readArgValue(name) {
+	const argv = process.argv.slice(2)
+	for (const [index, arg] of argv.entries()) {
+		if (arg === name) {
+			const value = argv[index + 1]
+			return value && !value.startsWith('--') ? value : undefined
+		}
+		if (arg.startsWith(`${name}=`)) {
+			return arg.slice(name.length + 1) || undefined
+		}
+	}
+	return undefined
+}
+
+/**
+ * parity manifest 是边界与机械替换的单一事实来源；Theme 独立仓库/发布包中可能不存在
+ * （例如 sync 测试 fixture），缺失时退化为「无声明替换 / 无边界记录」的旧行为。
+ */
+function readParityRecords(path) {
+	if (!existsSync(path)) {
+		return {}
+	}
+	const parsed = JSON.parse(readFileSync(path, 'utf8'))
+	return parsed?.records && typeof parsed.records === 'object' ? parsed.records : {}
 }
