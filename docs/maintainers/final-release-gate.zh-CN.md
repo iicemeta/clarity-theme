@@ -147,7 +147,7 @@ Phase 8 验证 [rc.2 提升记录](./rc2-promotion.md) 中的 release candidate 
 | runtime parity | **CI 上 PASS** | §6 |
 | visual parity | **CI 上运行** | §7 —— 已为本次发布 dispatch |
 | legacy 审计 | **PASS** | §9 |
-| CI | **部分通过** | 流水线运行上述门禁；`docs:check` 在 lint 作业内失败，即已记录的阻塞点 |
+| CI | **部分通过** | 最终 head 上的运行 `36220275504`：`Resolve versions` ✓、`Layer 1 · lint` ✓（其 `Lint` 步骤通过）、**`Documentation governance checks` ✗**，下游作业因并发取消。隔离证据：同一源码树在版本提升前的运行 `36217248681` 为 10/10 全绿，且 `parity` workflow 在本分支通过（`36219849601`）。 |
 
 ## 11. 阻塞点，以及清除它的两条路径
 

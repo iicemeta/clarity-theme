@@ -195,7 +195,7 @@ current API documentation. `src/generated` is absent.
 | runtime parity | **PASS on CI** | §6 |
 | visual parity | **RUN on CI** | §7 — dispatched for this release |
 | legacy audit | **PASS** | §9 |
-| CI | **PARTIAL** | the pipeline runs the gates above; `docs:check` fails inside the lint job, which is the recorded blocker |
+| CI | **PARTIAL** | run `36220275504` on the final head: `Resolve versions` ✓, `Layer 1 · lint` ✓ (its `Lint` step passes), **`Documentation governance checks` ✗**, downstream jobs cancelled by concurrency. Evidence that the blocker is isolated: the same source tree was fully green in run `36217248681` (10/10 jobs) before the version was promoted, and the `parity` workflow passed on this branch (`36219849601`). |
 
 ## 11. The blocker, and the two ways to clear it
 
