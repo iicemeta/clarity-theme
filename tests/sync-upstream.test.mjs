@@ -37,6 +37,8 @@ it('clean include file fast-forwards and updates the manifest', () => {
 	assert.equal(read(fixture, 'app/clean.vue'), 'clean-new\n')
 	assert.equal(manifest(fixture).upstream.commit, fixture.head)
 	assert.notEqual(manifest(fixture).upstream.syncedAt, '2000-01-01T00:00:00.000Z')
+	// 仓库 style/eol-last 对 *.json 要求 "never"：写入不得追加末尾换行
+	assert.ok(!readFileSync(join(fixture.theme, 'sync-manifest.json'), 'utf8').endsWith('\n'))
 })
 
 it('modified local file is a conflict and blocks every apply operation', () => {

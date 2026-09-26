@@ -211,7 +211,9 @@ function commitManifest(commit) {
 	try {
 		manifest.upstream.commit = commit
 		manifest.upstream.syncedAt = new Date().toISOString()
-		writeFileSync(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`)
+		// 不带末尾换行：仓库的 style/eol-last 规则对 *.json 要求 "never"，
+		// 追加换行会让每次 apply 都留下一个 lint 告警。
+		writeFileSync(manifestPath, JSON.stringify(manifest, null, 2))
 	}
 	catch (error) {
 		writeFileSync(manifestPath, previousManifest)
