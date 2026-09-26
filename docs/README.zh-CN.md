@@ -49,6 +49,7 @@
 | [补丁策略](./maintainers/patches.zh-CN.md) | 为什么补丁由消费方持有 |
 | [发布](./maintainers/publishing.zh-CN.md) | 永久发布流程：版本、tag、OIDC npm 发布与回滚 |
 | [发布清单](./maintainers/release-checklist.zh-CN.md) | 与版本无关的发布模板 |
+| [RC2 提升记录](./maintainers/rc2-promotion.zh-CN.md) | 上游演练中哪些内容被证明值得提升进第二个 release candidate，哪些留在原地 |
 | [项目状态](./maintainers/project-status.zh-CN.md) | 当前架构与验证事实 |
 | [路线图](./maintainers/roadmap.zh-CN.md) | 现在 / 下一步 / 以后 / 推迟 |
 | [文档规则](./maintainers/documentation.zh-CN.md) | 文档治理与放置规则 |

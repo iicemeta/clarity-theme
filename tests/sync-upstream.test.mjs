@@ -10,6 +10,10 @@ import { it } from 'node:test'
 import { fileURLToPath } from 'node:url'
 
 const syncScript = fileURLToPath(new URL('../scripts/sync-upstream.mjs', import.meta.url))
+// 子进程 stdin 必须显式 ignore：默认（管道）stdio 在部分 Windows 宿主上会以
+// `spawnSync ... EBUSY` 直接失败，被测脚本根本不会启动（与 scripts/*.mjs 内
+// git 调用同一原因；Phase 5 只硬化了实现，漏掉了本 harness）。
+const CHILD_STDIO = ['ignore', 'pipe', 'pipe']
 const initialFiles = {
 	'app/clean.vue': 'clean-old\n',
 	'app/conflict.vue': 'conflict-old\n',
@@ -33,6 +37,8 @@ it('clean include file fast-forwards and updates the manifest', () => {
 	assert.equal(read(fixture, 'app/clean.vue'), 'clean-new\n')
 	assert.equal(manifest(fixture).upstream.commit, fixture.head)
 	assert.notEqual(manifest(fixture).upstream.syncedAt, '2000-01-01T00:00:00.000Z')
+	// 仓库 style/eol-last 对 *.json 要求 "never"：写入不得追加末尾换行
+	assert.ok(!readFileSync(join(fixture.theme, 'sync-manifest.json'), 'utf8').endsWith('\n'))
 })
 
 it('modified local file is a conflict and blocks every apply operation', () => {
@@ -150,7 +156,7 @@ it('manual changes are reported but never copied over Theme files', () => {
 it('upstream rename deletes the old include path and creates the new path', () => {
 	const fixture = createFixture({
 		updateUpstream(upstream) {
-			execFileSync('git', ['mv', 'app/clean.vue', 'app/renamed.vue'], { cwd: upstream })
+			git(['mv', 'app/clean.vue', 'app/renamed.vue'], upstream)
 			commit(upstream, 'rename file')
 		},
 	})
@@ -215,6 +221,7 @@ it('verify fails when the manifest baseline is behind upstream', () => {
 	const result = spawnSync(process.execPath, [fixture.script, 'verify'], {
 		cwd: fixture.theme,
 		encoding: 'utf8',
+		stdio: CHILD_STDIO,
 	})
 
 	assert.equal(result.status, 1)
@@ -388,6 +395,164 @@ it('invalid pathMap prefixes are rejected before any sync mode runs', () => {
 	assert.equal(manifest(fixture).upstream.commit, fixture.baseline)
 })
 
+// ---------------------------------------------------------------------------
+// parity manifest 集成（Phase 6 演练修复）
+// ---------------------------------------------------------------------------
+
+const mechanicalFiles = {
+	'app/mech.vue': 'import type { Feed } from \'~/types/feed\'\nconst label = \'old\'\n',
+}
+const mechanicalRecords = {
+	'app/mech.vue': {
+		class: 'mechanical',
+		replacements: [['from \'~/types/feed\'', 'from \'../../types/feed\'']],
+		reason: 'Layer 内部类型引用不能使用消费项目的 ~ 别名，改为相对路径',
+	},
+}
+
+it('a newly added upstream file still receives its declared mechanical transform', () => {
+	const fixture = createFixture({
+		parityRecords: {
+			'app/added.vue': {
+				class: 'mechanical',
+				replacements: [['from \'~/types/feed\'', 'from \'../../types/feed\'']],
+				reason: 'Layer 内部类型引用不能使用消费项目的 ~ 别名，改为相对路径',
+			},
+		},
+		updateUpstream(upstream) {
+			// 上游新增一个仍使用消费项目别名的文件
+			writeFileSync(join(upstream, 'app/added.vue'), 'import type { Feed } from \'~/types/feed\'\nadded\n')
+			commit(upstream, 'add alias-using file')
+		},
+	})
+	const result = runApply(fixture)
+
+	assert.equal(result.status, 0, result.stderr)
+	assert.equal(read(fixture, 'app/added.vue'), 'import type { Feed } from \'../../types/feed\'\nadded\n')
+})
+
+it('declared mechanical transform is applied when syncing an upstream change', () => {
+	const fixture = createFixture({
+		files: mechanicalFiles,
+		parityRecords: mechanicalRecords,
+		updateTheme(theme) {
+			// Theme 侧存的是「基线 + 声明替换」的形态
+			writeFileSync(join(theme, 'app/mech.vue'), mechanicalFiles['app/mech.vue'].replace('from \'~/types/feed\'', 'from \'../../types/feed\''))
+		},
+		updateUpstream(upstream) {
+			writeFileSync(join(upstream, 'app/mech.vue'), 'import type { Feed } from \'~/types/feed\'\nconst label = \'new\'\n')
+			commit(upstream, 'update mechanical file')
+		},
+	})
+	const result = runApply(fixture)
+
+	assert.equal(result.status, 0, result.stderr)
+	assert.equal(
+		read(fixture, 'app/mech.vue'),
+		'import type { Feed } from \'../../types/feed\'\nconst label = \'new\'\n',
+	)
+	assert.equal(manifest(fixture).upstream.commit, fixture.head)
+})
+
+it('a stale mechanical transform fails loudly instead of writing unreplaced content', () => {
+	const fixture = createFixture({
+		files: mechanicalFiles,
+		parityRecords: mechanicalRecords,
+		updateTheme(theme) {
+			writeFileSync(join(theme, 'app/mech.vue'), mechanicalFiles['app/mech.vue'].replace('from \'~/types/feed\'', 'from \'../../types/feed\''))
+		},
+		updateUpstream(upstream) {
+			// 上游把别名换掉了：声明里的替换片段在新内容中不再存在
+			writeFileSync(join(upstream, 'app/mech.vue'), 'import type { Feed } from \'~/types/other\'\nconst label = \'new\'\n')
+			commit(upstream, 'rewrite alias')
+		},
+	})
+	const result = runApply(fixture)
+
+	assert.notEqual(result.status, 0)
+	assert.match(result.stderr, /找不到声明的机械替换片段/)
+	assert.equal(manifest(fixture).upstream.commit, fixture.baseline)
+})
+
+it('boundary-declared upstream changes block apply and are not reported as unknown', () => {
+	const fixture = createFixture({
+		parityRecords: {
+			'app/clean.vue': { class: 'boundary', reason: 'Theme 边界文件' },
+		},
+		updateUpstream(upstream) {
+			writeFileSync(join(upstream, 'app/clean.vue'), 'clean-new\n')
+			commit(upstream, 'update boundary file')
+		},
+	})
+	const result = runApply(fixture)
+
+	assert.notEqual(result.status, 0)
+	assert.match(result.stdout, /边界文件（boundary \/ bugfix/)
+	assert.doesNotMatch(result.stdout, /未分类（请更新 sync-manifest\.json）/)
+	assert.match(result.stderr, /边界文件的上游变更/)
+	assert.equal(read(fixture, 'app/clean.vue'), 'clean-old\n')
+	assert.equal(manifest(fixture).upstream.commit, fixture.baseline)
+})
+
+it('--accept overwrites a declared-transform file whose declaration changed', () => {
+	const fixture = createFixture({
+		files: mechanicalFiles,
+		parityRecords: {
+			// 声明已经更新（少了 ~/types/feed 那条），所以本地不再是「基线 + 当前声明」
+			'app/mech.vue': { class: 'mechanical', replacements: [] },
+		},
+		updateTheme(theme) {
+			writeFileSync(join(theme, 'app/mech.vue'), mechanicalFiles['app/mech.vue'].replace('from \'~/types/feed\'', 'from \'../../types/feed\''))
+		},
+		updateUpstream(upstream) {
+			writeFileSync(join(upstream, 'app/mech.vue'), 'import type { Feed } from \'~/types/feed\'\nconst label = \'new\'\n')
+			commit(upstream, 'update mechanical file')
+		},
+	})
+
+	const blocked = runApply(fixture)
+	assert.notEqual(blocked.status, 0)
+	assert.match(blocked.stderr, /存在冲突/)
+
+	const accepted = runApply(fixture, ['apply', '--accept', 'app/mech.vue'])
+	assert.equal(accepted.status, 0, accepted.stderr)
+	assert.match(accepted.stdout, /按 --accept 人工确认覆盖/)
+	assert.equal(read(fixture, 'app/mech.vue'), 'import type { Feed } from \'~/types/feed\'\nconst label = \'new\'\n')
+	assert.equal(manifest(fixture).upstream.commit, fixture.head)
+})
+
+it('--accept does not reach transform or manual files', () => {
+	const fixture = createFixture({
+		updateUpstream(upstream) {
+			writeFileSync(join(upstream, 'config/transform.ts'), 'transform-new\n')
+			commit(upstream, 'update transform')
+		},
+	})
+	const result = runApply(fixture, ['apply', '--accept', 'config/transform.ts'])
+
+	assert.equal(result.status, 0, result.stderr)
+	assert.equal(read(fixture, 'config/transform.ts'), 'transform-old\n')
+	assert.doesNotMatch(result.stdout, /按 --accept 人工确认覆盖/)
+})
+
+it('--ref targets a non-default upstream branch', () => {
+	const fixture = createFixture({
+		updateUpstream(upstream) {
+			git(['switch', '--quiet', '-c', 'future'], upstream)
+			writeFileSync(join(upstream, 'app/clean.vue'), 'future-content\n')
+			commit(upstream, 'advance future branch')
+			git(['switch', '--quiet', 'main'], upstream)
+		},
+	})
+	const futureHead = git(['rev-parse', 'future'], fixture.upstream).trim()
+	const result = runApply(fixture, ['apply', '--ref', 'future'])
+
+	assert.equal(result.status, 0, result.stderr)
+	assert.equal(read(fixture, 'app/clean.vue'), 'future-content\n')
+	assert.equal(manifest(fixture).upstream.commit, futureHead)
+	assert.notEqual(futureHead, fixture.head)
+})
+
 function createFixture(options = {}) {
 	const root = mkdtempSync(join(tmpdir(), 'clarity-sync-test-'))
 	const upstream = join(root, 'upstream')
@@ -419,6 +584,13 @@ function createFixture(options = {}) {
 		? '#!/usr/bin/env node\nprocess.exit(1)\n'
 		: '#!/usr/bin/env node\n')
 	writeFileSync(join(theme, 'sync-manifest.json'), `${JSON.stringify(manifest, null, 2)}\n`)
+	if (options.parityRecords) {
+		mkdirSync(join(theme, 'tests'), { recursive: true })
+		writeFileSync(
+			join(theme, 'tests', 'upstream-parity.manifest.json'),
+			`${JSON.stringify({ records: options.parityRecords }, null, 2)}\n`,
+		)
+	}
 	const script = join(theme, 'scripts', 'sync-upstream.mjs')
 	cpSync(syncScript, script)
 	commit(theme, 'theme baseline')
@@ -469,10 +641,11 @@ function git(args, cwd) {
 	return execFileSync('git', args, { cwd, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] })
 }
 
-function runApply(fixture) {
-	return spawnSync(process.execPath, [fixture.script, 'apply'], {
+function runApply(fixture, args = ['apply']) {
+	return spawnSync(process.execPath, [fixture.script, ...args], {
 		cwd: fixture.theme,
 		encoding: 'utf8',
+		stdio: CHILD_STDIO,
 	})
 }
 

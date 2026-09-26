@@ -6,6 +6,72 @@ All notable changes to Clarity Theme are documented here. The format follows
 
 ## Unreleased
 
+## 0.2.0-rc.2 - 2026-09-26
+
+Release candidate for the 0.2.0 breaking line. This release promotes the
+**generic synchronization infrastructure** that the upstream update rehearsal
+proved necessary, together with its regression tests. It carries **no upstream
+source changes**: the reviewed upstream baseline stays at `f6ea97d` (upstream
+3.7.2), and everything rehearsed against upstream's 3.8.0 work remains on the
+rehearsal branch. The Theme is **not** tracking 3.8.0 yet.
+
+The rehearsal itself, including the full 3.8.0 delta analysis, is recorded on
+the `rehearsal/upstream-update` branch; the promotion decision is recorded in
+[the rc.2 promotion record](docs/maintainers/rc2-promotion.md).
+
+### Added
+
+- **Rehearsal-capable sync runs.** `node scripts/sync-upstream.mjs <check|diff|apply|verify> --ref <branch>`
+  targets any upstream ref instead of only the manifest branch, so a future
+  update can be rehearsed before it is committed to. Without this, a rehearsal
+  was impossible.
+- **Declared mechanical transforms are applied during sync.** The sync tool now
+  reads `tests/upstream-parity.manifest.json` and treats the expected local
+  state as *upstream baseline content + the replacements declared for that
+  file*, applying those replacements to the new upstream content. Previously
+  every declared mechanical file was compared against the raw upstream
+  baseline, counted as locally adapted, and aborted the whole transactional
+  apply — so no realistic upstream change could ever be synced. Newly added
+  upstream files run the same transform, because an added file can still import
+  a consumer alias.
+- **A stale declaration fails loudly.** If a declared replacement fragment no
+  longer exists in the new upstream content, the sync stops with an explicit
+  message instead of writing unreplaced content into the Layer.
+- **Boundary files are reported as boundaries.** A changed `boundary` /
+  `bugfix` file previously fell into the "unclassified" bucket and blocked
+  apply with a misleading instruction to edit the manifest. It now reports
+  under its own heading and still blocks — the intended fail-closed behaviour
+  for a surface the Theme deliberately reimplements.
+- **`--accept <upstream-path>`** (repeatable) marks a specific include file as
+  wholly upstream-owned after review, for the case where an upstream refactor
+  invalidates part of a declaration and the local file therefore no longer
+  equals *baseline + current declaration*. It is explicit and audited: every
+  accepted path is printed, it cannot reach transform / manual / boundary
+  files, and the default remains fail-closed.
+- Regression coverage for all of the above in `tests/sync-upstream.test.mjs`,
+  which grew from 18 to 25 cases.
+
+### Changed
+
+- The sync surface declaration now classifies three upstream root files that
+  previously had no classification and blocked apply: `README.md` and
+  `pnpm-lock.yaml` are declared `exclude` (the Theme ships its own), and
+  `MIGRATION.md` is declared `manual` so upstream's downstream migration notes
+  are reported for human review on every sync without blocking it.
+
+### Fixed
+
+- **The sync test suite was silently unverifiable on Windows hosts.**
+  `spawnSync` with the default (piped) `stdio` fails with `EBUSY` before the
+  child starts, so all 18 tests reported `status: null` regardless of what the
+  script did — the harness, not the tool, was broken. Phase 5 had hardened
+  every git call inside `scripts/` but missed the harnesses that spawn them.
+  `stdio` is now pinned and the one raw `execFileSync` call routes through the
+  hardened helper.
+- `commitManifest` appended a trailing newline to `sync-manifest.json`, which
+  violates the repository's `style/eol-last: never` rule for `*.json` and left
+  a lint warning behind after every sync.
+
 ## 0.2.0-rc.1 - 2026-09-25
 
 Release candidate for the 0.2.0 breaking line. It freezes the Phase 1–4 repair
