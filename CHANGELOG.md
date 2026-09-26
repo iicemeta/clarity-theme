@@ -6,6 +6,31 @@ All notable changes to Clarity Theme are documented here. The format follows
 
 ## Unreleased
 
+## 0.2.0 - 2026-09-26
+
+First stable release of the 0.2.0 line. It is the release candidate content of
+`0.2.0-rc.2` promoted unchanged; see the two release-candidate sections below
+for the full detail.
+
+**Breaking:** the 0.1.x compatibility surface is gone. `useClarityConfig()`,
+`useClaritySite()`, `useClarityArticle()`, `useClaritySiteFeedEntry()`, the
+nested `clarity` app-config key, and `article.useRandomPermalink` no longer
+exist. Migrate using the mapping in
+[the legacy policy](docs/maintainers/legacy-policy.md).
+
+Highlights of the line:
+
+- The Theme is a faithful Layer extraction of upstream blog-v3, reading the flat
+  upstream-shaped app config through `useAppConfig()`.
+- Runtime and visual parity gates compare a tarball-built consumer against the
+  upstream build across DOM, stylesheets, computed style and geometry.
+- Synchronization infrastructure hardened by the upstream update rehearsal:
+  declared mechanical transforms are applied during sync, boundary files are
+  reported and blocked rather than mislabelled, and runs can target any upstream
+  ref (`--ref`) or record an explicit human decision (`--accept`).
+- The reviewed upstream baseline remains upstream 3.7.2; upstream's later work
+  is rehearsed only and is not part of this release.
+
 ## 0.2.0-rc.2 - 2026-09-26
 
 Release candidate for the 0.2.0 breaking line. This release promotes the

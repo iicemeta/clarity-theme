@@ -162,6 +162,9 @@ jobs:
       - name: Sync tool regression（manifest / apply / rollback）
         run: pnpm test:sync
 
+      - name: Documentation governance regression（版本快照 vs 合法历史/迁移引用）
+        run: pnpm test:docs-governance
+
       - name: Migration skill regression（fixture / safety rules / API mapping）
         run: pnpm test:migration
 

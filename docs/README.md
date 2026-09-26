@@ -50,6 +50,7 @@ Authoring material (the Markdown/MDC capability audit, syntax guide, and per-com
 | [Publishing](./maintainers/publishing.md) | Permanent release process: version, tag, OIDC npm publish, rollback |
 | [Release checklist](./maintainers/release-checklist.md) | Version-agnostic release template |
 | [RC2 promotion](./maintainers/rc2-promotion.md) | What the upstream rehearsal proved worth promoting into the second release candidate, and what stayed behind |
+| [Final release gate](./maintainers/final-release-gate.md) | The 0.2.0 release gate: baseline, package, consumer, HTML, parity and the one recorded blocker |
 | [Project status](./maintainers/project-status.md) | Current architecture and verification facts |
 | [Roadmap](./maintainers/roadmap.md) | Now / Next / Later / Deferred work |
 | [Documentation rules](./maintainers/documentation.md) | Documentation governance and placement rules |

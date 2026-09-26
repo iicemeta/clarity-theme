@@ -19,11 +19,12 @@
 
 ## 版本规则
 
-**Clarity Theme 的发布版本只记录在 `CHANGELOG.md`。**
+**发布版本记录在 `CHANGELOG.md`；长期文档可以引用某个发布，但不得把当前发布写成快照。**
 
 - 发布版本、日期、Added/Changed/Fixed/Breaking Changes 与迁移说明属于根目录 `CHANGELOG.md`：最新版本在最上方，严格按 SemVer 倒序（`docs:check` 校验顺序；可选的 `## Unreleased` 节可位于最新版本之上）。
 - `create-clarity-theme` 使用自己的 `create-clarity-theme/CHANGELOG.md`；Theme changelog 永不描述创建器发布，反之亦然。
-- 长期文档（README、`history/` 之外的 `docs/**`）不得硬编码当前 Theme 发布版本。请使用 `<version>`、`v<version>` 或 `clarity-theme@<version>` 占位符。
+- 长期文档（README、`history/` 之外的 `docs/**`）不得把当前 Theme 发布版本**写成快照**——版本断言标签（`Version: <version>`、`Current release: <version>`、`当前版本：<version>`）、元数据表格值（`| Version | <version> |`）、精确包版本钉死（`clarity-theme@<version>`）或独立成行的版本标题。请使用 `<version>`、`v<version>` 或 `clarity-theme@<version>` 占位符。快照会在下一次发布时过期。
+- 以下**不是**快照，因此允许：历史事实（`useClarityConfig was removed in 0.2.0`、`deleted in 0.2.0`）、迁移对照（`0.1.x → 0.2.0`）、安装范围（`^0.2.0`、`>=0.2.0 <0.3.0`）与发布来源记录（提升记录）。写明是哪个版本移除了某个 API 是必要的文档内容——`docs:check` 会把它们与快照区分开。
 - 兼容性版本（Node、Nuxt、Vue、Nuxt Content、pnpm、上游 blog-v3 基线）属于技术参考数据，不是发布版本——允许保留在 requirements/compatibility/maintainer 页面中。
 - 历史发布事故与一次性证据属于该版本的 changelog 条目或 `docs/history/`——绝不进入 publishing/checklist 流程文档。
 - 不要创建按版本拆分的文件，如 `RELEASE-NOTES-*.md`、`VERSION-*.md`、`CHANGELOG-*.md`；`docs:check` 会对新文件报错。
@@ -77,7 +78,7 @@
 
 `pnpm docs:check` 在 CI（第一层）运行并校验：
 
-1. 当前 `package.json.version` 不出现在 `CHANGELOG.md`/`docs/history/` 之外的 `README*` 与 `docs/**` 中；
+1. 长期文档不得把当前 `package.json.version` **写成快照**——版本断言标签、元数据表格值、精确包版本钉死或独立成行的版本标题；历史、迁移、安装范围与来源引用允许保留；
 2. 不存在 `RELEASE-NOTES-*.md`、`VERSION-*.md`、`CHANGELOG-*.md` 文件；
 3. 双语文件配对（`docs/history/` 除外）；
 4. 相对 Markdown 链接指向真实文件；
