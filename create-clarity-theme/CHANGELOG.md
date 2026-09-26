@@ -4,6 +4,26 @@ All notable changes to `create-clarity-theme` are documented here. The format
 follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the
 package uses [Semantic Versioning](https://semver.org/).
 
+## 0.2.0 - 2026-09-26
+
+Breaking release aligning generated projects with Clarity Theme 0.2.0.
+
+### Changed
+
+- **Breaking:** the default template now depends on `clarity-theme` with the
+  caret range `^0.2.0` (previously `^0.1.4`). Every generated project lands on
+  the 0.2.0 Theme line, where the flat upstream-shaped app config
+  (`useAppConfig()`) is the only configuration model and the 0.1.x
+  compatibility surface no longer exists.
+- **Breaking:** the template no longer ships an empty `clarity` app-config
+  object into generated projects. That nested key was 0.1.x-only; Theme 0.2.0
+  stopped reading it, so carrying it silently did nothing. The flat
+  `app/app.config.ts` override shape (complete UI group members) is the
+  documented way to customise the Theme UI.
+- The consumer acceptance fixture's flat `header` override supplies the full
+  declared member set, satisfying the `defineAppConfig` type contract instead
+  of degrading app-config type resolution with 38 spurious errors.
+
 ## 0.1.3 - 2026-09-24
 
 Patch release making dependency installation explicit and pnpm-only.

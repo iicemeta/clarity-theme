@@ -1,7 +1,7 @@
 {
   "name": "create-clarity-theme",
   "type": "module",
-  "version": "0.1.3",
+  "version": "0.2.0",
   "description": "Create a ready-to-run Nuxt blog powered by Clarity Theme.",
   "license": "MIT",
   "publishConfig": {
