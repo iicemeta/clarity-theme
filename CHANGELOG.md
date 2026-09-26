@@ -48,6 +48,10 @@ compatibility surface is gone; 0.2.x is the current API and 0.1.x is legacy.
   `toPublicClarityConfig()` and the `ClarityAppConfig` / `ClarityUiConfigInput`
   public types that modelled the nested key. `article.useRandomPermalink` is
   now a fatal unknown key again.
+- Consumer-facing scaffolds no longer reference the removed key: the creator
+  template's `app/app.config.ts` drops its empty `clarity` object, and the
+  consumer acceptance fixture overrides `header` flat instead of
+  `clarity.header`, so both exercise the only supported configuration shape.
 - Migration: see the [legacy policy](docs/maintainers/legacy-policy.md) for
   the 0.1.x → 0.2.0 old-to-new table.
 

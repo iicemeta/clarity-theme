@@ -522,11 +522,10 @@ export default [
 	},
 ] satisfies FeedGroup[]`,
 
-		// ---- app/app.config.ts override：消费项目覆盖 Theme UI 默认值 ----
+		// ---- app/app.config.ts override：消费项目按上游扁平形状覆盖 Theme UI 默认值 ----
+		// 0.2.0 起只支持扁平键（0.1.x 的嵌套 clarity 键已删除，写在这里会被完全忽略）。
 		'app/app.config.ts': `export default defineAppConfig({
-	clarity: {
-		header: { emojiTail: ['🧪'] },
-	},
+	header: { emojiTail: ['🧪'] },
 })`,
 
 		// ---- consumer custom shiki config：覆盖 Theme 内置高亮主题 ----
