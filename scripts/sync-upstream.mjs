@@ -22,6 +22,10 @@
  * 针对任意上游 ref 运行（例如上游 dev 领先 main 时预演下一次 main 更新）。
  * 不传时行为与旧版完全一致。
  *
+ * 人工确认：`--accept <upstream-path>`（可重复）把指定 include 文件视为上游完全拥有，
+ * 允许覆盖本地。仅在机械声明本身因上游重构而变更、本地因此不再等于「基线 + 当前声明」
+ * 时使用；每次使用都会在输出中逐条列出，便于审计。
+ *
  * 与 parity manifest 的关系（tests/upstream-parity.manifest.json，单一事实来源）：
  * - `mechanical` 记录声明的机械替换在同步时**同样适用**：本地文件的期望内容 =
  *   上游基线内容 + 该记录声明的替换。只有本地正好等于这个期望内容才允许快进，
@@ -50,6 +54,16 @@ const parityPath = join(themeDir, 'tests', 'upstream-parity.manifest.json')
 const manifest = readManifest(manifestPath)
 const parityRecords = readParityRecords(parityPath)
 const targetBranch = readArgValue('--ref') ?? manifest.upstream.branch
+/**
+ * `--accept <upstream-path>`（可重复）：人工确认某个 include 文件由上游完全拥有，
+ * 允许用「新上游内容 + 当前声明替换」覆盖本地。
+ *
+ * 存在的理由：机械声明是「上游版本 → Theme」的映射。上游重构使某个声明片段失效时，
+ * 维护者更新声明后，本地文件就不再等于「基线 + **当前**声明」（它是「基线 + 旧声明」），
+ * 于是被判为冲突。工具无法知道旧声明，所以这里要求一次显式、可审计的人工确认，
+ * 而不是放宽判定或静默容忍。
+ */
+const acceptedPaths = readArgValues('--accept')
 const modes = new Set(['check', 'diff', 'apply', 'verify'])
 const mode = process.argv[2] ?? 'check'
 const globRegexCache = new Map()
@@ -135,7 +149,7 @@ function sync() {
 			throw new Error(`存在 ${buckets.boundary.length} 个边界文件的上游变更；请先人工对照上游重构 Theme 版本，基线保持 ${short(baselineCommit)}。`)
 		}
 
-		const { operations, conflicts } = buildOperations(changes, tempDir, head)
+		const { operations, conflicts, accepted } = buildOperations(changes, tempDir, head)
 		if (conflicts.length) {
 			console.error(`\n⚠ ${conflicts.length} 个文件被 Theme 适配过、上游又有变更，需手动合并（基线 ${short(baselineCommit)} → ${short(head)}）：`)
 			for (const { path, reason } of conflicts) {
@@ -144,6 +158,13 @@ function sync() {
 			console.error(`✖ 存在冲突，未应用任何 include 变更，基线保持 ${short(baselineCommit)}。`)
 			process.exitCode = 1
 			return
+		}
+
+		if (accepted.length) {
+			console.log(`\n⚠ 以下文件按 --accept 人工确认覆盖（上游完全拥有，本地内容被替换）：`)
+			for (const path of accepted) {
+				console.log(`  ~ ${path}`)
+			}
 		}
 
 		const applied = applyTransactionally(operations, () => commitManifest(head))
@@ -361,6 +382,7 @@ function buildOperations(changes, upstreamDir, targetCommit) {
 	const headTree = upstreamTree(targetCommit, upstreamDir)
 	const themeTree = themeTrackedTree()
 	const expectedSha = expectedLocalShas(changes, baselineTree, upstreamDir)
+	const accepted = []
 
 	const planDelete = (path) => {
 		const baseline = baselineState(path, baselineTree)
@@ -403,7 +425,8 @@ function buildOperations(changes, upstreamDir, targetCommit) {
 
 		const localIsBaseline = baseline.kind === 'file' && local.kind === 'file' && expected !== undefined && local.sha === expected
 		const canCreate = baseline.kind === 'missing' && local.kind === 'missing'
-		if (!localIsBaseline && !canCreate) {
+		const isAccepted = acceptedPaths.has(path)
+		if (!localIsBaseline && !canCreate && !isAccepted) {
 			conflicts.push({
 				path,
 				reason: baseline.kind === 'missing'
@@ -411,6 +434,9 @@ function buildOperations(changes, upstreamDir, targetCommit) {
 					: '本地内容已偏离基线（含声明的机械替换）',
 			})
 			return
+		}
+		if (isAccepted && !localIsBaseline && !canCreate) {
+			accepted.push(path)
 		}
 
 		// 新建文件同样要过声明的机械替换：上游新增一个仍使用消费项目别名的文件时，
@@ -441,7 +467,7 @@ function buildOperations(changes, upstreamDir, targetCommit) {
 		}
 	}
 
-	return { operations, conflicts }
+	return { operations, conflicts, accepted }
 }
 
 function upstreamTree(commit, upstreamDir) {
@@ -785,6 +811,31 @@ function readArgValue(name) {
 		}
 	}
 	return undefined
+}
+
+/**
+ * 读取可重复的 `--name value`（全部取值）；未提供返回空集合。
+ * 同时接受 `--name=a,b` 的逗号分隔写法，便于命令行一次性列出多个路径。
+ */
+function readArgValues(name) {
+	const argv = process.argv.slice(2)
+	const values = new Set()
+	for (const [index, arg] of argv.entries()) {
+		if (arg === name) {
+			const value = argv[index + 1]
+			if (value && !value.startsWith('--')) {
+				values.add(value)
+			}
+		}
+		else if (arg.startsWith(`${name}=`)) {
+			for (const value of arg.slice(name.length + 1).split(',')) {
+				if (value) {
+					values.add(value)
+				}
+			}
+		}
+	}
+	return values
 }
 
 /**

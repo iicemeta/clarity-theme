@@ -492,6 +492,47 @@ it('boundary-declared upstream changes block apply and are not reported as unkno
 	assert.equal(manifest(fixture).upstream.commit, fixture.baseline)
 })
 
+it('--accept overwrites a declared-transform file whose declaration changed', () => {
+	const fixture = createFixture({
+		files: mechanicalFiles,
+		parityRecords: {
+			// 声明已经更新（少了 ~/types/feed 那条），所以本地不再是「基线 + 当前声明」
+			'app/mech.vue': { class: 'mechanical', replacements: [] },
+		},
+		updateTheme(theme) {
+			writeFileSync(join(theme, 'app/mech.vue'), mechanicalFiles['app/mech.vue'].replace('from \'~/types/feed\'', 'from \'../../types/feed\''))
+		},
+		updateUpstream(upstream) {
+			writeFileSync(join(upstream, 'app/mech.vue'), 'import type { Feed } from \'~/types/feed\'\nconst label = \'new\'\n')
+			commit(upstream, 'update mechanical file')
+		},
+	})
+
+	const blocked = runApply(fixture)
+	assert.notEqual(blocked.status, 0)
+	assert.match(blocked.stderr, /存在冲突/)
+
+	const accepted = runApply(fixture, ['apply', '--accept', 'app/mech.vue'])
+	assert.equal(accepted.status, 0, accepted.stderr)
+	assert.match(accepted.stdout, /按 --accept 人工确认覆盖/)
+	assert.equal(read(fixture, 'app/mech.vue'), 'import type { Feed } from \'~/types/feed\'\nconst label = \'new\'\n')
+	assert.equal(manifest(fixture).upstream.commit, fixture.head)
+})
+
+it('--accept does not reach transform or manual files', () => {
+	const fixture = createFixture({
+		updateUpstream(upstream) {
+			writeFileSync(join(upstream, 'config/transform.ts'), 'transform-new\n')
+			commit(upstream, 'update transform')
+		},
+	})
+	const result = runApply(fixture, ['apply', '--accept', 'config/transform.ts'])
+
+	assert.equal(result.status, 0, result.stderr)
+	assert.equal(read(fixture, 'config/transform.ts'), 'transform-old\n')
+	assert.doesNotMatch(result.stdout, /按 --accept 人工确认覆盖/)
+})
+
 it('--ref targets a non-default upstream branch', () => {
 	const fixture = createFixture({
 		updateUpstream(upstream) {
