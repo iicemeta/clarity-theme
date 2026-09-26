@@ -182,27 +182,33 @@ Do not spread a custom collection schema into this file without reviewing the fa
 
 ### 3.5 Convert `app/app.config.ts` to UI-only overrides
 
-Remove the old `...blogConfig` spread. Keep only UI groups under `clarity`:
+Remove the old `...blogConfig` spread. Keep only the UI groups, written as flat upstream-shaped keys:
 
 ```ts
 export default defineAppConfig({
-	clarity: {
-		component: { codeblock: { triggerRows: 32, collapsedRows: 16 } },
-		header: { showTitle: true, emojiTail: ['📝'] },
-		nav: [
-			{
-				title: '',
-				items: [
-					{ icon: 'tabler:files', text: 'Articles', url: '/' },
-					{ icon: 'tabler:link', text: 'Friends', url: '/link' },
-					{ icon: 'tabler:archive', text: 'Archive', url: '/archive' },
-				],
-			},
-		],
-		pagination: { perPage: 10, sortOrder: 'date' },
+	component: {
+		alert: { defaultStyle: 'card' },
+		codeblock: { triggerRows: 32, collapsedRows: 16, enableIndentGuide: true, indent: 4, tabSize: 3 },
+		excerpt: { animation: true, caret: '_' },
+		slide: { showTitle: true },
+		stats: { birthYear: 0, wordCount: '' },
 	},
+	header: { logo: '', showTitle: true, subtitle: '', emojiTail: ['📝'] },
+	nav: [
+		{
+			title: '',
+			items: [
+				{ icon: 'tabler:files', text: 'Articles', url: '/' },
+				{ icon: 'tabler:link', text: 'Friends', url: '/link' },
+				{ icon: 'tabler:archive', text: 'Archive', url: '/archive' },
+			],
+		},
+	],
+	pagination: { perPage: 10, sortOrder: 'date', allowAscending: false },
 })
 ```
+
+Every group you override must be complete: the declared members are all required, so a partial group fails `nuxt typecheck`. If you only need a couple of fields, keep the rest at their Theme defaults rather than listing a partial group.
 
 Allowed top-level keys are exactly `component`, `footer`, `header`, `link`, `nav`, `pagination`, and `themes`. Site values derived from `blog.config.ts` must live in `clarity.config.ts`; the module warns when it finds site-level fields in app config. Objects merge deeply; arrays replace the Theme value entirely.
 

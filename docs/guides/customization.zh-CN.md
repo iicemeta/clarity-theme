@@ -13,66 +13,64 @@ Clarity 将站点数据与展示分离：
 
 ## 1. UI 配置
 
-创建 `app/app.config.ts`，把覆盖项放在 `clarity` 下：
+创建 `app/app.config.ts`，把覆盖项放在扁平的上游形状键下：
 
 ```ts
 export default defineAppConfig({
-	clarity: {
-		component: {
-			alert: { defaultStyle: 'flat' },
-			codeblock: {
-				triggerRows: 32,
-				collapsedRows: 16,
-				enableIndentGuide: true,
-				indent: 4,
-				tabSize: 3,
-			},
-			excerpt: { animation: true, caret: '_' },
-			slide: { showTitle: true },
-			stats: { birthYear: 2000 },
+	component: {
+		alert: { defaultStyle: 'flat' },
+		codeblock: {
+			triggerRows: 32,
+			collapsedRows: 16,
+			enableIndentGuide: true,
+			indent: 4,
+			tabSize: 3,
 		},
-		footer: {
-			copyright: '© 2026 My Name',
-			iconNav: [
-				{ icon: 'tabler:brand-github', text: 'GitHub', url: 'https://github.com/example' },
-			],
-			nav: [
-				{
-					title: 'Site',
-					items: [{ icon: 'tabler:rss', text: 'Feed', url: '/atom.xml' }],
-				},
-			],
-		},
-		header: {
-			logo: '/avatar.webp',
-			showTitle: true,
-			subtitle: 'A short subtitle',
-			emojiTail: ['📝', '✨'],
-		},
-		link: {
-			remindNoFeed: true,
-			randomInGroup: true,
-		},
+		excerpt: { animation: true, caret: '_' },
+		slide: { showTitle: true },
+		stats: { birthYear: 2000, wordCount: '' },
+	},
+	footer: {
+		copyright: '© 2026 My Name',
+		iconNav: [
+			{ icon: 'tabler:brand-github', text: 'GitHub', url: 'https://github.com/example' },
+		],
 		nav: [
 			{
-				title: '',
-				items: [
-					{ icon: 'tabler:files', text: 'Articles', url: '/' },
-					{ icon: 'tabler:link', text: 'Friends', url: '/link' },
-					{ icon: 'tabler:archive', text: 'Archive', url: '/archive' },
-				],
+				title: 'Site',
+				items: [{ icon: 'tabler:rss', text: 'Feed', url: '/atom.xml' }],
 			},
 		],
-		pagination: {
-			perPage: 10,
-			sortOrder: 'date',
-			allowAscending: false,
+	},
+	header: {
+		logo: '/avatar.webp',
+		showTitle: true,
+		subtitle: 'A short subtitle',
+		emojiTail: ['📝', '✨'],
+	},
+	link: {
+		remindNoFeed: true,
+		randomInGroup: true,
+	},
+	nav: [
+		{
+			title: '',
+			items: [
+				{ icon: 'tabler:files', text: 'Articles', url: '/' },
+				{ icon: 'tabler:link', text: 'Friends', url: '/link' },
+				{ icon: 'tabler:archive', text: 'Archive', url: '/archive' },
+			],
 		},
-		themes: {
-			light: { icon: 'tabler:sun', tip: 'Light' },
-			system: { icon: 'tabler:device-desktop', tip: 'System' },
-			dark: { icon: 'tabler:moon', tip: 'Dark' },
-		},
+	],
+	pagination: {
+		perPage: 10,
+		sortOrder: 'date',
+		allowAscending: false,
+	},
+	themes: {
+		light: { icon: 'tabler:sun', tip: 'Light' },
+		system: { icon: 'tabler:device-desktop', tip: 'System' },
+		dark: { icon: 'tabler:moon', tip: 'Dark' },
 	},
 })
 ```

@@ -179,27 +179,33 @@ export default createClarityContentConfig(clarityConfig)
 
 ### 3.5 把 `app/app.config.ts` 转换为仅 UI 覆盖
 
-移除旧的 `...blogConfig` 展开，只保留 `clarity` 下的 UI 分组：
+移除旧的 `...blogConfig` 展开，只保留 UI 分组，并直接写成扁平的上游形状键：
 
 ```ts
 export default defineAppConfig({
-	clarity: {
-		component: { codeblock: { triggerRows: 32, collapsedRows: 16 } },
-		header: { showTitle: true, emojiTail: ['📝'] },
-		nav: [
-			{
-				title: '',
-				items: [
-					{ icon: 'tabler:files', text: 'Articles', url: '/' },
-					{ icon: 'tabler:link', text: 'Friends', url: '/link' },
-					{ icon: 'tabler:archive', text: 'Archive', url: '/archive' },
-				],
-			},
-		],
-		pagination: { perPage: 10, sortOrder: 'date' },
+	component: {
+		alert: { defaultStyle: 'card' },
+		codeblock: { triggerRows: 32, collapsedRows: 16, enableIndentGuide: true, indent: 4, tabSize: 3 },
+		excerpt: { animation: true, caret: '_' },
+		slide: { showTitle: true },
+		stats: { birthYear: 0, wordCount: '' },
 	},
+	header: { logo: '', showTitle: true, subtitle: '', emojiTail: ['📝'] },
+	nav: [
+		{
+			title: '',
+			items: [
+				{ icon: 'tabler:files', text: 'Articles', url: '/' },
+				{ icon: 'tabler:link', text: 'Friends', url: '/link' },
+				{ icon: 'tabler:archive', text: 'Archive', url: '/archive' },
+			],
+		},
+	],
+	pagination: { perPage: 10, sortOrder: 'date', allowAscending: false },
 })
 ```
+
+覆盖的任何分组都必须完整：声明的成员全部必填，分组不完整会让 `nuxt typecheck` 报错。若只需要其中几个字段，请让其余字段保持 Theme 默认值，而不要写一个不完整的分组。
 
 允许的顶层键只有 `component`、`footer`、`header`、`link`、`nav`、`pagination` 与 `themes`。从 `blog.config.ts` 派生的站点值必须放进 `clarity.config.ts`；模块发现 app config 中出现站点级字段时会输出 WARN。对象深度合并；数组整体替换 Theme 值。
 
