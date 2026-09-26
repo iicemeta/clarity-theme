@@ -19,7 +19,7 @@ Clarity Theme is a reusable Nuxt 4 Layer rooted at `nuxt.config.ts`, with all ru
 
 The verification pipeline is layered (see [testing](./testing.md)) and all layers are wired into CI:
 
-- Static/contract: lint, typecheck, theme purity, upstream-sync tool regression, migration skill regression, compatibility contract, peer audit, docs governance.
+- Static/contract: lint, typecheck, theme purity, upstream-sync tool regression (including rehearsal runs against a non-default ref, declared mechanical transforms, boundary blocking, and explicit `--accept`), migration skill regression, compatibility contract, peer audit, docs governance.
 - Generation: playground static generation through the workspace-linked Layer.
 - Real consumers: packed-tarball consumer with export/typecheck/configuration-branch assertions; production SSR + real-browser + dev-hydration compatibility; creator CLI/E2E/tarball suites.
 - Release: `release:check` gate plus a registry-consumer test that installs the published npm version.
@@ -42,11 +42,13 @@ The Theme package carries no patch directory and no site data: articles, friend 
 
 The reviewed upstream baseline is recorded in [`sync-manifest.json`](../../sync-manifest.json) (repository, branch, commit, upstream version, framework versions, sync time). The weekly sync workflow only detects and reports drift; applying changes is always a human, transactional decision (see [upstream sync](./upstream-sync.md)).
 
+The baseline tracks upstream's released branch. An unreleased upstream branch can be rehearsed without committing to it via `node scripts/sync-upstream.mjs <diff|apply> --ref <branch>`; a rehearsal against upstream's development branch was performed and the reviewed upstream content was deliberately left out of this release (see [rc.2 promotion](./rc2-promotion.md)). The baseline therefore remains upstream 3.7.2.
+
 ## Known limitations
 
 1. Remote CSS/font origins (KaTeX, Inter, JetBrains Mono, Noto Serif SC) are built-in defaults; making them configurable is roadmap work.
 2. `plain-shiki` scope rendering needs the documented consumer patch until the upstream dependency fixes its selector behavior.
-3. Several upstream-derived sync paths (`app/stores/**`, `app/types/**`, `app/utils/**`) still require manual classification during upstream sync.
+3. Upstream-derived sync paths whose local form deviates from upstream beyond a declared mechanical replacement — and paths the parity manifest records as `boundary` / `bugfix` — still require a human decision during sync. The tool now detects and reports both classes precisely instead of aborting with an "unclassified" message, and `--accept` records the decision for a path that was reviewed and is wholly upstream-owned, but the review itself remains manual.
 4. Same-path component overrides emit the intentional `NUXT_B3011` duplicate-name warning.
 5. Compatibility tolerates some non-fatal warning classes (Vue slot/readonly, og:image/twitter:card deprecations, external-resource noise).
 6. Shiki depends on remote esm.sh imports; restricted/offline builds may be affected.
