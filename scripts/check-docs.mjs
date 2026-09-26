@@ -2,7 +2,10 @@
 /**
  * Documentation governance checks（文档宪法的可执行子集，详见 docs/maintainers/documentation.md）
  *
- *  1. 当前 package.json 版本不得出现在 README* / docs/**（CHANGELOG 与 docs/history 冻结记录除外）
+ *  1. 版本快照：长青文档（README* / docs/**，CHANGELOG 与 docs/history 冻结记录除外）
+ *     不得把当前 release 版本写成"快照"——版本断言标签、元数据表格、精确包版本钉死、
+ *     独立成行的版本标题。历史事实、迁移对照、安装范围与发布来源记录中的版本引用是
+ *     合法内容，不属于快照，不受本条限制。
  *  2. 禁止按版本拆分的文档：RELEASE-NOTES-*.md / VERSION-*.md / CHANGELOG-*.md
  *  3. 双语文件配对（docs/history 冻结记录豁免）
  *  4. Markdown 相对链接可解析
@@ -15,6 +18,7 @@ import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import { basename, dirname, join, relative, resolve } from 'node:path'
 import process from 'node:process'
 import { fileURLToPath } from 'node:url'
+import { findVersionStamps } from './lib/version-stamps.mjs'
 
 const themeDir = fileURLToPath(new URL('..', import.meta.url))
 const pkg = JSON.parse(readFileSync(join(themeDir, 'package.json'), 'utf8'))
@@ -54,26 +58,25 @@ const isChangelog = path => resolve(path) === resolve(changelogPath)
 console.log('▶ Documentation Checks\n')
 
 // ---------------------------------------------------------------------------
-// [1] 版本污染：当前 release 版本只允许出现在 CHANGELOG 与历史冻结记录中
+// [1] 版本快照：长青文档不得把当前 release 版本写死成会随发布过期的快照
+//     （判定逻辑见 ./lib/version-stamps.mjs，其 JSDoc 列明了快照与合法引用的分界）
 // ---------------------------------------------------------------------------
-console.log('[1/6] Release-version pollution')
-const versionPattern = new RegExp(`(?<![\\d.])${pkg.version.replaceAll(/[.*+?^${}()|[\]\\]/g, String.raw`\$&`)}(?!\\d)`)
+console.log('[1/6] Release-version stamps')
 let versionChecked = 0
+let stampCount = 0
 for (const file of checkedFiles) {
 	if (isChangelog(file) || isHistory(file)) {
 		continue
 	}
 	versionChecked++
 	const rel = toPosix(relative(themeDir, file))
-	const offending = readFileSync(file, 'utf8')
-		.split(/\r?\n/)
-		.map((line, index) => (versionPattern.test(line) ? index + 1 : 0))
-		.filter(Boolean)
-	if (offending.length > 0) {
-		failures.push(`[version] ${rel} 第 ${offending.join(', ')} 行包含当前版本 ${pkg.version}；发布版本只应记录在 CHANGELOG.md`)
+	const lines = readFileSync(file, 'utf8').split(/\r?\n/)
+	for (const stamp of findVersionStamps(lines, pkg.version)) {
+		stampCount++
+		failures.push(`[version-stamp] ${rel} 第 ${stamp.line} 行把当前版本 ${pkg.version} 写成了快照（${stamp.kind}）；历史、迁移与来源引用不受限制，规则语义见 docs/maintainers/documentation.md`)
 	}
 }
-console.log(`  ✓ 已检查 ${versionChecked} 个非历史文档（CHANGELOG 与 docs/history 豁免）`)
+console.log(`  ✓ 已检查 ${versionChecked} 个非历史文档（CHANGELOG 与 docs/history 豁免），发现版本快照 ${stampCount} 处`)
 
 // ---------------------------------------------------------------------------
 // [2] 禁止按版本拆分的文档文件

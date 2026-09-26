@@ -19,11 +19,12 @@ Never "fix" code to match stale prose unless the change is required to make the 
 
 ## Version rule
 
-**Clarity Theme release versions are documented only in `CHANGELOG.md`.**
+**Release versions are recorded in `CHANGELOG.md`; long-lived documents may reference a release, but must not stamp the current one.**
 
 - Release version, date, Added/Changed/Fixed/Breaking Changes, and migration notes belong in the root `CHANGELOG.md`, newest release first, in strictly descending SemVer order (`docs:check` verifies the order; an optional `## Unreleased` section may sit above the newest release).
 - `create-clarity-theme` keeps its own `create-clarity-theme/CHANGELOG.md`; the Theme changelog never describes creator releases and vice versa.
-- Long-lived documents (README, `docs/**` outside `history/`) must not hardcode the current Theme release version. Write `<version>`, `v<version>`, or `clarity-theme@<version>` placeholders instead.
+- Long-lived documents (README, `docs/**` outside `history/`) must not **stamp** the current Theme release version — a version-asserting label (`Version: <version>`, `Current release: <version>`, `当前版本：<version>`), a metadata-table value (`| Version | <version> |`), an exact package pin (`clarity-theme@<version>`), or a standalone version heading. Write `<version>`, `v<version>`, or `clarity-theme@<version>` placeholders instead. A stamp goes stale at the next release.
+- Not stamps, therefore allowed: historical facts (`useClarityConfig was removed in 0.2.0`, `deleted in 0.2.0`), migration mappings (`0.1.x → 0.2.0`), install ranges (`^0.2.0`, `>=0.2.0 <0.3.0`), and release provenance (promotion records). Naming the release that removed an API is required documentation — `docs:check` distinguishes these from stamps.
 - Compatibility versions (Node, Nuxt, Vue, Nuxt Content, pnpm, upstream blog-v3 baselines) are technical reference data, not release versions — they stay allowed in requirements/compatibility/maintainer pages.
 - Historical release incidents and one-time evidence belong in the changelog entry for that release or in `docs/history/` — never in publishing/checklist process documents.
 - Do not create per-version files such as `RELEASE-NOTES-*.md`, `VERSION-*.md`, or `CHANGELOG-*.md`; `docs:check` fails on new ones.
@@ -77,7 +78,7 @@ User-facing documentation uses `foo.md` (English) + `foo.zh-CN.md` (Chinese) sib
 
 `pnpm docs:check` runs in CI (Layer 1) and verifies:
 
-1. the current `package.json.version` does not appear in `README*` or `docs/**` outside `CHANGELOG.md`/`docs/history/`;
+1. long-lived documents do not **stamp** the current `package.json.version` — version-asserting labels, metadata-table values, exact package pins, or standalone version headings; historical, migration, install-range and provenance references are allowed;
 2. no `RELEASE-NOTES-*.md`, `VERSION-*.md`, or `CHANGELOG-*.md` files exist;
 3. bilingual files are paired (outside `docs/history/`);
 4. relative Markdown links resolve to real files;
