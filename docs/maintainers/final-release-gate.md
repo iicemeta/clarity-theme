@@ -6,10 +6,13 @@ Phase 8 verifies that the release candidate promoted in
 [rc.2 promotion](./rc2-promotion.md) is ready to become the stable 0.2 release.
 No feature work, no upstream sync, no gate relaxation.
 
-**Outcome: `FINAL-RELEASE-BLOCKED`** — by exactly one blocker, which is a
-documentation-governance rule, not a product defect. Everything else passes.
-The blocker, its evidence, and the two candidate resolutions are recorded in
-§10 and §11.
+**Outcome: ~~`FINAL-RELEASE-BLOCKED`~~ → `FINAL-RELEASE-READY`**
+
+Phase 8 reported exactly one blocker — a documentation-governance false
+positive, not a product defect. It was resolved in Phase 8.5 by narrowing the
+rule to what it had always claimed to check; see
+[Resolution](#resolution). Everything below is the original audit, kept as the
+record of what was verified and why the blocker was real.
 
 ## 1. Release identity
 
@@ -178,7 +181,7 @@ current API documentation. `src/generated` is absent.
 | --- | --- | --- |
 | upstream baseline (`upstream/main` == formal baseline) | **PASS** | Gate 1, checked first |
 | lint | **PASS** | 0 errors, 0 warnings |
-| docs:check | **FAIL** | **The blocker.** 16 findings: 74 occurrences of the release version across 16 bilingual documents. See §11. |
+| docs:check | **PASS** | resolved by Phase 8.5 — 0 stamps, 0 legitimate references rewritten (see [Resolution](#resolution)) |
 | typecheck | **PASS** | 0 errors |
 | verify (purity) | **PASS** | clean |
 | source parity | **PASS** | formal baseline, rc.1 class counts |
@@ -256,21 +259,97 @@ instead of papered over.
 Either resolves the blocker; after either, the release gate should be re-run
 and the assessment re-evaluated.
 
+## Resolution
+
+Phase 8.5 resolved the blocker by **narrowing the rule**, not by rewriting the
+documents. The maintainer decision was recorded up front: migration
+documentation must be able to name the release that removed an API, so the 74
+references stay and the rule changes.
+
+### What the rule was
+
+`scripts/check-docs.mjs` check [1] read `package.json`'s `version` and flagged
+**any line containing that string** inside long-lived documents (`docs/**`,
+root READMEs), exempting only `CHANGELOG.md` and `docs/history/`.
+
+### Why it misfired
+
+Occurrence is not semantics. While the current version was a prerelease string
+(`0.2.0-rc.1`), the documents' references to the stable version did not match
+the pattern, so the rule passed. Promoting the version to the stable release
+made the very same lines match — because they name the release that the 0.2.0
+legacy policy documents. The rule's own design doc said it was about
+hardcoding; the implementation checked mere occurrence.
+
+### What the rule protects now
+
+A **version stamp**: a line that asserts the current version as the current
+state, or pins it exactly — the forms that go stale at the next release:
+
+- a version-asserting label bound to the version: `Version: <version>`,
+  `Current release: <version>`, `当前版本：<version>`
+- a metadata-table value: `| Version | <version> |`
+- an exact package pin: `clarity-theme@<version>`
+- a standalone version heading: `## <version>`
+- an assertion sentence: `the latest version is <version>`
+
+### What is explicitly allowed
+
+- historical facts: `useClarityConfig was removed in 0.2.0`, `deleted in 0.2.0`
+- migration mappings: `0.1.x → 0.2.0`, the legacy-policy table header
+  `| 0.1.x | 0.2.0 |` (its label cell is another release line, not a version
+  noun)
+- install ranges: `^0.2.0`, `>=0.2.0 <0.3.0`
+- release provenance: promotion records, release history
+
+### Implementation
+
+The matcher lives in `scripts/lib/version-stamps.mjs`
+(`findVersionStamps(lines, version)`), imported by `check-docs.mjs`, so the
+regression suite tests the same code the gate runs. There is **no allowlist**
+and no filename exemption: the rule is pattern-based, and the pre-existing
+`CHANGELOG.md` / `docs/history/` exemptions are unchanged.
+
+### Regression tests
+
+`tests/docs-governance.test.mjs` (wired into CI Layer 1 as
+`test:docs-governance`) locks both directions:
+
+- stamps that must keep failing — version-asserting labels, metadata-table
+  values, exact package pins, standalone headings, assertion sentences;
+- references that must keep passing — historical facts, migration mappings,
+  install ranges, provenance, including the exact sentences that ship in the
+  0.2.0 documentation;
+- the twelve real bilingual documents listed in the original audit still
+  contain zero stamps;
+- `docs:check` exits 0 and reports `发现版本快照 0 处`.
+
+### Result
+
+| Metric | Before | After |
+| --- | --- | --- |
+| `docs:check` findings | 16 files / 74 occurrences | **0** |
+| legitimate references rewritten | — | **0** |
+| stamps still detectable | — | yes (regression-tested) |
+
+`docs/maintainers/documentation.md` (+ `.zh-CN.md`) was updated to describe the
+rule as it now behaves.
+
 ## 12. Final assessment
 
-**`FINAL-RELEASE-BLOCKED`**
+**`FINAL-RELEASE-READY`**
 
-The artifact itself is in good shape: the upstream baseline is confirmed
-unchanged, the package audits clean, the generated HTML is real and
+The single Phase 8 blocker was a documentation-governance false positive: the
+rule checked version *occurrences* where its own design doc said it should
+check version *hardcoding*. Phase 8.5 narrowed it to the stamp semantics it
+always claimed, with regression tests locking both directions, and **zero**
+legitimate references were rewritten.
+
+Everything the release gate measures now passes: the upstream baseline is
+confirmed unchanged, the package audits clean, the generated HTML is real and
 byte-equivalent to the verified rc.2 build apart from the version stamp, source
 and transform parity hold on the formal baseline, no removed API re-entered the
-runtime, and CI is green on everything except the recorded blocker.
-
-The single blocker is a conflict between two of the project's own governance
-requirements — the version-pollution rule and the requirement that the 0.2.0
-legacy documentation names the release it documents. Clearing it is a one-line
-policy change or a twelve-file documentation rewrite; both belong to the
-maintainer, not to an automated release gate.
+runtime, and CI is green.
 
 **Not done, by instruction:** nothing published, no `v0.2.0` tag, no GitHub
 Release, no merge to the main branch, no deletion of any release or rehearsal

@@ -4,7 +4,11 @@
 
 Phase 8 验证 [rc.2 提升记录](./rc2-promotion.md) 中的 release candidate 是否已具备成为 0.2 稳定版的条件。不含功能开发、不含上游同步、不放宽任何门禁。
 
-**结论：`FINAL-RELEASE-BLOCKED`** —— 阻塞点只有一项，而且是文档治理规则冲突，不是产品缺陷。其余全部通过。阻塞点、证据与两种可选解决方案见 §10 与 §11。
+**结论：~~`FINAL-RELEASE-BLOCKED`~~ → `FINAL-RELEASE-READY`**
+
+Phase 8 只上报了一个阻塞点 —— 文档治理的误报，不是产品缺陷。Phase 8.5 已通过**收窄规则**解决
+（规则改为它一直声称要检查的东西）；见 [Resolution](#resolution)。以下保留原始审计，作为「验证了什么、
+为什么阻塞点是真实的」的记录。
 
 ## 1. 发布标识
 
@@ -130,7 +134,7 @@ Phase 8 验证 [rc.2 提升记录](./rc2-promotion.md) 中的 release candidate 
 | --- | --- | --- |
 | 上游基线（`upstream/main` == 正式基线） | **PASS** | Gate 1，最先检查 |
 | lint | **PASS** | 0 error、0 warning |
-| docs:check | **FAIL** | **阻塞点。** 16 项发现：16 份双语文档中 74 处出现发布版本。见 §11。 |
+| docs:check | **PASS** | 已由 Phase 8.5 解决 —— 0 处快照、0 处合法引用被改写（见 [Resolution](#resolution)） |
 | typecheck | **PASS** | 0 错误 |
 | verify（提纯） | **PASS** | 干净 |
 | 源一致性 | **PASS** | 正式基线，rc.1 的类计数 |
@@ -184,12 +188,66 @@ Phase 8 验证 [rc.2 提升记录](./rc2-promotion.md) 中的 release candidate 
 
 任一都能清除阻塞点；之后应重跑发布门禁并重新评估结论。
 
+## Resolution
+
+Phase 8.5 通过**收窄规则**解决了阻塞点，而不是改写文档。维护决策已事先记录：迁移文档必须能写明是哪个版本移除了某个 API，因此 74 处引用保持原样，改动的是规则。
+
+### 原规则是什么
+
+`scripts/check-docs.mjs` 的检查 [1] 读取 `package.json` 的 `version`，把长青文档（`docs/**`、根 README）中**任何包含该字符串的行**都标记出来，仅豁免 `CHANGELOG.md` 与 `docs/history/`。
+
+### 为什么误报
+
+「出现」不等于「语义」。当前版本是 prerelease 字符串（`0.2.0-rc.1`）时，文档里对稳定版的引用不匹配该模式，规则通过；把版本提升为稳定版后，同样的行开始命中 —— 因为它们写明的正是 0.2.0 legacy 政策所记录的那个发布。规则自己的设计文档说的是「不得硬编码」，实现却在查「出现」。
+
+### 新规则保护什么
+
+**版本快照（version stamp）**：把当前版本断言为当前状态、或精确钉死的行 —— 会在下一次发布时过期的写法：
+
+- 版本断言标签绑定版本：`Version: <version>`、`Current release: <version>`、`当前版本：<version>`
+- 元数据表格值：`| Version | <version> |`
+- 精确包版本钉死：`clarity-theme@<version>`
+- 独立成行的版本标题：`## <version>`
+- 断言句：`the latest version is <version>`
+
+### 明确放行什么
+
+- 历史事实：`useClarityConfig was removed in 0.2.0`、`deleted in 0.2.0`
+- 迁移对照：`0.1.x → 0.2.0`，以及 legacy-policy 表头 `| 0.1.x | 0.2.0 |`（其标签单元格是另一条发布线，不是版本名词）
+- 安装范围：`^0.2.0`、`>=0.2.0 <0.3.0`
+- 发布来源记录：提升记录、发布历史
+
+### 实现
+
+匹配器位于 `scripts/lib/version-stamps.mjs`（`findVersionStamps(lines, version)`），由 `check-docs.mjs` 导入，回归套件测的正是门禁运行的同一份代码。**没有 allowlist**，也没有按文件名豁免：规则基于模式，既有的 `CHANGELOG.md` / `docs/history/` 豁免保持不变。
+
+### 回归测试
+
+`tests/docs-governance.test.mjs`（接入 CI Layer 1，脚本名 `test:docs-governance`）同时锁住两个方向：
+
+- 必须继续失败的快照 —— 版本断言标签、元数据表格值、精确包版本钉死、独立成行标题、断言句；
+- 必须继续通过的引用 —— 历史事实、迁移对照、安装范围、来源记录，包括 0.2.0 文档中实际存在的那些句子；
+- 原始审计列出的 12 份真实双语文档仍为 0 处快照；
+- `docs:check` 退出码 0，并报告 `发现版本快照 0 处`。
+
+### 结果
+
+| 指标 | 之前 | 之后 |
+| --- | --- | --- |
+| `docs:check` 发现 | 16 文件 / 74 处 | **0** |
+| 被改写的合法引用 | — | **0** |
+| 仍可检测的快照 | — | 是（回归测试锁定） |
+
+`docs/maintainers/documentation.md`（+ `.zh-CN.md`）已更新为描述规则现在的实际行为。
+
 ## 12. 最终评估
 
-**`FINAL-RELEASE-BLOCKED`**
+## 12. 最终评估
 
-工件本身状态良好：上游基线确认未变、包审计干净、生成的 HTML 是真实的且与已验证的 rc.2 构建逐字节等价（仅版本戳不同）、源一致性与 transform parity 在正式基线上保持、没有任何已移除 API 重新进入 runtime，CI 在除已记录阻塞点之外的一切上都是绿的。
+**`FINAL-RELEASE-READY`**
 
-唯一的阻塞点是项目自身两条治理要求的冲突 —— 版本污染规则，与"0.2.0 legacy 文档必须写明它所记录的那个发布"这一要求。清除它只需一行策略改动或 12 份文档的重写；两者都属于维护者，而不属于一个自动化的发布门禁。
+Phase 8 的唯一阻塞点是文档治理的误报：规则检查的是版本「出现」，而它自己的设计文档说的是版本「硬编码」。Phase 8.5 把它收窄为它一直声称的快照语义，用回归测试锁住两个方向，并且**零**合法引用被改写。
+
+发布门禁度量的所有内容现在都通过：上游基线确认未变、包审计干净、生成的 HTML 是真实的且与已验证的 rc.2 构建逐字节等价（仅版本戳不同）、源一致性与 transform parity 在正式基线上保持、没有任何已移除 API 重新进入 runtime，CI 全绿。
 
 **按指示未做的事：** 未发布任何东西、未打 `v0.2.0` tag、未创建 GitHub Release、未合并主分支、未删除任何发布或演练分支、未向上游写入、未开始后续阶段。
