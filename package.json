@@ -57,6 +57,7 @@
     "docs:check": "node scripts/check-docs.mjs",
     "verify": "node scripts/verify-theme.mjs",
     "test:sync": "node --test tests/sync-upstream.test.mjs",
+    "test:docs-governance": "node --test tests/docs-governance.test.mjs",
     "test:config": "node --test tests/config-schema.test.mjs",
     "test:transform-parity": "node --test tests/transform-parity.test.mjs",
     "test:migration": "node --test tests/migration-skill.test.mjs",
