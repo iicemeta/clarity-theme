@@ -413,7 +413,10 @@ function buildOperations(changes, upstreamDir, targetCommit) {
 			return
 		}
 
-		const data = canCreate ? upstream.data : transformUpstreamContent(localThemePath, upstream.data)
+		// 新建文件同样要过声明的机械替换：上游新增一个仍使用消费项目别名的文件时，
+		// 原样写入会让 Layer 内出现无法解析的 ~/ 导入（transformUpstreamContent 在
+		// 没有声明时是恒等变换）。
+		const data = transformUpstreamContent(localThemePath, upstream.data)
 		operations.push({ type: 'write', path, data })
 		virtual.set(path, { kind: 'file', sha: gitBlobSha(data) })
 	}

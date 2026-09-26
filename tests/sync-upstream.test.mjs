@@ -408,6 +408,27 @@ const mechanicalRecords = {
 	},
 }
 
+it('a newly added upstream file still receives its declared mechanical transform', () => {
+	const fixture = createFixture({
+		parityRecords: {
+			'app/added.vue': {
+				class: 'mechanical',
+				replacements: [['from \'~/types/feed\'', 'from \'../../types/feed\'']],
+				reason: 'Layer 内部类型引用不能使用消费项目的 ~ 别名，改为相对路径',
+			},
+		},
+		updateUpstream(upstream) {
+			// 上游新增一个仍使用消费项目别名的文件
+			writeFileSync(join(upstream, 'app/added.vue'), 'import type { Feed } from \'~/types/feed\'\nadded\n')
+			commit(upstream, 'add alias-using file')
+		},
+	})
+	const result = runApply(fixture)
+
+	assert.equal(result.status, 0, result.stderr)
+	assert.equal(read(fixture, 'app/added.vue'), 'import type { Feed } from \'../../types/feed\'\nadded\n')
+})
+
 it('declared mechanical transform is applied when syncing an upstream change', () => {
 	const fixture = createFixture({
 		files: mechanicalFiles,
