@@ -12,6 +12,10 @@ Release candidate for the 0.2.0 breaking line. It freezes the Phase 1–4 repair
 work and removes the 0.1.x compatibility layer. **Breaking:** the 0.1.x
 compatibility surface is gone; 0.2.x is the current API and 0.1.x is legacy.
 
+The full phase record — legacy removal, package and exports audit, consumer
+verification, the CI result, and the remaining risks — is frozen at
+[the release candidate record](docs/history/2026-09-25-release-candidate.md).
+
 ### Added
 
 - **Runtime/visual parity gate.** `pnpm test:runtime-parity` and
