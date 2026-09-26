@@ -16,7 +16,7 @@ Configuration entry points:
 | File | Responsibility | Validation |
 | --- | --- | --- |
 | `clarity.config.ts` | Site / content / feature configuration (`defineClarityConfig`) | Zod schema (`clarity-theme/schema`) |
-| `app/app.config.ts` | UI overrides (`defineAppConfig({ clarity: ... })`) | TypeScript (`CustomAppConfig` merge) |
+| `app/app.config.ts` | UI overrides (`defineAppConfig` with the flat upstream keys) | TypeScript (`CustomAppConfig` merge) |
 | `content.config.ts` | Calls the Theme factory to generate the Content collection | `createClarityContentConfig` reparses internally |
 | `feeds.ts` | Friend data (`FeedGroup[]`) | TypeScript |
 | `runtimeConfig` | Environment and secrets; secrets are only valid in the server-only section | Nuxt |
@@ -160,7 +160,7 @@ The first key of `article.types` is the default article layout; `pagination.sort
 
 ## `app/app.config.ts` (UI overrides, all optional)
 
-The type is `ClarityUiConfig` (from `clarity-theme/config`). Every field may be overridden as needed:
+The type is `ClarityUiConfig` (from `clarity-theme/config`). Every field may be overridden, but an override must supply the **complete object for that group** — the declared members are all required, so a partial group is a `nuxt typecheck` error even though it would merge fine at runtime:
 
 | Group | Fields |
 | --- | --- |
@@ -176,7 +176,7 @@ The type is `ClarityUiConfig` (from `clarity-theme/config`). Every field may be 
 | `pagination` | `perPage` / `sortOrder` (must be an `article.order` key) / `allowAscending` |
 | `themes` | light / system / dark `icon` / `tip` |
 
-Objects merge deeply; arrays replace the Theme value entirely. Only `component`, `footer`, `header`, `link`, `nav`, `pagination`, and `themes` are valid groups — see [customization](./customization.md).
+Objects merge deeply; arrays replace the Theme value entirely. Only `component`, `footer`, `header`, `link`, `nav`, `pagination`, and `themes` are valid groups — see [customization](./customization.md). Supply every member of a group you override; a partial group degrades type resolution for the whole app config, not just that key.
 
 ## Files consumers must provide (the Theme never carries them)
 

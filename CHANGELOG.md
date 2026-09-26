@@ -57,6 +57,13 @@ compatibility surface is gone; 0.2.x is the current API and 0.1.x is legacy.
 
 ### Fixed
 
+- **UI app-config override typing.** The flat UI override contract is now stated
+  where consumers read it: overriding a UI group requires supplying every member
+  of that group, because the declared members are all required. A partial group
+  fails `defineAppConfig` type checking and degrades app-config type resolution
+  for the whole app, so Theme components report spurious `possibly undefined`
+  errors. The acceptance fixture and the creator template scaffold both follow
+  the contract.
 - **Production/runtime fixes.** Consumer install reliability (package metadata
   and legacy config paths), and the dev cold-start transient lazy-import
   failure that made first dev boot flaky.

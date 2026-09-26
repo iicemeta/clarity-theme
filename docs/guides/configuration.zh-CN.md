@@ -19,7 +19,7 @@
 | 文件 | 作用 | 校验 |
 | --- | --- | --- |
 | `clarity.config.ts` | 站点 / 内容 / 功能配置（`defineClarityConfig`） | zod schema（`clarity-theme/schema`） |
-| `app/app.config.ts` | UI 覆盖（`defineAppConfig({ clarity: ... })`） | TypeScript（`CustomAppConfig` 合并） |
+| `app/app.config.ts` | UI 覆盖（`defineAppConfig` + 上游扁平键） | TypeScript（`CustomAppConfig` 合并） |
 | `content.config.ts` | 调用 Theme 工厂生成 Content 集合 | `createClarityContentConfig` 内部再次 parse |
 | `feeds.ts` | 友链数据（`FeedGroup[]`） | TypeScript |
 | `runtimeConfig` | 环境与密钥；密钥仅允许 server-only 区 | Nuxt |
@@ -165,7 +165,7 @@ export default defineClarityConfig({
 
 ## app/app.config.ts（UI 覆盖，全部 Optional）
 
-类型为 `ClarityUiConfig`（`clarity-theme/config`）。所有字段均可按需覆盖：
+类型为 `ClarityUiConfig`（`clarity-theme/config`）。所有字段均可覆盖，但覆盖时必须提供该分组的**完整对象**——声明的成员全部必填，分组不完整会让 `nuxt typecheck` 报错（尽管运行期仍能正常合并）：
 
 | 分组 | 字段 |
 | --- | --- |
@@ -180,6 +180,8 @@ export default defineClarityConfig({
 | `link` | `remindNoFeed` / `randomInGroup` |
 | `pagination` | `perPage` / `sortOrder`（须为 `article.order` 键）/ `allowAscending` |
 | `themes` | light / system / dark 的 `icon` / `tip` |
+
+对象深度合并；数组整体替换 Theme 默认值。合法分组只有 `component`、`footer`、`header`、`link`、`nav`、`pagination`、`themes`——见[自定义](./customization.zh-CN.md)。覆盖某分组时请补齐该分组的全部成员；分组不完整会让整个 app config 的类型解析退化，而不只是那一个键。
 
 ## Consumer 必须自行提供的文件（Theme 永不携带）
 

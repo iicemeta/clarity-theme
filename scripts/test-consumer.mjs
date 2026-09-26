@@ -524,8 +524,16 @@ export default [
 
 		// ---- app/app.config.ts override：消费项目按上游扁平形状覆盖 Theme UI 默认值 ----
 		// 0.2.0 起只支持扁平键（0.1.x 的嵌套 clarity 键已删除，写在这里会被完全忽略）。
+		// 覆盖某个 UI 键必须给出**完整对象**：Theme 声明的 AppConfigInput 里该键属性全部必填，
+		// 缺字段会让类型退化（ResolvedAppConfig 解析失败），Theme 组件随之全量报 possibly undefined。
+		// 下面除 emojiTail 外都等于 Theme 的注入默认值（site 未设 avatar / subtitle）。
 		'app/app.config.ts': `export default defineAppConfig({
-	header: { emojiTail: ['🧪'] },
+	header: {
+		logo: '/favicon.svg',
+		showTitle: true,
+		subtitle: '${site.description}',
+		emojiTail: ['🧪'],
+	},
 })`,
 
 		// ---- consumer custom shiki config：覆盖 Theme 内置高亮主题 ----
